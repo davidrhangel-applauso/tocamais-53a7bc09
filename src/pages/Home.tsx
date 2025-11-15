@@ -11,11 +11,11 @@ import { toast } from "sonner";
 
 interface Artist {
   id: string;
-  name: string;
-  city: string;
-  music_style: string;
+  nome: string;
+  cidade: string;
+  estilo_musical: string;
   bio: string;
-  avatar_url: string;
+  foto_url: string;
   status_destaque: boolean;
   ativo_ao_vivo: boolean;
 }
@@ -40,11 +40,11 @@ const Home = () => {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("user_type")
+      .select("tipo")
       .eq("id", user.id)
       .single();
 
-    if (profile?.user_type === "artist") {
+    if (profile?.tipo === "artista") {
       navigate("/painel");
     }
   };
@@ -54,9 +54,9 @@ const Home = () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("user_type", "artist")
+        .eq("tipo", "artista")
         .order("status_destaque", { ascending: false })
-        .order("name");
+        .order("nome");
 
       if (error) throw error;
       setArtists(data || []);
@@ -74,9 +74,9 @@ const Home = () => {
 
   const filteredArtists = artists.filter(
     (artist) =>
-      artist.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      artist.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      artist.music_style?.toLowerCase().includes(searchTerm.toLowerCase())
+      artist.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      artist.cidade.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      artist.estilo_musical?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const featuredArtists = filteredArtists.filter((a) => a.status_destaque);
@@ -132,13 +132,13 @@ const Home = () => {
                       <CardContent className="p-6">
                         <div className="flex items-start gap-4">
                           <Avatar className="w-16 h-16">
-                            <AvatarImage src={artist.avatar_url} />
-                            <AvatarFallback>{artist.name[0]}</AvatarFallback>
+                            <AvatarImage src={artist.foto_url} />
+                            <AvatarFallback>{artist.nome[0]}</AvatarFallback>
                           </Avatar>
                           <div className="flex-1">
-                            <h3 className="font-bold text-lg mb-1">{artist.name}</h3>
-                            <p className="text-sm text-muted-foreground mb-2">{artist.city}</p>
-                            <Badge variant="secondary">{artist.music_style}</Badge>
+                            <h3 className="font-bold text-lg mb-1">{artist.nome}</h3>
+                            <p className="text-sm text-muted-foreground mb-2">{artist.cidade}</p>
+                            <Badge variant="secondary">{artist.estilo_musical}</Badge>
                             {artist.ativo_ao_vivo && (
                               <Badge variant="destructive" className="ml-2">
                                 AO VIVO
@@ -165,13 +165,13 @@ const Home = () => {
                     <CardContent className="p-6">
                       <div className="flex items-start gap-4">
                         <Avatar className="w-16 h-16">
-                          <AvatarImage src={artist.avatar_url} />
-                          <AvatarFallback>{artist.name[0]}</AvatarFallback>
+                          <AvatarImage src={artist.foto_url} />
+                          <AvatarFallback>{artist.nome[0]}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
-                          <h3 className="font-bold text-lg mb-1">{artist.name}</h3>
-                          <p className="text-sm text-muted-foreground mb-2">{artist.city}</p>
-                          <Badge variant="secondary">{artist.music_style}</Badge>
+                          <h3 className="font-bold text-lg mb-1">{artist.nome}</h3>
+                          <p className="text-sm text-muted-foreground mb-2">{artist.cidade}</p>
+                          <Badge variant="secondary">{artist.estilo_musical}</Badge>
                           {artist.ativo_ao_vivo && (
                             <Badge variant="destructive" className="ml-2">
                               AO VIVO
