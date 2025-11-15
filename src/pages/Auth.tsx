@@ -31,9 +31,9 @@ const Auth = () => {
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
-            name,
-            city,
-            user_type: userType,
+            nome: name,
+            cidade: city,
+            tipo: userType === "artist" ? "artista" : "cliente",
           },
         },
       });
