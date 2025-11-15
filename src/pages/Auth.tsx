@@ -71,11 +71,11 @@ const Auth = () => {
       
       const { data: profile } = await supabase
         .from("profiles")
-        .select("user_type")
+        .select("tipo")
         .eq("id", (await supabase.auth.getUser()).data.user?.id)
         .single();
 
-      navigate(profile?.user_type === "artist" ? "/painel" : "/");
+      navigate(profile?.tipo === "artista" ? "/painel" : "/");
     } catch (error: any) {
       toast.error(error.message || "Erro ao fazer login");
     } finally {
