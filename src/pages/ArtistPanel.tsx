@@ -8,8 +8,9 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Music, Heart, LogOut, Settings, TrendingUp, Check, X, MessageCircle } from "lucide-react";
+import { Music, Heart, LogOut, Settings, TrendingUp, Check, X, MessageCircle, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
+import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 
 interface Pedido {
   id: string;
@@ -42,6 +43,15 @@ interface Stats {
   gorjetas_hoje: number;
 }
 
+interface AnalyticsData {
+  pedidosPorDia: { data: string; total: number }[];
+  gorjetasPorDia: { data: string; valor: number }[];
+  topMusicas: { musica: string; total: number }[];
+  taxaAceitacao: number;
+  ticketMedio: number;
+  totalClientes: number;
+}
+
 const ArtistPanel = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -55,6 +65,14 @@ const ArtistPanel = () => {
     pedidos_aceitos: 0,
     gorjetas_total: 0,
     gorjetas_hoje: 0,
+  });
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
+    pedidosPorDia: [],
+    gorjetasPorDia: [],
+    topMusicas: [],
+    taxaAceitacao: 0,
+    ticketMedio: 0,
+    totalClientes: 0,
   });
 
   useEffect(() => {
@@ -79,6 +97,7 @@ const ArtistPanel = () => {
           () => {
             fetchPedidos();
             fetchStats();
+            fetchAnalytics();
           }
         )
         .subscribe();
@@ -96,6 +115,7 @@ const ArtistPanel = () => {
           () => {
             fetchGorjetas();
             fetchStats();
+            fetchAnalytics();
             toast.success("Nova gorjeta recebida! 🎉");
           }
         )
@@ -135,6 +155,7 @@ const ArtistPanel = () => {
     fetchPedidos();
     fetchGorjetas();
     fetchStats();
+    fetchAnalytics();
     setLoading(false);
   };
 
@@ -222,6 +243,109 @@ const ArtistPanel = () => {
     });
   };
 
+  const fetchAnalytics = async () => {
+    if (!artistId) return;
+
+    // Últimos 7 dias
+    const seteDiasAtras = new Date();
+    seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);
+
+    // Pedidos por dia (últimos 7 dias)
+    const { data: pedidosData } = await supabase
+      .from("pedidos")
+      .select("created_at")
+      .eq("artista_id", artistId)
+      .gte("created_at", seteDiasAtras.toISOString());
+
+    const pedidosPorDia = Array.from({ length: 7 }, (_, i) => {
+      const data = new Date();
+      data.setDate(data.getDate() - (6 - i));
+      const dataStr = data.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+      const total = pedidosData?.filter(p => {
+        const pedidoData = new Date(p.created_at);
+        return pedidoData.toDateString() === data.toDateString();
+      }).length || 0;
+      return { data: dataStr, total };
+    });
+
+    // Gorjetas por dia (últimos 7 dias)
+    const { data: gorjetasData } = await supabase
+      .from("gorjetas")
+      .select("valor, created_at")
+      .eq("artista_id", artistId)
+      .gte("created_at", seteDiasAtras.toISOString());
+
+    const gorjetasPorDia = Array.from({ length: 7 }, (_, i) => {
+      const data = new Date();
+      data.setDate(data.getDate() - (6 - i));
+      const dataStr = data.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+      const valor = gorjetasData?.filter(g => {
+        const gorjetaData = new Date(g.created_at);
+        return gorjetaData.toDateString() === data.toDateString();
+      }).reduce((sum, g) => sum + g.valor, 0) || 0;
+      return { data: dataStr, valor };
+    });
+
+    // Top 5 músicas mais pedidas
+    const { data: todasMusicas } = await supabase
+      .from("pedidos")
+      .select("musica")
+      .eq("artista_id", artistId);
+
+    const musicasCount = todasMusicas?.reduce((acc, p) => {
+      acc[p.musica] = (acc[p.musica] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>) || {};
+
+    const topMusicas = Object.entries(musicasCount)
+      .map(([musica, total]) => ({ musica, total }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
+
+    // Taxa de aceitação
+    const { count: totalPedidos } = await supabase
+      .from("pedidos")
+      .select("*", { count: "exact", head: true })
+      .eq("artista_id", artistId);
+
+    const { count: pedidosAceitos } = await supabase
+      .from("pedidos")
+      .select("*", { count: "exact", head: true })
+      .eq("artista_id", artistId)
+      .eq("status", "aceito");
+
+    const taxaAceitacao = totalPedidos && totalPedidos > 0 
+      ? (pedidosAceitos || 0) / totalPedidos * 100 
+      : 0;
+
+    // Ticket médio de gorjetas
+    const { data: todasGorjetas } = await supabase
+      .from("gorjetas")
+      .select("valor")
+      .eq("artista_id", artistId);
+
+    const ticketMedio = todasGorjetas && todasGorjetas.length > 0
+      ? todasGorjetas.reduce((sum, g) => sum + g.valor, 0) / todasGorjetas.length
+      : 0;
+
+    // Total de clientes únicos
+    const { data: clientesUnicos } = await supabase
+      .from("pedidos")
+      .select("cliente_id")
+      .eq("artista_id", artistId);
+
+    const totalClientes = new Set(clientesUnicos?.map(c => c.cliente_id) || []).size;
+
+    setAnalyticsData({
+      pedidosPorDia,
+      gorjetasPorDia,
+      topMusicas,
+      taxaAceitacao,
+      ticketMedio,
+      totalClientes,
+    });
+  };
+
   const handleToggleLiveStatus = async (checked: boolean) => {
     if (!artistId) return;
 
@@ -253,6 +377,7 @@ const ArtistPanel = () => {
     toast.success(newStatus === "aceito" ? "Pedido aceito! ✅" : "Pedido recusado");
     fetchPedidos();
     fetchStats();
+    fetchAnalytics();
   };
 
   const handleLogout = async () => {
@@ -362,7 +487,11 @@ const ArtistPanel = () => {
 
         {/* Tabs for Pedidos and Gorjetas */}
         <Tabs defaultValue="pendentes" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="analytics">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Analytics
+            </TabsTrigger>
             <TabsTrigger value="pendentes">
               Pendentes ({pedidosPendentes.length})
             </TabsTrigger>
@@ -376,6 +505,11 @@ const ArtistPanel = () => {
               Gorjetas ({gorjetas.length})
             </TabsTrigger>
           </TabsList>
+
+          {/* Analytics Dashboard */}
+          <TabsContent value="analytics">
+            <AnalyticsDashboard data={analyticsData} />
+          </TabsContent>
 
           {/* Pedidos Pendentes */}
           <TabsContent value="pendentes" className="space-y-4">
