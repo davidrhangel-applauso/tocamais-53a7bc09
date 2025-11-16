@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Music, Search, LogOut, Star, MessageCircle } from "lucide-react";
+import { Music, Search, LogOut, Star, MessageCircle, Settings } from "lucide-react";
 import { toast } from "sonner";
 
 interface Artist {
@@ -94,6 +94,10 @@ const Home = () => {
             <Button variant="outline" onClick={() => navigate("/mensagens")}>
               <MessageCircle className="w-4 h-4 mr-2" />
               Mensagens
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/configuracoes")}>
+              <Settings className="w-4 h-4 mr-2" />
+              Configurações
             </Button>
             <Button variant="outline" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-2" />
