@@ -8,10 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Constants, type Database } from "@/integrations/supabase/types";
+import { AvatarUpload } from "@/components/AvatarUpload";
 
 type MusicStyle = Database["public"]["Enums"]["music_style"];
 
@@ -131,18 +131,12 @@ const Settings = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Avatar Preview */}
-            <div className="flex flex-col items-center gap-4">
-              <Avatar className="w-24 h-24">
-                <AvatarImage src={profile.foto_url || ""} />
-                <AvatarFallback className="text-2xl">
-                  {profile.nome.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <p className="text-sm text-muted-foreground">
-                {profile.tipo === "artista" ? "Artista" : "Cliente"}
-              </p>
-            </div>
+            {/* Avatar Upload */}
+            <AvatarUpload
+              currentUrl={profile.foto_url}
+              onUpload={(url) => setProfile({ ...profile, foto_url: url })}
+              userName={profile.nome}
+            />
 
             {/* Basic Info */}
             <div className="space-y-4">
@@ -150,19 +144,10 @@ const Settings = () => {
                 <Label htmlFor="nome">Nome</Label>
                 <Input
                   id="nome"
+                  type="text"
+                  placeholder="Seu nome"
                   value={profile.nome}
                   onChange={(e) => setProfile({ ...profile, nome: e.target.value })}
-                  placeholder="Seu nome"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="foto_url">URL da Foto</Label>
-                <Input
-                  id="foto_url"
-                  value={profile.foto_url || ""}
-                  onChange={(e) => setProfile({ ...profile, foto_url: e.target.value })}
-                  placeholder="https://..."
                 />
               </div>
 
@@ -170,9 +155,10 @@ const Settings = () => {
                 <Label htmlFor="cidade">Cidade</Label>
                 <Input
                   id="cidade"
+                  type="text"
+                  placeholder="São Paulo, SP"
                   value={profile.cidade || ""}
                   onChange={(e) => setProfile({ ...profile, cidade: e.target.value })}
-                  placeholder="Sua cidade"
                 />
               </div>
 
@@ -182,12 +168,10 @@ const Settings = () => {
                     <Label htmlFor="estilo_musical">Estilo Musical</Label>
                     <Select
                       value={profile.estilo_musical || ""}
-                      onValueChange={(value) =>
-                        setProfile({ ...profile, estilo_musical: value as MusicStyle })
-                      }
+                      onValueChange={(value) => setProfile({ ...profile, estilo_musical: value as MusicStyle })}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o estilo" />
+                      <SelectTrigger id="estilo_musical">
+                        <SelectValue placeholder="Selecione um estilo" />
                       </SelectTrigger>
                       <SelectContent>
                         {Constants.public.Enums.music_style.map((style) => (
@@ -200,12 +184,12 @@ const Settings = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="bio">Bio</Label>
+                    <Label htmlFor="bio">Biografia</Label>
                     <Textarea
                       id="bio"
+                      placeholder="Conte um pouco sobre você e sua música..."
                       value={profile.bio || ""}
                       onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-                      placeholder="Conte sobre você e seu trabalho"
                       rows={4}
                     />
                   </div>
@@ -213,7 +197,7 @@ const Settings = () => {
               )}
             </div>
 
-            {/* Social Links - Only for Artists */}
+            {/* Social Links - Only for artists */}
             {profile.tipo === "artista" && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Redes Sociais</h3>
@@ -222,9 +206,10 @@ const Settings = () => {
                   <Label htmlFor="instagram">Instagram</Label>
                   <Input
                     id="instagram"
+                    type="url"
+                    placeholder="https://instagram.com/seuuser"
                     value={profile.instagram || ""}
                     onChange={(e) => setProfile({ ...profile, instagram: e.target.value })}
-                    placeholder="https://instagram.com/..."
                   />
                 </div>
 
@@ -232,9 +217,10 @@ const Settings = () => {
                   <Label htmlFor="youtube">YouTube</Label>
                   <Input
                     id="youtube"
+                    type="url"
+                    placeholder="https://youtube.com/seu-canal"
                     value={profile.youtube || ""}
                     onChange={(e) => setProfile({ ...profile, youtube: e.target.value })}
-                    placeholder="https://youtube.com/..."
                   />
                 </div>
 
@@ -242,44 +228,56 @@ const Settings = () => {
                   <Label htmlFor="spotify">Spotify</Label>
                   <Input
                     id="spotify"
+                    type="url"
+                    placeholder="https://open.spotify.com/artist/..."
                     value={profile.spotify || ""}
                     onChange={(e) => setProfile({ ...profile, spotify: e.target.value })}
-                    placeholder="https://spotify.com/..."
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="link_pix">Link PIX (para receber gorjetas)</Label>
+                  <Label htmlFor="link_pix">Link Pix (para gorjetas)</Label>
                   <Input
                     id="link_pix"
+                    type="url"
+                    placeholder="https://..."
                     value={profile.link_pix || ""}
                     onChange={(e) => setProfile({ ...profile, link_pix: e.target.value })}
-                    placeholder="https://..."
                   />
+                  <p className="text-sm text-muted-foreground">
+                    Configure seu link de pagamento Pix para receber gorjetas
+                  </p>
                 </div>
+              </div>
+            )}
 
-                <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                  <div className="space-y-0.5">
+            {/* Live Status - Only for artists */}
+            {profile.tipo === "artista" && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Status</h3>
+                <div className="flex items-center justify-between">
+                  <div>
                     <Label htmlFor="ativo_ao_vivo">Ao Vivo Agora</Label>
                     <p className="text-sm text-muted-foreground">
-                      Indica que você está tocando ao vivo
+                      Ative quando estiver tocando ao vivo
                     </p>
                   </div>
                   <Switch
                     id="ativo_ao_vivo"
                     checked={profile.ativo_ao_vivo}
-                    onCheckedChange={(checked) =>
-                      setProfile({ ...profile, ativo_ao_vivo: checked })
-                    }
+                    onCheckedChange={(checked) => setProfile({ ...profile, ativo_ao_vivo: checked })}
                   />
                 </div>
               </div>
             )}
 
-            <Button onClick={handleSave} disabled={saving} className="w-full">
-              <Save className="w-4 h-4 mr-2" />
-              {saving ? "Salvando..." : "Salvar Alterações"}
-            </Button>
+            {/* Save Button */}
+            <div className="flex gap-3 pt-4">
+              <Button onClick={handleSave} disabled={saving} className="flex-1">
+                <Save className="w-4 h-4 mr-2" />
+                {saving ? "Salvando..." : "Salvar Alterações"}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </main>
