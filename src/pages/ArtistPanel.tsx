@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Music, Heart, LogOut, Settings, TrendingUp, Check, X } from "lucide-react";
+import { Music, Heart, LogOut, Settings, TrendingUp, Check, X, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 interface Pedido {

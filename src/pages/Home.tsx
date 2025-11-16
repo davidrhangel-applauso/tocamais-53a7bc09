@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Music, Search, LogOut, Star } from "lucide-react";
+import { Music, Search, LogOut, Star, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 interface Artist {
@@ -90,10 +90,16 @@ const Home = () => {
             <Music className="w-8 h-8 text-primary" />
             <h1 className="text-2xl font-bold text-gradient">Toca+</h1>
           </div>
-          <Button variant="outline" onClick={handleLogout}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Sair
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate("/mensagens")}>
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Mensagens
+            </Button>
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
+            </Button>
+          </div>
         </div>
       </header>
 
