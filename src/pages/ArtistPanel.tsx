@@ -285,8 +285,11 @@ const ArtistPanel = () => {
               <MessageCircle className="w-4 h-4 mr-2" />
               Mensagens
             </Button>
-            <Button variant="outline" onClick={() => navigate("/home")}>
+            <Button variant="outline" onClick={() => navigate("/configuracoes")}>
               <Settings className="w-4 h-4 mr-2" />
+              Configurações
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/home")}>
               Ver como Cliente
             </Button>
             <Button variant="outline" onClick={handleLogout}>
