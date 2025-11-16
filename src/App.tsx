@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import Home from "./pages/Home";
 import ArtistProfile from "./pages/ArtistProfile";
 import ArtistPanel from "./pages/ArtistPanel";
+import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/home" element={<Home />} />
           <Route path="/artista/:id" element={<ArtistProfile />} />
           <Route path="/painel" element={<ArtistPanel />} />
+          <Route path="/mensagens" element={<Messages />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
