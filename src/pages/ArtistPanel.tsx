@@ -281,6 +281,10 @@ const ArtistPanel = () => {
             <h1 className="text-2xl font-bold text-gradient">Painel do Artista</h1>
           </div>
           <div className="flex items-center gap-4">
+            <Button variant="outline" onClick={() => navigate("/mensagens")}>
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Mensagens
+            </Button>
             <Button variant="outline" onClick={() => navigate("/home")}>
               <Settings className="w-4 h-4 mr-2" />
               Ver como Cliente
