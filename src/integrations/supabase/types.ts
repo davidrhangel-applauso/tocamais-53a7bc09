@@ -95,6 +95,42 @@ export type Database = {
           },
         ]
       }
+      notificacoes: {
+        Row: {
+          created_at: string
+          data: Json | null
+          id: string
+          lida: boolean
+          link: string | null
+          mensagem: string
+          tipo: string
+          titulo: string
+          usuario_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          lida?: boolean
+          link?: string | null
+          mensagem: string
+          tipo: string
+          titulo: string
+          usuario_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          lida?: boolean
+          link?: string | null
+          mensagem?: string
+          tipo?: string
+          titulo?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
       pedidos: {
         Row: {
           artista_id: string
@@ -202,7 +238,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      criar_notificacao: {
+        Args: {
+          p_data?: Json
+          p_link?: string
+          p_mensagem: string
+          p_tipo: string
+          p_titulo: string
+          p_usuario_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       music_style:

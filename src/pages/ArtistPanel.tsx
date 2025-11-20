@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Music, Heart, LogOut, Settings, TrendingUp, Check, X, MessageCircle, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
+import NotificationBell from "@/components/NotificationBell";
 
 interface Pedido {
   id: string;
@@ -406,6 +407,7 @@ const ArtistPanel = () => {
             <h1 className="text-2xl font-bold text-gradient">Painel do Artista</h1>
           </div>
           <div className="flex items-center gap-4">
+            <NotificationBell userId={artistId || undefined} />
             <Button variant="outline" onClick={() => navigate("/mensagens")}>
               <MessageCircle className="w-4 h-4 mr-2" />
               Mensagens
