@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, Send } from "lucide-react";
 import { toast } from "sonner";
+import NotificationBell from "@/components/NotificationBell";
 
 interface Message {
   id: string;
@@ -170,21 +171,24 @@ export default function Messages() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container max-w-4xl mx-auto p-4 flex flex-col h-screen">
-        <div className="flex items-center gap-4 mb-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          {destinatario && (
-            <div className="flex items-center gap-3">
-              <Avatar>
-                <AvatarImage src={destinatario.foto_url || ""} />
-                <AvatarFallback>{destinatario.nome[0]}</AvatarFallback>
-              </Avatar>
-              <div>
-                <h1 className="text-xl font-bold">{destinatario.nome}</h1>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            {destinatario && (
+              <div className="flex items-center gap-3">
+                <Avatar>
+                  <AvatarImage src={destinatario.foto_url || ""} />
+                  <AvatarFallback>{destinatario.nome[0]}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h1 className="text-xl font-bold">{destinatario.nome}</h1>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+          <NotificationBell userId={currentUser || undefined} />
         </div>
 
         <Card className="flex-1 flex flex-col overflow-hidden">

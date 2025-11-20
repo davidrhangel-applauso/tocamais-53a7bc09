@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Music, Search, LogOut, Star, MessageCircle, Settings } from "lucide-react";
 import { toast } from "sonner";
+import NotificationBell from "@/components/NotificationBell";
 
 interface Artist {
   id: string;
@@ -25,6 +26,7 @@ const Home = () => {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | undefined>();
 
   useEffect(() => {
     checkAuth();
@@ -37,6 +39,8 @@ const Home = () => {
       navigate("/auth");
       return;
     }
+
+    setUserId(user.id);
 
     const { data: profile } = await supabase
       .from("profiles")
@@ -91,6 +95,7 @@ const Home = () => {
             <h1 className="text-2xl font-bold text-gradient">Toca+</h1>
           </div>
           <div className="flex gap-2">
+            <NotificationBell userId={userId} />
             <Button variant="outline" onClick={() => navigate("/mensagens")}>
               <MessageCircle className="w-4 h-4 mr-2" />
               Mensagens
