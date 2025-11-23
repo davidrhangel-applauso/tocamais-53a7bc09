@@ -93,6 +93,7 @@ const ArtistProfile = () => {
   // Tip form state
   const [valorGorjeta, setValorGorjeta] = useState("");
   const [tipLoading, setTipLoading] = useState(false);
+  const [coverFee, setCoverFee] = useState(true); // Cover processing fee by default
   
   // Pix payment state
   const [pixDialogOpen, setPixDialogOpen] = useState(false);
@@ -200,11 +201,14 @@ const ArtistProfile = () => {
 
     try {
       const valor = parseFloat(valorGorjeta);
+      
+      // Add 1% fee if user wants to cover it so artist receives the full amount
+      const valorComTaxa = coverFee ? valor * 1.01 : valor;
 
       // Criar pagamento Pix via edge function
       const { data, error } = await supabase.functions.invoke('create-pix-payment', {
         body: {
-          valor,
+          valor: valorComTaxa,
           artista_id: id,
           cliente_id: currentUserId,
         },
@@ -430,6 +434,29 @@ const ArtistProfile = () => {
                   >
                     R$ 20
                   </Button>
+                </div>
+              </div>
+
+              {/* Fee coverage option */}
+              <div className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg border border-border/50">
+                <input
+                  type="checkbox"
+                  id="coverFee"
+                  checked={coverFee}
+                  onChange={(e) => setCoverFee(e.target.checked)}
+                  className="mt-1 cursor-pointer"
+                />
+                <div className="flex-1">
+                  <Label htmlFor="coverFee" className="cursor-pointer text-sm font-medium">
+                    Cobrir taxa de processamento (+1%)
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {coverFee && valorGorjeta ? (
+                      <>Artista receberá: <span className="font-semibold text-foreground">R$ {parseFloat(valorGorjeta).toFixed(2)}</span> | Total: R$ {(parseFloat(valorGorjeta) * 1.01).toFixed(2)}</>
+                    ) : (
+                      <>Sem cobertura, artista pode receber menos devido à taxa de processamento</>
+                    )}
+                  </p>
                 </div>
               </div>
 
