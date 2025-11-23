@@ -54,8 +54,15 @@ serve(async (req: Request) => {
       throw new Error('Token do Mercado Pago não configurado');
     }
 
+    // Calcular valores com taxa da plataforma (10%) e taxa de processamento (1%)
+    const valorBruto = valor; // Valor que o cliente deseja enviar
+    const taxaPlataforma = Number((valorBruto * 0.10).toFixed(2)); // 10% para a plataforma
+    const valorLiquidoArtista = Number((valorBruto * 0.90).toFixed(2)); // 90% para o artista
+    const taxaProcessamento = Number((valorBruto * 0.01).toFixed(2)); // 1% taxa Mercado Pago
+    const valorTotal = Number((valorBruto + taxaProcessamento).toFixed(2)); // Total a cobrar do cliente
+
     const paymentData = {
-      transaction_amount: valor,
+      transaction_amount: valorTotal, // Cobrar valor total (bruto + taxa processamento)
       description: `Gorjeta para ${artista.nome}`,
       payment_method_id: 'pix',
       payer: {
@@ -91,11 +98,13 @@ serve(async (req: Request) => {
     // Calcular expiração (30 minutos)
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
-    // Inserir gorjeta no banco com dados do pagamento
+    // Inserir gorjeta no banco com dados do pagamento e valores calculados
     const { data: gorjeta, error: gorjetaError } = await supabase
       .from('gorjetas')
       .insert({
-        valor,
+        valor: valorBruto, // Valor bruto (sem taxa de processamento)
+        valor_liquido_artista: valorLiquidoArtista, // 90% do valor bruto
+        taxa_plataforma: taxaPlataforma, // 10% do valor bruto
         artista_id,
         cliente_id,
         payment_id: mpData.id.toString(),
