@@ -10,6 +10,7 @@ import { Music, Search, LogOut, Star, MessageCircle, Settings } from "lucide-rea
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import { waitForProfile } from "@/lib/auth-utils";
+import DebugUserInfo from "@/components/DebugUserInfo";
 
 interface Artist {
   id: string;
@@ -29,6 +30,8 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [authLoading, setAuthLoading] = useState(true);
   const [userId, setUserId] = useState<string | undefined>();
+  const [userType, setUserType] = useState<"artista" | "cliente">("cliente");
+  const [profileExists, setProfileExists] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -53,11 +56,15 @@ const Home = () => {
       
       if (!profile) {
         console.error("Profile not found after retries");
+        setProfileExists(false);
         toast.error("Erro ao carregar perfil. Por favor, faça login novamente.");
         await supabase.auth.signOut();
         navigate("/auth", { replace: true });
         return;
       }
+
+      setProfileExists(true);
+      setUserType(profile.tipo);
 
       // Redirect artists to their panel
       if (profile.tipo === "artista") {
@@ -66,7 +73,7 @@ const Home = () => {
       }
       
       // Client stays on home page
-      console.log("Client authenticated successfully");
+      console.log("Client authenticated successfully", { userId: user.id, tipo: profile.tipo });
     } catch (error) {
       console.error("Auth check error:", error);
       navigate("/auth", { replace: true });
@@ -146,6 +153,12 @@ const Home = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        <DebugUserInfo 
+          userId={userId} 
+          userType={userType} 
+          profileExists={profileExists} 
+        />
+
         <div className="mb-8">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />

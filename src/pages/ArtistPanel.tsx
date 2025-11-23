@@ -12,6 +12,7 @@ import { Music, Heart, LogOut, Settings, TrendingUp, Check, X, MessageCircle, Ba
 import { toast } from "sonner";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 import NotificationBell from "@/components/NotificationBell";
+import DebugUserInfo from "@/components/DebugUserInfo";
 
 interface Pedido {
   id: string;
@@ -59,6 +60,7 @@ const ArtistPanel = () => {
   const [artistId, setArtistId] = useState<string | null>(null);
   const [artistName, setArtistName] = useState("");
   const [ativoAoVivo, setAtivoAoVivo] = useState(false);
+  const [profileExists, setProfileExists] = useState(false);
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [gorjetas, setGorjetas] = useState<Gorjeta[]>([]);
   const [stats, setStats] = useState<Stats>({
@@ -142,7 +144,15 @@ const ArtistPanel = () => {
       .eq("id", user.id)
       .single();
 
-    if (!profile || profile.tipo !== "artista") {
+    if (!profile) {
+      setProfileExists(false);
+      navigate("/home");
+      return;
+    }
+
+    setProfileExists(true);
+
+    if (profile.tipo !== "artista") {
       navigate("/home");
       return;
     }
@@ -428,6 +438,12 @@ const ArtistPanel = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        <DebugUserInfo 
+          userId={artistId || undefined} 
+          userType="artista" 
+          profileExists={profileExists} 
+        />
+
         {/* Welcome and Live Status */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold mb-4">Olá, {artistName}! 👋</h2>
