@@ -25,7 +25,9 @@ export type Database = {
           qr_code: string | null
           qr_code_base64: string | null
           status_pagamento: string | null
+          taxa_plataforma: number
           valor: number
+          valor_liquido_artista: number
         }
         Insert: {
           artista_id: string
@@ -37,7 +39,9 @@ export type Database = {
           qr_code?: string | null
           qr_code_base64?: string | null
           status_pagamento?: string | null
+          taxa_plataforma: number
           valor: number
+          valor_liquido_artista: number
         }
         Update: {
           artista_id?: string
@@ -49,7 +53,9 @@ export type Database = {
           qr_code?: string | null
           qr_code_base64?: string | null
           status_pagamento?: string | null
+          taxa_plataforma?: number
           valor?: number
+          valor_liquido_artista?: number
         }
         Relationships: [
           {

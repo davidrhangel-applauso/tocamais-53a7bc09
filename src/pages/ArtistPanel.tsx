@@ -30,6 +30,8 @@ interface Pedido {
 interface Gorjeta {
   id: string;
   valor: number;
+  valor_liquido_artista: number;
+  taxa_plataforma: number;
   created_at: string;
   cliente_id: string;
   status_pagamento: string;
@@ -201,6 +203,7 @@ const ArtistPanel = () => {
         profiles!gorjetas_cliente_id_fkey (nome, foto_url)
       `)
       .eq("artista_id", artistId)
+      .eq("status_pagamento", "approved") // Apenas gorjetas aprovadas
       .order("created_at", { ascending: false })
       .limit(50);
 
@@ -229,23 +232,25 @@ const ArtistPanel = () => {
       .eq("artista_id", artistId)
       .eq("status", "aceito");
 
-    // Total de gorjetas
+    // Total de gorjetas - usando valor_liquido_artista (90% do valor)
     const { data: totalGorjetas } = await supabase
       .from("gorjetas")
-      .select("valor")
-      .eq("artista_id", artistId);
+      .select("valor_liquido_artista, status_pagamento")
+      .eq("artista_id", artistId)
+      .eq("status_pagamento", "approved"); // Apenas gorjetas aprovadas
 
-    const total = totalGorjetas?.reduce((sum, g) => sum + g.valor, 0) || 0;
+    const total = totalGorjetas?.reduce((sum, g) => sum + (g.valor_liquido_artista || 0), 0) || 0;
 
-    // Gorjetas hoje
+    // Gorjetas hoje - usando valor_liquido_artista
     const hoje = new Date().toISOString().split("T")[0];
     const { data: gorjetasHoje } = await supabase
       .from("gorjetas")
-      .select("valor")
+      .select("valor_liquido_artista, status_pagamento")
       .eq("artista_id", artistId)
+      .eq("status_pagamento", "approved")
       .gte("created_at", hoje);
 
-    const totalHoje = gorjetasHoje?.reduce((sum, g) => sum + g.valor, 0) || 0;
+    const totalHoje = gorjetasHoje?.reduce((sum, g) => sum + (g.valor_liquido_artista || 0), 0) || 0;
 
     setStats({
       pedidos_pendentes: pendentes || 0,
@@ -280,11 +285,12 @@ const ArtistPanel = () => {
       return { data: dataStr, total };
     });
 
-    // Gorjetas por dia (últimos 7 dias)
+    // Gorjetas por dia (últimos 7 dias) - usando valor_liquido_artista
     const { data: gorjetasData } = await supabase
       .from("gorjetas")
-      .select("valor, created_at")
+      .select("valor_liquido_artista, created_at, status_pagamento")
       .eq("artista_id", artistId)
+      .eq("status_pagamento", "approved") // Apenas gorjetas aprovadas
       .gte("created_at", seteDiasAtras.toISOString());
 
     const gorjetasPorDia = Array.from({ length: 7 }, (_, i) => {
@@ -294,7 +300,7 @@ const ArtistPanel = () => {
       const valor = gorjetasData?.filter(g => {
         const gorjetaData = new Date(g.created_at);
         return gorjetaData.toDateString() === data.toDateString();
-      }).reduce((sum, g) => sum + g.valor, 0) || 0;
+      }).reduce((sum, g) => sum + (g.valor_liquido_artista || 0), 0) || 0;
       return { data: dataStr, valor };
     });
 
@@ -330,14 +336,15 @@ const ArtistPanel = () => {
       ? (pedidosAceitos || 0) / totalPedidos * 100 
       : 0;
 
-    // Ticket médio de gorjetas
+    // Ticket médio de gorjetas - usando valor_liquido_artista
     const { data: todasGorjetas } = await supabase
       .from("gorjetas")
-      .select("valor")
-      .eq("artista_id", artistId);
+      .select("valor_liquido_artista, status_pagamento")
+      .eq("artista_id", artistId)
+      .eq("status_pagamento", "approved"); // Apenas gorjetas aprovadas
 
     const ticketMedio = todasGorjetas && todasGorjetas.length > 0
-      ? todasGorjetas.reduce((sum, g) => sum + g.valor, 0) / todasGorjetas.length
+      ? todasGorjetas.reduce((sum, g) => sum + (g.valor_liquido_artista || 0), 0) / todasGorjetas.length
       : 0;
 
     // Total de clientes únicos
@@ -500,6 +507,9 @@ const ArtistPanel = () => {
               <CardTitle className="text-4xl text-green-600">
                 R$ {stats.gorjetas_total.toFixed(2)}
               </CardTitle>
+              <p className="text-xs text-muted-foreground mt-2">
+                Valor líquido após dedução de 10% da taxa da plataforma
+              </p>
             </CardHeader>
           </Card>
         </div>
@@ -702,10 +712,15 @@ const ArtistPanel = () => {
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Heart className="w-5 h-5 text-red-500 fill-red-500" />
-                        <p className="text-2xl font-bold text-green-600">
-                          R$ {gorjeta.valor.toFixed(2)}
+                      <div className="text-right">
+                        <div className="flex items-center gap-2 justify-end">
+                          <Heart className="w-5 h-5 text-red-500 fill-red-500" />
+                          <p className="text-2xl font-bold text-green-600">
+                            R$ {(gorjeta.valor_liquido_artista || 0).toFixed(2)}
+                          </p>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          (90% de R$ {gorjeta.valor.toFixed(2)})
                         </p>
                       </div>
                     </div>
