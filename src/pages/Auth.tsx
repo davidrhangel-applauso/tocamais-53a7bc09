@@ -42,7 +42,7 @@ const Auth = () => {
 
       if (authData.user) {
         toast.success("Conta criada com sucesso!");
-        navigate(userType === "artist" ? "/painel" : "/");
+        navigate(userType === "artist" ? "/painel" : "/home");
       }
     } catch (error: any) {
       if (error.message?.includes("User already registered")) {
@@ -79,7 +79,7 @@ const Auth = () => {
         .eq("id", (await supabase.auth.getUser()).data.user?.id)
         .single();
 
-      navigate(profile?.tipo === "artista" ? "/painel" : "/");
+      navigate(profile?.tipo === "artista" ? "/painel" : "/home");
     } catch (error: any) {
       if (error.message?.includes("Invalid login credentials")) {
         toast.error("Email ou senha incorretos");
