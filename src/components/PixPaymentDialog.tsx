@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import { Button } from "./ui/button";
-import { Copy, Check, Loader2, XCircle, CheckCircle2 } from "lucide-react";
+import { Badge } from "./ui/badge";
+import { Copy, Check, Loader2, XCircle, CheckCircle2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "./ui/alert";
 
 interface PixPaymentDialogProps {
   open: boolean;
@@ -168,7 +170,12 @@ export const PixPaymentDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{statusInfo.title}</DialogTitle>
+          <div className="flex items-center gap-2">
+            <DialogTitle>{statusInfo.title}</DialogTitle>
+            <Badge variant="outline" className="text-xs">
+              Modo Teste
+            </Badge>
+          </div>
           <DialogDescription>{statusInfo.description}</DialogDescription>
         </DialogHeader>
 
@@ -176,17 +183,29 @@ export const PixPaymentDialog = ({
           {getStatusIcon()}
 
           {status === 'pending' && (
+            <Alert variant="default" className="w-full">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-sm">
+                Este QR Code é de teste e pode não ser reconhecido por aplicativos bancários reais. 
+                Para pagamentos reais, configure um token de produção do Mercado Pago.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {status === 'pending' && qrCodeBase64 && (
             <>
               {/* QR Code */}
-              {qrCodeBase64 && (
-                <div className="p-4 bg-white rounded-lg">
-                  <img
-                    src={`data:image/png;base64,${qrCodeBase64}`}
-                    alt="QR Code Pix"
-                    className="w-64 h-64"
-                  />
-                </div>
-              )}
+              <div className="relative">
+                {qrCodeBase64 && (
+                  <div className="p-4 bg-white rounded-lg">
+                    <img
+                      src={`data:image/png;base64,${qrCodeBase64}`}
+                      alt="QR Code Pix"
+                      className="w-64 h-64"
+                    />
+                  </div>
+                )}
+              </div>
 
               {/* Código Pix Copia e Cola */}
               <div className="w-full space-y-2">
