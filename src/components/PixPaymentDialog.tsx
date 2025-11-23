@@ -66,9 +66,8 @@ export const PixPaymentDialog = ({
       setChecking(true);
 
       try {
-        const { data, error } = await supabase.functions.invoke('check-payment-status', {
-          body: { gorjeta_id: gorjetaId },
-        });
+        const url = `check-payment-status?gorjeta_id=${gorjetaId}`;
+        const { data, error } = await supabase.functions.invoke(url);
 
         if (error) {
           console.error('Error checking payment status:', error);
