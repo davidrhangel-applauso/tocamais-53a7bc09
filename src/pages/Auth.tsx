@@ -13,6 +13,7 @@ import { waitForProfile } from "@/lib/auth-utils";
 const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [userType, setUserType] = useState<"artist" | "client">("client");
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -65,6 +66,30 @@ const Auth = () => {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth?reset=true`,
+      });
+
+      if (error) throw error;
+
+      toast.success("Email de recuperação enviado! Verifique sua caixa de entrada.");
+      setIsForgotPassword(false);
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao enviar email de recuperação");
+      console.error('Password reset error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -74,37 +99,33 @@ const Auth = () => {
     const password = formData.get("password") as string;
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
 
-      toast.success("Login realizado com sucesso!");
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast.error("Erro ao obter usuário");
-        return;
-      }
+      if (data.user) {
+        const profile = await waitForProfile(data.user.id);
+        
+        if (!profile) {
+          toast.error("Erro ao carregar perfil. Tente novamente.");
+          await supabase.auth.signOut();
+          return;
+        }
 
-      // Wait for profile with retry logic in case it's still being created
-      const profile = await waitForProfile(user.id);
-      
-      if (!profile) {
-        toast.error("Perfil não encontrado. Contate o suporte.");
-        return;
+        toast.success("Login realizado com sucesso!");
+        
+        if (profile.tipo === "artista") {
+          navigate("/painel");
+        } else {
+          navigate("/home");
+        }
       }
-
-      navigate(profile.tipo === "artista" ? "/painel" : "/home", { replace: true });
     } catch (error: any) {
-      if (error.message?.includes("Invalid login credentials")) {
-        toast.error("Email ou senha incorretos");
-      } else {
-        toast.error(error.message || "Erro ao fazer login");
-      }
+      toast.error(error.message || "Erro ao fazer login");
+      console.error('Login error:', error);
     } finally {
       setLoading(false);
     }
@@ -147,31 +168,65 @@ const Auth = () => {
             </TabsList>
 
             <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">E-mail</Label>
-                  <Input
-                    id="signin-email"
-                    name="email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Senha</Label>
-                  <Input
-                    id="signin-password"
-                    name="password"
-                    type="password"
-                    placeholder="••••••••"
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Entrando..." : "Entrar"}
-                </Button>
-              </form>
+              {isForgotPassword ? (
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="reset-email">E-mail</Label>
+                    <Input
+                      id="reset-email"
+                      name="email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Enviando..." : "Enviar Link de Recuperação"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full"
+                    onClick={() => setIsForgotPassword(false)}
+                  >
+                    Voltar ao Login
+                  </Button>
+                </form>
+              ) : (
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-email">E-mail</Label>
+                    <Input
+                      id="signin-email"
+                      name="email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-password">Senha</Label>
+                    <Input
+                      id="signin-password"
+                      name="password"
+                      type="password"
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Entrando..." : "Entrar"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="w-full text-sm"
+                    onClick={() => setIsForgotPassword(true)}
+                  >
+                    Esqueci minha senha
+                  </Button>
+                </form>
+              )}
             </TabsContent>
 
             <TabsContent value="signup">
