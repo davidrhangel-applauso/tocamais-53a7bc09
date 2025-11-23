@@ -238,6 +238,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_view_sensitive_profile_data: {
+        Args: { profile_id: string }
+        Returns: boolean
+      }
       criar_notificacao: {
         Args: {
           p_data?: Json
