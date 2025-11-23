@@ -238,6 +238,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_view_full_profile: { Args: { profile_id: string }; Returns: boolean }
       can_view_sensitive_profile_data: {
         Args: { profile_id: string }
         Returns: boolean
