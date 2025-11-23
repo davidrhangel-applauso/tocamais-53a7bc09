@@ -57,10 +57,12 @@ export const PixPaymentDialog = ({
 
     let attempts = 0;
     const maxAttempts = 200; // 10 minutos (3s * 200)
+    let intervalId: number;
 
     const checkStatus = async () => {
-      if (attempts >= maxAttempts) {
-        console.log('Max polling attempts reached');
+      if (attempts >= maxAttempts || status !== 'pending') {
+        console.log('Stopping polling - max attempts reached or status changed');
+        clearInterval(intervalId);
         return;
       }
 
@@ -80,12 +82,14 @@ export const PixPaymentDialog = ({
 
         if (data.status === 'approved') {
           setStatus('approved');
+          clearInterval(intervalId);
           toast({
             title: "Pagamento Confirmado!",
             description: "Sua gorjeta foi recebida com sucesso.",
           });
         } else if (data.status === 'rejected') {
           setStatus('rejected');
+          clearInterval(intervalId);
           toast({
             title: "Pagamento Recusado",
             description: "O pagamento não foi aprovado.",
@@ -103,9 +107,11 @@ export const PixPaymentDialog = ({
     checkStatus();
 
     // Continuar verificando a cada 3 segundos
-    const interval = setInterval(checkStatus, 3000);
+    intervalId = setInterval(checkStatus, 3000) as unknown as number;
 
-    return () => clearInterval(interval);
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [open, status, gorjetaId, toast]);
 
   const handleCopy = async () => {
@@ -165,6 +171,36 @@ export const PixPaymentDialog = ({
   };
 
   const statusInfo = getStatusMessage();
+
+  const handleDemoApproval = async () => {
+    try {
+      setChecking(true);
+      const { data, error } = await supabase.functions.invoke('approve-payment-demo', {
+        body: { gorjeta_id: gorjetaId },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.success) {
+        setStatus('approved');
+        toast({
+          title: "Pagamento Aprovado (Demo)",
+          description: "Pagamento aprovado em modo de teste.",
+        });
+      }
+    } catch (error) {
+      console.error('Error approving payment:', error);
+      toast({
+        title: "Erro ao aprovar",
+        description: "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
+      setChecking(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -240,6 +276,17 @@ export const PixPaymentDialog = ({
                   Verificando pagamento...
                 </p>
               )}
+
+              {/* Botão de aprovação demo para testes */}
+              <Button 
+                onClick={handleDemoApproval}
+                variant="outline"
+                size="sm"
+                disabled={checking}
+                className="mt-2"
+              >
+                Aprovar Pagamento (Modo Teste)
+              </Button>
             </>
           )}
 
