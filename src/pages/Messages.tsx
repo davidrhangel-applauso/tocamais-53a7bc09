@@ -9,6 +9,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, Send } from "lucide-react";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
+import { z } from "zod";
+
+// Validation schema for messages
+const messageSchema = z.object({
+  conteudo: z.string()
+    .trim()
+    .min(1, "Mensagem não pode estar vazia")
+    .max(2000, "Mensagem deve ter no máximo 2000 caracteres")
+});
 
 interface Message {
   id: string;
@@ -144,12 +153,21 @@ export default function Messages() {
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !currentUser || !destinatarioId) return;
+    if (!currentUser || !destinatarioId) return;
+
+    // Validate message with zod
+    const validation = messageSchema.safeParse({ conteudo: newMessage });
+    
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
+      toast.error(firstError.message);
+      return;
+    }
 
     const { error } = await supabase.from("mensagens").insert({
       remetente_id: currentUser,
       destinatario_id: destinatarioId,
-      conteudo: newMessage.trim(),
+      conteudo: validation.data.conteudo,
     });
 
     if (error) {
