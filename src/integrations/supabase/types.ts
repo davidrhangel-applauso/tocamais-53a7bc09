@@ -19,21 +19,36 @@ export type Database = {
           artista_id: string
           cliente_id: string
           created_at: string | null
+          expires_at: string | null
           id: string
+          payment_id: string | null
+          qr_code: string | null
+          qr_code_base64: string | null
+          status_pagamento: string | null
           valor: number
         }
         Insert: {
           artista_id: string
           cliente_id: string
           created_at?: string | null
+          expires_at?: string | null
           id?: string
+          payment_id?: string | null
+          qr_code?: string | null
+          qr_code_base64?: string | null
+          status_pagamento?: string | null
           valor: number
         }
         Update: {
           artista_id?: string
           cliente_id?: string
           created_at?: string | null
+          expires_at?: string | null
           id?: string
+          payment_id?: string | null
+          qr_code?: string | null
+          qr_code_base64?: string | null
+          status_pagamento?: string | null
           valor?: number
         }
         Relationships: [
