@@ -206,27 +206,13 @@ export const PixPaymentDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <DialogTitle>{statusInfo.title}</DialogTitle>
-            <Badge variant="outline" className="text-xs">
-              Modo Teste
-            </Badge>
-          </div>
+          <DialogTitle>{statusInfo.title}</DialogTitle>
           <DialogDescription>{statusInfo.description}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col items-center gap-4 py-4">
           {getStatusIcon()}
 
-          {status === 'pending' && (
-            <Alert variant="default" className="w-full">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="text-sm">
-                Este QR Code é de teste e pode não ser reconhecido por aplicativos bancários reais. 
-                Para pagamentos reais, configure um token de produção do Mercado Pago.
-              </AlertDescription>
-            </Alert>
-          )}
 
           {status === 'pending' && qrCodeBase64 && (
             <>
@@ -277,16 +263,6 @@ export const PixPaymentDialog = ({
                 </p>
               )}
 
-              {/* Botão de aprovação demo para testes */}
-              <Button 
-                onClick={handleDemoApproval}
-                variant="outline"
-                size="sm"
-                disabled={checking}
-                className="mt-2"
-              >
-                Aprovar Pagamento (Modo Teste)
-              </Button>
             </>
           )}
 
