@@ -36,7 +36,7 @@ const Home = () => {
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      navigate("/auth");
+      navigate("/auth", { replace: true });
       return;
     }
 
@@ -49,7 +49,7 @@ const Home = () => {
       .single();
 
     if (profile?.tipo === "artista") {
-      navigate("/painel");
+      navigate("/painel", { replace: true });
     }
   };
 

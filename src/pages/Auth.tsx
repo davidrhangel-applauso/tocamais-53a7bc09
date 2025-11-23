@@ -42,7 +42,11 @@ const Auth = () => {
 
       if (authData.user) {
         toast.success("Conta criada com sucesso!");
-        navigate(userType === "artist" ? "/painel" : "/home");
+        
+        // Wait a bit for the trigger to create the profile
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        navigate(userType === "artist" ? "/painel" : "/home", { replace: true });
       }
     } catch (error: any) {
       if (error.message?.includes("User already registered")) {
@@ -73,13 +77,14 @@ const Auth = () => {
 
       toast.success("Login realizado com sucesso!");
       
+      const { data: { user } } = await supabase.auth.getUser();
       const { data: profile } = await supabase
         .from("profiles")
         .select("tipo")
-        .eq("id", (await supabase.auth.getUser()).data.user?.id)
+        .eq("id", user?.id)
         .single();
 
-      navigate(profile?.tipo === "artista" ? "/painel" : "/home");
+      navigate(profile?.tipo === "artista" ? "/painel" : "/home", { replace: true });
     } catch (error: any) {
       if (error.message?.includes("Invalid login credentials")) {
         toast.error("Email ou senha incorretos");

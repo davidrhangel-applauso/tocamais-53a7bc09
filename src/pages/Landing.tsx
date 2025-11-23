@@ -21,7 +21,7 @@ const Landing = () => {
         .eq("id", user.id)
         .single();
 
-      navigate(profile?.tipo === "artista" ? "/painel" : "/home");
+      navigate(profile?.tipo === "artista" ? "/painel" : "/home", { replace: true });
     }
   };
 
