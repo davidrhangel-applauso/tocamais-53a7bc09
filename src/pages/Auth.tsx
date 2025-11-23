@@ -45,7 +45,11 @@ const Auth = () => {
         navigate(userType === "artist" ? "/painel" : "/");
       }
     } catch (error: any) {
-      toast.error(error.message || "Erro ao criar conta");
+      if (error.message?.includes("User already registered")) {
+        toast.error("Este email já está cadastrado. Tente fazer login.");
+      } else {
+        toast.error(error.message || "Erro ao criar conta");
+      }
     } finally {
       setLoading(false);
     }
@@ -77,7 +81,11 @@ const Auth = () => {
 
       navigate(profile?.tipo === "artista" ? "/painel" : "/");
     } catch (error: any) {
-      toast.error(error.message || "Erro ao fazer login");
+      if (error.message?.includes("Invalid login credentials")) {
+        toast.error("Email ou senha incorretos");
+      } else {
+        toast.error(error.message || "Erro ao fazer login");
+      }
     } finally {
       setLoading(false);
     }
