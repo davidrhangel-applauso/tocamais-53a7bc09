@@ -15,6 +15,18 @@ import { toast } from "sonner";
 import { useProfilePermissions } from "@/hooks/useProfilePermissions";
 import { z } from "zod";
 
+// Validation schema for song requests
+const songRequestSchema = z.object({
+  musica: z.string()
+    .trim()
+    .min(1, "Por favor, digite o nome da música")
+    .max(200, "Nome da música deve ter no máximo 200 caracteres"),
+  mensagem: z.string()
+    .trim()
+    .max(500, "Mensagem deve ter no máximo 500 caracteres")
+    .optional()
+});
+
 // Validation schema for tip amounts
 const tipSchema = z.object({
   valor: z.string()
@@ -118,8 +130,15 @@ const ArtistProfile = () => {
   };
 
   const handleSendRequest = async () => {
-    if (!musica.trim()) {
-      toast.error("Por favor, digite o nome da música");
+    // Validate song request with zod
+    const validation = songRequestSchema.safeParse({ 
+      musica, 
+      mensagem: mensagem || "" 
+    });
+    
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
+      toast.error(firstError.message);
       return;
     }
 
@@ -130,8 +149,8 @@ const ArtistProfile = () => {
       const { error } = await supabase.from("pedidos").insert({
         artista_id: artist.id,
         cliente_id: currentUserId,
-        musica: musica.trim(),
-        mensagem: mensagem.trim() || null,
+        musica: validation.data.musica,
+        mensagem: validation.data.mensagem || null,
         status: "pendente",
       });
 
