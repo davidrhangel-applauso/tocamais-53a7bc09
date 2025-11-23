@@ -13,6 +13,42 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Music, Heart, Instagram, Youtube, Music2, ExternalLink, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useProfilePermissions } from "@/hooks/useProfilePermissions";
+import { z } from "zod";
+
+// Validation schema for tip amounts
+const tipSchema = z.object({
+  valor: z.string()
+    .trim()
+    .min(1, "Por favor, digite um valor")
+    .refine((val) => !isNaN(parseFloat(val)), {
+      message: "Valor inválido"
+    })
+    .refine((val) => {
+      const num = parseFloat(val);
+      return isFinite(num) && num > 0;
+    }, {
+      message: "O valor deve ser maior que zero"
+    })
+    .refine((val) => {
+      const num = parseFloat(val);
+      return num <= 10000;
+    }, {
+      message: "Valor máximo: R$ 10.000,00"
+    })
+    .refine((val) => {
+      const num = parseFloat(val);
+      return num >= 1;
+    }, {
+      message: "Valor mínimo: R$ 1,00"
+    })
+    .refine((val) => {
+      const num = parseFloat(val);
+      const decimals = (val.split('.')[1] || '').length;
+      return decimals <= 2;
+    }, {
+      message: "Use no máximo 2 casas decimais"
+    })
+});
 
 interface Artist {
   id: string;
@@ -112,11 +148,17 @@ const ArtistProfile = () => {
   };
 
   const handleSendTip = async () => {
-    const valor = parseFloat(valorGorjeta);
-    if (!valor || valor <= 0) {
-      toast.error("Por favor, digite um valor válido");
+    // Validate tip amount with zod
+    const validation = tipSchema.safeParse({ valor: valorGorjeta });
+    
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
+      toast.error(firstError.message);
       return;
     }
+
+    // Safe to parse after validation
+    const valor = parseFloat(valorGorjeta);
 
     if (!currentUserId || !artist) return;
 
