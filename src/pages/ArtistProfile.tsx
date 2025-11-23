@@ -14,6 +14,7 @@ import { ArrowLeft, Music, Heart, Instagram, Youtube, Music2, ExternalLink, Lock
 import { toast } from "sonner";
 import { useProfilePermissions } from "@/hooks/useProfilePermissions";
 import { z } from "zod";
+import { PixPaymentDialog } from "@/components/PixPaymentDialog";
 
 // Validation schema for song requests
 const songRequestSchema = z.object({
@@ -93,6 +94,15 @@ const ArtistProfile = () => {
   const [valorGorjeta, setValorGorjeta] = useState("");
   const [tipLoading, setTipLoading] = useState(false);
   
+  // Pix payment state
+  const [pixDialogOpen, setPixDialogOpen] = useState(false);
+  const [pixPaymentData, setPixPaymentData] = useState<{
+    gorjetaId: string;
+    qrCode: string;
+    qrCodeBase64: string;
+    expiresAt: string;
+  } | null>(null);
+  
   // Check permissions for sensitive data
   const { canViewSensitiveData, loading: permissionsLoading } = useProfilePermissions(id);
 
@@ -167,39 +177,61 @@ const ArtistProfile = () => {
   };
 
   const handleSendTip = async () => {
-    // Validate tip amount with zod
-    const validation = tipSchema.safeParse({ valor: valorGorjeta });
+    if (!currentUserId || !id) {
+      toast.error("Você precisa estar logado para enviar gorjetas");
+      return;
+    }
+
+    // Validate form
+    const validationResult = tipSchema.safeParse({ valor: valorGorjeta });
     
-    if (!validation.success) {
-      const firstError = validation.error.errors[0];
+    if (!validationResult.success) {
+      const firstError = validationResult.error.errors[0];
       toast.error(firstError.message);
       return;
     }
 
-    // Safe to parse after validation
-    const valor = parseFloat(valorGorjeta);
-
-    if (!currentUserId || !artist) return;
+    if (currentUserId === id) {
+      toast.error("Você não pode enviar gorjeta para si mesmo");
+      return;
+    }
 
     setTipLoading(true);
+
     try {
-      const { error } = await supabase.from("gorjetas").insert({
-        artista_id: artist.id,
-        cliente_id: currentUserId,
-        valor: valor,
+      const valor = parseFloat(valorGorjeta);
+
+      // Criar pagamento Pix via edge function
+      const { data, error } = await supabase.functions.invoke('create-pix-payment', {
+        body: {
+          valor,
+          artista_id: id,
+          cliente_id: currentUserId,
+        },
       });
 
-      if (error) throw error;
-
-      // Open Pix link if available and user has permission
-      if (canViewSensitiveData && artist.link_pix) {
-        window.open(artist.link_pix, "_blank");
+      if (error) {
+        throw error;
       }
 
-      toast.success("Gorjeta registrada! Efetue o pagamento via Pix.");
+      if (!data.success) {
+        throw new Error(data.error || 'Erro ao criar pagamento');
+      }
+
+      // Abrir dialog com QR Code
+      setPixPaymentData({
+        gorjetaId: data.gorjeta_id,
+        qrCode: data.qr_code,
+        qrCodeBase64: data.qr_code_base64,
+        expiresAt: data.expires_at,
+      });
+      setPixDialogOpen(true);
+      
+      toast.success("QR Code gerado! Escaneie para pagar");
       setValorGorjeta("");
     } catch (error: any) {
-      toast.error("Erro ao registrar gorjeta: " + error.message);
+      console.error('Error creating Pix payment:', error);
+      toast.error("Erro ao gerar pagamento Pix: " + (error.message || 'Tente novamente'));
     } finally {
       setTipLoading(false);
     }
@@ -424,6 +456,18 @@ const ArtistProfile = () => {
           </Card>
         </div>
       </main>
+
+      {/* Pix Payment Dialog */}
+      {pixPaymentData && (
+        <PixPaymentDialog
+          open={pixDialogOpen}
+          onOpenChange={setPixDialogOpen}
+          gorjetaId={pixPaymentData.gorjetaId}
+          qrCode={pixPaymentData.qrCode}
+          qrCodeBase64={pixPaymentData.qrCodeBase64}
+          expiresAt={pixPaymentData.expiresAt}
+        />
+      )}
     </div>
   );
 };

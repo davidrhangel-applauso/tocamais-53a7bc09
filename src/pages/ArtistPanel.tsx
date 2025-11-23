@@ -32,6 +32,7 @@ interface Gorjeta {
   valor: number;
   created_at: string;
   cliente_id: string;
+  status_pagamento: string;
   profiles: {
     nome: string;
     foto_url: string;
@@ -685,6 +686,20 @@ const ArtistPanel = () => {
                           <p className="text-sm text-muted-foreground">
                             {new Date(gorjeta.created_at).toLocaleString("pt-BR")}
                           </p>
+                          {gorjeta.status_pagamento && (
+                            <Badge 
+                              variant={
+                                gorjeta.status_pagamento === 'approved' ? 'default' : 
+                                gorjeta.status_pagamento === 'pending' ? 'secondary' : 
+                                'destructive'
+                              }
+                              className="mt-2"
+                            >
+                              {gorjeta.status_pagamento === 'approved' ? '✓ Confirmado' : 
+                               gorjeta.status_pagamento === 'pending' ? '⏳ Aguardando' : 
+                               '✗ Expirado'}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
