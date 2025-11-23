@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Music } from "lucide-react";
+import { waitForProfile } from "@/lib/auth-utils";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -43,10 +44,15 @@ const Auth = () => {
       if (authData.user) {
         toast.success("Conta criada com sucesso!");
         
-        // Wait a bit for the trigger to create the profile
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Wait for the trigger to create the profile with retry logic
+        const profile = await waitForProfile(authData.user.id);
         
-        navigate(userType === "artist" ? "/painel" : "/home", { replace: true });
+        if (!profile) {
+          toast.error("Erro ao criar perfil. Por favor, tente fazer login.");
+          return;
+        }
+        
+        navigate(profile.tipo === "artista" ? "/painel" : "/home", { replace: true });
       }
     } catch (error: any) {
       if (error.message?.includes("User already registered")) {
@@ -78,13 +84,21 @@ const Auth = () => {
       toast.success("Login realizado com sucesso!");
       
       const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("tipo")
-        .eq("id", user?.id)
-        .single();
+      
+      if (!user) {
+        toast.error("Erro ao obter usuário");
+        return;
+      }
 
-      navigate(profile?.tipo === "artista" ? "/painel" : "/home", { replace: true });
+      // Wait for profile with retry logic in case it's still being created
+      const profile = await waitForProfile(user.id);
+      
+      if (!profile) {
+        toast.error("Perfil não encontrado. Contate o suporte.");
+        return;
+      }
+
+      navigate(profile.tipo === "artista" ? "/painel" : "/home", { replace: true });
     } catch (error: any) {
       if (error.message?.includes("Invalid login credentials")) {
         toast.error("Email ou senha incorretos");

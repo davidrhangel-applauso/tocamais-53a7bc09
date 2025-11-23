@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Music, Search, LogOut, Star, MessageCircle, Settings } from "lucide-react";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
+import { waitForProfile } from "@/lib/auth-utils";
 
 interface Artist {
   id: string;
@@ -26,6 +27,7 @@ const Home = () => {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
   const [userId, setUserId] = useState<string | undefined>();
 
   useEffect(() => {
@@ -34,22 +36,42 @@ const Home = () => {
   }, []);
 
   const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    setAuthLoading(true);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        navigate("/auth", { replace: true });
+        return;
+      }
+
+      setUserId(user.id);
+
+      // Wait for profile with retry logic
+      const profile = await waitForProfile(user.id, 5, 500);
+      
+      if (!profile) {
+        console.error("Profile not found after retries");
+        toast.error("Erro ao carregar perfil. Por favor, faça login novamente.");
+        await supabase.auth.signOut();
+        navigate("/auth", { replace: true });
+        return;
+      }
+
+      // Redirect artists to their panel
+      if (profile.tipo === "artista") {
+        navigate("/painel", { replace: true });
+        return;
+      }
+      
+      // Client stays on home page
+      console.log("Client authenticated successfully");
+    } catch (error) {
+      console.error("Auth check error:", error);
       navigate("/auth", { replace: true });
-      return;
-    }
-
-    setUserId(user.id);
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("tipo")
-      .eq("id", user.id)
-      .single();
-
-    if (profile?.tipo === "artista") {
-      navigate("/painel", { replace: true });
+    } finally {
+      setAuthLoading(false);
     }
   };
 
@@ -85,6 +107,17 @@ const Home = () => {
 
   const featuredArtists = filteredArtists.filter((a) => a.status_destaque);
   const regularArtists = filteredArtists.filter((a) => !a.status_destaque);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
+        <div className="text-center">
+          <Music className="w-12 h-12 text-primary mx-auto mb-4 animate-pulse" />
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
