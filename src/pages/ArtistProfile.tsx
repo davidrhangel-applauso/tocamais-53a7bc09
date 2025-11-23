@@ -10,8 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Music, Heart, Instagram, Youtube, Music2, ExternalLink } from "lucide-react";
+import { ArrowLeft, Music, Heart, Instagram, Youtube, Music2, ExternalLink, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { useProfilePermissions } from "@/hooks/useProfilePermissions";
 
 interface Artist {
   id: string;
@@ -43,6 +44,9 @@ const ArtistProfile = () => {
   // Tip form state
   const [valorGorjeta, setValorGorjeta] = useState("");
   const [tipLoading, setTipLoading] = useState(false);
+  
+  // Check permissions for sensitive data
+  const { canViewSensitiveData, loading: permissionsLoading } = useProfilePermissions(id);
 
   useEffect(() => {
     checkAuth();
@@ -126,8 +130,8 @@ const ArtistProfile = () => {
 
       if (error) throw error;
 
-      // Open Pix link if available
-      if (artist.link_pix) {
+      // Open Pix link if available and user has permission
+      if (canViewSensitiveData && artist.link_pix) {
         window.open(artist.link_pix, "_blank");
       }
 
@@ -177,7 +181,9 @@ const ArtistProfile = () => {
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h1 className="text-4xl font-bold mb-2">{artist.nome}</h1>
-                    <p className="text-lg text-muted-foreground mb-2">{artist.cidade}</p>
+                    {canViewSensitiveData && artist.cidade && (
+                      <p className="text-lg text-muted-foreground mb-2">{artist.cidade}</p>
+                    )}
                     <div className="flex gap-2 flex-wrap">
                       <Badge variant="secondary" className="text-base px-3 py-1">
                         {artist.estilo_musical}
@@ -201,32 +207,39 @@ const ArtistProfile = () => {
                 )}
 
                 {/* Social Links */}
-                <div className="flex gap-3 flex-wrap">
-                  {artist.instagram && (
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={artist.instagram} target="_blank" rel="noopener noreferrer">
-                        <Instagram className="w-4 h-4 mr-2" />
-                        Instagram
-                      </a>
-                    </Button>
-                  )}
-                  {artist.youtube && (
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={artist.youtube} target="_blank" rel="noopener noreferrer">
-                        <Youtube className="w-4 h-4 mr-2" />
-                        YouTube
-                      </a>
-                    </Button>
-                  )}
-                  {artist.spotify && (
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={artist.spotify} target="_blank" rel="noopener noreferrer">
-                        <Music2 className="w-4 h-4 mr-2" />
-                        Spotify
-                      </a>
-                    </Button>
-                  )}
-                </div>
+                {canViewSensitiveData ? (
+                  <div className="flex gap-3 flex-wrap">
+                    {artist.instagram && (
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={artist.instagram} target="_blank" rel="noopener noreferrer">
+                          <Instagram className="w-4 h-4 mr-2" />
+                          Instagram
+                        </a>
+                      </Button>
+                    )}
+                    {artist.youtube && (
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={artist.youtube} target="_blank" rel="noopener noreferrer">
+                          <Youtube className="w-4 h-4 mr-2" />
+                          YouTube
+                        </a>
+                      </Button>
+                    )}
+                    {artist.spotify && (
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={artist.spotify} target="_blank" rel="noopener noreferrer">
+                          <Music2 className="w-4 h-4 mr-2" />
+                          Spotify
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+                    <Lock className="w-4 h-4" />
+                    <p>Links de redes sociais visíveis após interação com o artista</p>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
@@ -335,7 +348,13 @@ const ArtistProfile = () => {
                 {tipLoading ? "Processando..." : "Enviar Gorjeta via Pix"}
               </Button>
               
-              {!artist.link_pix && (
+              {!canViewSensitiveData && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded justify-center">
+                  <Lock className="w-3 h-3" />
+                  <p>Link PIX visível após enviar gorjeta</p>
+                </div>
+              )}
+              {canViewSensitiveData && !artist.link_pix && (
                 <p className="text-xs text-muted-foreground text-center">
                   Este artista ainda não configurou o Pix
                 </p>
