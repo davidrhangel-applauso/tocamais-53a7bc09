@@ -253,6 +253,7 @@ export type Database = {
         }
         Returns: string
       }
+      is_client: { Args: { user_id: string }; Returns: boolean }
     }
     Enums: {
       music_style:
