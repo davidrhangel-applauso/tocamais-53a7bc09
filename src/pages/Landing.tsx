@@ -1,10 +1,29 @@
 import { Button } from "@/components/ui/button";
 import { Music, Heart, Star, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/hero-concert.jpg";
 
 const Landing = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("tipo")
+        .eq("id", user.id)
+        .single();
+
+      navigate(profile?.tipo === "artista" ? "/painel" : "/home");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
