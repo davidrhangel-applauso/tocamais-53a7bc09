@@ -211,6 +211,7 @@ export type Database = {
           id: string
           instagram: string | null
           link_pix: string | null
+          mercadopago_seller_id: string | null
           nome: string
           spotify: string | null
           status_destaque: boolean | null
@@ -228,6 +229,7 @@ export type Database = {
           id: string
           instagram?: string | null
           link_pix?: string | null
+          mercadopago_seller_id?: string | null
           nome: string
           spotify?: string | null
           status_destaque?: boolean | null
@@ -245,6 +247,7 @@ export type Database = {
           id?: string
           instagram?: string | null
           link_pix?: string | null
+          mercadopago_seller_id?: string | null
           nome?: string
           spotify?: string | null
           status_destaque?: boolean | null
