@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 import NotificationBell from "@/components/NotificationBell";
 import DebugUserInfo from "@/components/DebugUserInfo";
+import { MercadoPagoLink } from "@/components/MercadoPagoLink";
 
 interface Pedido {
   id: string;
@@ -536,8 +537,11 @@ const ArtistPanel = () => {
           </TabsList>
 
           {/* Analytics Dashboard */}
-          <TabsContent value="analytics">
+          <TabsContent value="analytics" className="space-y-6">
             <AnalyticsDashboard data={analyticsData} />
+            
+            {/* Mercado Pago Split Payment */}
+            {artistId && <MercadoPagoLink userId={artistId} />}
           </TabsContent>
 
           {/* Pedidos Pendentes */}

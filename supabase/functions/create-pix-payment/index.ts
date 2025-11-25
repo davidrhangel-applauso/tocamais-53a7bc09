@@ -37,10 +37,10 @@ serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Buscar informações do artista
+    // Buscar informações do artista incluindo mercadopago_seller_id
     const { data: artista, error: artistaError } = await supabase
       .from('profiles')
-      .select('nome, id')
+      .select('nome, id, mercadopago_seller_id')
       .eq('id', artista_id)
       .single();
 
@@ -61,7 +61,8 @@ serve(async (req: Request) => {
     const taxaProcessamento = Number((valorBruto * 0.01).toFixed(2)); // 1% taxa Mercado Pago
     const valorTotal = Number((valorBruto + taxaProcessamento).toFixed(2)); // Total a cobrar do cliente
 
-    const paymentData = {
+    // Construir dados do pagamento
+    const paymentData: any = {
       transaction_amount: valorTotal, // Cobrar valor total (bruto + taxa processamento)
       description: `Gorjeta para ${artista.nome}`,
       payment_method_id: 'pix',
@@ -70,6 +71,22 @@ serve(async (req: Request) => {
       },
       notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-webhook`,
     };
+
+    // Se o artista tem Mercado Pago vinculado, adicionar split de pagamento
+    if (artista.mercadopago_seller_id) {
+      console.log('Adicionando split de pagamento para seller:', artista.mercadopago_seller_id);
+      
+      paymentData.marketplace = artista.mercadopago_seller_id;
+      paymentData.application_fee = taxaPlataforma; // 10% para a plataforma
+      
+      console.log('Split configurado:', {
+        marketplace: paymentData.marketplace,
+        application_fee: paymentData.application_fee,
+        valor_para_artista: valorLiquidoArtista,
+      });
+    } else {
+      console.log('Artista não tem Mercado Pago vinculado, pagamento direto sem split');
+    }
 
     console.log('Calling Mercado Pago API...');
 
