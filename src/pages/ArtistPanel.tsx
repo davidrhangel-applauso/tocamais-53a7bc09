@@ -188,10 +188,7 @@ const ArtistPanel = () => {
 
     const { data, error } = await supabase
       .from("pedidos")
-      .select(`
-        *,
-        profiles!pedidos_cliente_id_fkey (nome, foto_url)
-      `)
+      .select("*")
       .eq("artista_id", artistId)
       .order("created_at", { ascending: false });
 
@@ -200,7 +197,23 @@ const ArtistPanel = () => {
       return;
     }
 
-    setPedidos(data || []);
+    // Buscar profiles apenas para pedidos com cliente_id
+    const pedidosComProfiles = await Promise.all(
+      (data || []).map(async (pedido) => {
+        if (pedido.cliente_id) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("nome, foto_url")
+            .eq("id", pedido.cliente_id)
+            .maybeSingle();
+          
+          return { ...pedido, profiles: profile };
+        }
+        return { ...pedido, profiles: null };
+      })
+    );
+
+    setPedidos(pedidosComProfiles);
   };
 
   const fetchGorjetas = async () => {
@@ -208,12 +221,9 @@ const ArtistPanel = () => {
 
     const { data, error } = await supabase
       .from("gorjetas")
-      .select(`
-        *,
-        profiles!gorjetas_cliente_id_fkey (nome, foto_url)
-      `)
+      .select("*")
       .eq("artista_id", artistId)
-      .eq("status_pagamento", "approved") // Apenas gorjetas aprovadas
+      .eq("status_pagamento", "approved")
       .order("created_at", { ascending: false })
       .limit(50);
 
@@ -222,7 +232,23 @@ const ArtistPanel = () => {
       return;
     }
 
-    setGorjetas(data || []);
+    // Buscar profiles apenas para gorjetas com cliente_id
+    const gorjetasComProfiles = await Promise.all(
+      (data || []).map(async (gorjeta) => {
+        if (gorjeta.cliente_id) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("nome, foto_url")
+            .eq("id", gorjeta.cliente_id)
+            .maybeSingle();
+          
+          return { ...gorjeta, profiles: profile };
+        }
+        return { ...gorjeta, profiles: null };
+      })
+    );
+
+    setGorjetas(gorjetasComProfiles);
   };
 
   const fetchStats = async () => {
