@@ -28,6 +28,7 @@ interface Profile {
   spotify: string | null;
   link_pix: string | null;
   ativo_ao_vivo: boolean;
+  mercadopago_seller_id: string | null;
 }
 
 const Settings = () => {
@@ -81,6 +82,7 @@ const Settings = () => {
           spotify: profile.spotify,
           link_pix: profile.link_pix,
           ativo_ao_vivo: profile.ativo_ao_vivo,
+          mercadopago_seller_id: profile.mercadopago_seller_id,
         })
         .eq("id", profile.id);
 
@@ -246,6 +248,30 @@ const Settings = () => {
                   />
                   <p className="text-sm text-muted-foreground">
                     Configure seu link de pagamento Pix para receber gorjetas
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Payment Settings - Only for artists */}
+            {profile.tipo === "artista" && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Configurações de Pagamento</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="mercadopago_seller_id">Mercado Pago Seller ID</Label>
+                  <Input
+                    id="mercadopago_seller_id"
+                    type="text"
+                    placeholder="123456789"
+                    value={profile.mercadopago_seller_id || ""}
+                    onChange={(e) => setProfile({ ...profile, mercadopago_seller_id: e.target.value })}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Configure seu Seller ID do Mercado Pago para receber gorjetas diretamente (90% do valor). 
+                    Sem isso, os pagamentos ficam na plataforma.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Para obter seu Seller ID: Acesse sua conta Mercado Pago → Seu negócio → Configurações → Dados da sua conta → Coletor User ID
                   </p>
                 </div>
               </div>
