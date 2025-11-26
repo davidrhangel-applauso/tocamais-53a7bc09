@@ -18,6 +18,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import NotificationBell from "@/components/NotificationBell";
+import { useEffect, useState } from "react";
 
 interface AppSidebarProps {
   artistName: string;
@@ -43,6 +45,13 @@ export function AppSidebar({ artistName, artistPhoto, ativoAoVivo }: AppSidebarP
   const location = useLocation();
   const navigate = useNavigate();
   const collapsed = state === "collapsed";
+  const [userId, setUserId] = useState<string | undefined>();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUserId(user?.id);
+    });
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -69,6 +78,7 @@ export function AppSidebar({ artistName, artistPhoto, ativoAoVivo }: AppSidebarP
               </div>
             </div>
           )}
+          <NotificationBell userId={userId} />
         </div>
       </SidebarHeader>
 
