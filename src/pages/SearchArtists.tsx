@@ -30,8 +30,9 @@ const SearchArtists = () => {
   const [filterStyle, setFilterStyle] = useState<string>("all");
   const [filterLive, setFilterLive] = useState<string>("all");
   const [cities, setCities] = useState<string[]>([]);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Carregar cidades disponíveis
+  // Carregar cidades disponíveis e artistas iniciais
   useEffect(() => {
     const fetchCities = async () => {
       const { data } = await supabase
@@ -48,6 +49,9 @@ const SearchArtists = () => {
     };
     
     fetchCities();
+    // Carregar todos os artistas inicialmente
+    searchArtists("", "all", "all", "all");
+    setIsInitialLoad(false);
   }, []);
 
   // Função de busca em tempo real (debounced)
@@ -100,12 +104,14 @@ const SearchArtists = () => {
 
   // Debounce da busca - aguarda 300ms após o usuário parar de digitar
   useEffect(() => {
+    if (isInitialLoad) return; // Não executar na carga inicial
+    
     const timeoutId = setTimeout(() => {
       searchArtists(searchTerm, filterCity, filterStyle, filterLive);
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, filterCity, filterStyle, filterLive, searchArtists]);
+  }, [searchTerm, filterCity, filterStyle, filterLive, searchArtists, isInitialLoad]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -260,9 +266,8 @@ const SearchArtists = () => {
           </CardContent>
         </Card>
 
-        {(hasSearched || filterCity !== "all" || filterStyle !== "all" || filterLive !== "all") && (
-          <div className="space-y-4">
-            {loading && artists.length === 0 ? (
+        <div className="space-y-4">
+          {loading && artists.length === 0 ? (
               <Card className="border-dashed">
                 <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                   <Loader2 className="w-12 h-12 text-muted-foreground mb-4 animate-spin" />
@@ -275,7 +280,11 @@ const SearchArtists = () => {
               <>
                 <div className="flex flex-wrap items-center gap-2 mb-4">
                   <h2 className="text-xl font-semibold">
-                    {artists.length} {artists.length === 1 ? "artista encontrado" : "artistas encontrados"}
+                    {artists.length} {artists.length === 1 ? "artista" : "artistas"}
+                    {searchTerm || filterCity !== "all" || filterStyle !== "all" || filterLive !== "all" 
+                      ? (artists.length === 1 ? " encontrado" : " encontrados")
+                      : " disponíveis"
+                    }
                   </h2>
                   <div className="flex flex-wrap gap-2">
                     {searchTerm && (
@@ -368,20 +377,7 @@ const SearchArtists = () => {
                 </CardContent>
               </Card>
             )}
-          </div>
-        )}
-        
-        {!hasSearched && !searchTerm && filterCity === "all" && filterStyle === "all" && filterLive === "all" && (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-              <Music className="w-16 h-16 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Encontre artistas incríveis</h3>
-              <p className="text-muted-foreground max-w-md">
-                Use os filtros acima para buscar artistas por nome, cidade, estilo musical ou disponibilidade
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        </div>
       </div>
     </div>
   );
