@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Music, Search, MapPin, ArrowLeft } from "lucide-react";
+import { Music, Search, MapPin, ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface Artist {
@@ -26,11 +26,11 @@ const SearchArtists = () => {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!searchTerm.trim()) {
-      toast.error("Digite o nome do artista para buscar");
+  // Função de busca em tempo real (debounced)
+  const searchArtists = useCallback(async (term: string) => {
+    if (!term.trim()) {
+      setArtists([]);
+      setHasSearched(false);
       return;
     }
 
@@ -38,26 +38,43 @@ const SearchArtists = () => {
     setHasSearched(true);
 
     try {
+      // Busca por nome completo ou palavras que começam com o termo
       const { data, error } = await supabase
         .from("profiles")
         .select("id, nome, cidade, estilo_musical, foto_url, bio, ativo_ao_vivo")
         .eq("tipo", "artista")
-        .ilike("nome", `%${searchTerm}%`)
-        .order("nome");
+        .or(`nome.ilike.${term}%,nome.ilike.% ${term}%,nome.ilike.%${term}%`)
+        .order("ativo_ao_vivo", { ascending: false })
+        .order("nome")
+        .limit(20);
 
       if (error) throw error;
 
       setArtists(data || []);
-      
-      if (data && data.length === 0) {
-        toast.info("Nenhum artista encontrado com esse nome");
-      }
     } catch (error: any) {
-      toast.error("Erro ao buscar artistas");
       console.error("Search error:", error);
+      // Não mostrar toast em busca automática para não ser intrusivo
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Debounce da busca - aguarda 300ms após o usuário parar de digitar
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchArtists(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, searchArtists]);
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchTerm.trim()) {
+      toast.error("Digite o nome do artista para buscar");
+      return;
+    }
+    // A busca já está sendo feita em tempo real pelo useEffect
   };
 
   return (
@@ -86,28 +103,56 @@ const SearchArtists = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSearch} className="flex gap-2">
-              <Input
-                type="text"
-                placeholder="Digite o nome do artista..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1"
-              />
-              <Button type="submit" disabled={loading}>
-                <Search className="w-4 h-4 mr-2" />
-                {loading ? "Buscando..." : "Buscar"}
+              <div className="relative flex-1">
+                <Input
+                  type="text"
+                  placeholder="Digite o nome do artista..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pr-10"
+                  autoFocus
+                />
+                {loading && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+              <Button type="submit" disabled={loading || !searchTerm.trim()}>
+                <Search className="w-4 h-4" />
               </Button>
             </form>
+            {searchTerm && (
+              <p className="mt-2 text-xs text-muted-foreground text-center">
+                Buscando enquanto você digita...
+              </p>
+            )}
           </CardContent>
         </Card>
 
         {hasSearched && (
           <div className="space-y-4">
-            {artists.length > 0 ? (
+            {loading && artists.length === 0 ? (
+              <Card className="border-dashed">
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                  <Loader2 className="w-12 h-12 text-muted-foreground mb-4 animate-spin" />
+                  <p className="text-muted-foreground">
+                    Buscando artistas...
+                  </p>
+                </CardContent>
+              </Card>
+            ) : artists.length > 0 ? (
               <>
-                <h2 className="text-xl font-semibold mb-4">
-                  {artists.length} {artists.length === 1 ? "artista encontrado" : "artistas encontrados"}
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold">
+                    {artists.length} {artists.length === 1 ? "artista encontrado" : "artistas encontrados"}
+                  </h2>
+                  {searchTerm && (
+                    <Badge variant="secondary">
+                      "{searchTerm}"
+                    </Badge>
+                  )}
+                </div>
                 {artists.map((artist) => (
                   <Card 
                     key={artist.id}
@@ -161,7 +206,7 @@ const SearchArtists = () => {
                   </Card>
                 ))}
               </>
-            ) : (
+            ) : searchTerm ? (
               <Card className="border-dashed">
                 <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                   <Search className="w-12 h-12 text-muted-foreground mb-4" />
@@ -169,12 +214,24 @@ const SearchArtists = () => {
                     Nenhum artista encontrado com "{searchTerm}"
                   </p>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Tente buscar com outro nome
+                    Tente buscar por outro nome ou verifique a ortografia
                   </p>
                 </CardContent>
               </Card>
-            )}
+            ) : null}
           </div>
+        )}
+        
+        {!hasSearched && !searchTerm && (
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+              <Music className="w-16 h-16 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Encontre artistas incríveis</h3>
+              <p className="text-muted-foreground max-w-md">
+                Digite o nome ou as primeiras letras para ver sugestões em tempo real
+              </p>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
