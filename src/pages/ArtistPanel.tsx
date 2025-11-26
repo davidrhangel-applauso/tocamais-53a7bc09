@@ -24,11 +24,12 @@ interface Pedido {
   mensagem: string | null;
   status: string;
   created_at: string;
-  cliente_id: string;
+  cliente_id: string | null;
+  cliente_nome: string | null;
   profiles: {
     nome: string;
     foto_url: string;
-  };
+  } | null;
 }
 
 interface Gorjeta {
@@ -37,12 +38,13 @@ interface Gorjeta {
   valor_liquido_artista: number;
   taxa_plataforma: number;
   created_at: string;
-  cliente_id: string;
+  cliente_id: string | null;
+  cliente_nome: string | null;
   status_pagamento: string;
   profiles: {
     nome: string;
     foto_url: string;
-  };
+  } | null;
 }
 
 interface Stats {
@@ -654,11 +656,11 @@ const ArtistPanel = () => {
                         </div>
                         <div className="flex items-start gap-4 flex-1">
                         <Avatar>
-                          <AvatarImage src={pedido.profiles.foto_url} />
-                          <AvatarFallback>{pedido.profiles.nome[0]}</AvatarFallback>
+                          <AvatarImage src={pedido.profiles?.foto_url} />
+                          <AvatarFallback>{(pedido.profiles?.nome || pedido.cliente_nome || "Anônimo")[0]}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
-                          <p className="font-semibold">{pedido.profiles.nome}</p>
+                          <p className="font-semibold">{pedido.profiles?.nome || pedido.cliente_nome || "Anônimo"}</p>
                           <p className="text-sm text-muted-foreground mb-2">
                             {new Date(pedido.created_at).toLocaleString("pt-BR")}
                           </p>
@@ -714,11 +716,11 @@ const ArtistPanel = () => {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-4 flex-1">
                         <Avatar>
-                          <AvatarImage src={pedido.profiles.foto_url} />
-                          <AvatarFallback>{pedido.profiles.nome[0]}</AvatarFallback>
+                          <AvatarImage src={pedido.profiles?.foto_url} />
+                          <AvatarFallback>{(pedido.profiles?.nome || pedido.cliente_nome || "Anônimo")[0]}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
-                          <p className="font-semibold">{pedido.profiles.nome}</p>
+                          <p className="font-semibold">{pedido.profiles?.nome || pedido.cliente_nome || "Anônimo"}</p>
                           <p className="text-sm text-muted-foreground mb-2">
                             {new Date(pedido.created_at).toLocaleString("pt-BR")}
                           </p>
@@ -763,11 +765,11 @@ const ArtistPanel = () => {
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
                       <Avatar>
-                        <AvatarImage src={pedido.profiles.foto_url} />
-                        <AvatarFallback>{pedido.profiles.nome[0]}</AvatarFallback>
+                        <AvatarImage src={pedido.profiles?.foto_url} />
+                        <AvatarFallback>{(pedido.profiles?.nome || pedido.cliente_nome || "Anônimo")[0]}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <p className="font-semibold">{pedido.profiles.nome}</p>
+                        <p className="font-semibold">{pedido.profiles?.nome || pedido.cliente_nome || "Anônimo"}</p>
                         <p className="text-sm text-muted-foreground mb-2">
                           {new Date(pedido.created_at).toLocaleString("pt-BR")}
                         </p>
@@ -803,11 +805,11 @@ const ArtistPanel = () => {
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
                       <Avatar>
-                        <AvatarImage src={pedido.profiles.foto_url} />
-                        <AvatarFallback>{pedido.profiles.nome[0]}</AvatarFallback>
+                        <AvatarImage src={pedido.profiles?.foto_url} />
+                        <AvatarFallback>{(pedido.profiles?.nome || pedido.cliente_nome || "Anônimo")[0]}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <p className="font-semibold">{pedido.profiles.nome}</p>
+                        <p className="font-semibold">{pedido.profiles?.nome || pedido.cliente_nome || "Anônimo"}</p>
                         <p className="text-sm text-muted-foreground mb-2">
                           {new Date(pedido.created_at).toLocaleString("pt-BR")}
                         </p>
@@ -839,11 +841,11 @@ const ArtistPanel = () => {
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-4">
                         <Avatar>
-                          <AvatarImage src={gorjeta.profiles.foto_url} />
-                          <AvatarFallback>{gorjeta.profiles.nome[0]}</AvatarFallback>
+                          <AvatarImage src={gorjeta.profiles?.foto_url} />
+                          <AvatarFallback>{(gorjeta.profiles?.nome || gorjeta.cliente_nome || "Anônimo")[0]}</AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-semibold">{gorjeta.profiles.nome}</p>
+                          <p className="font-semibold">{gorjeta.profiles?.nome || gorjeta.cliente_nome || "Anônimo"}</p>
                           <p className="text-sm text-muted-foreground">
                             {new Date(gorjeta.created_at).toLocaleString("pt-BR")}
                           </p>
