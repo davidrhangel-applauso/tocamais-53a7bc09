@@ -74,15 +74,15 @@ const Landing = () => {
               className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 bg-gradient-to-r from-primary to-primary-glow hover:shadow-2xl hover:shadow-primary/50 transition-all duration-300 hover:scale-105 font-semibold shadow-xl w-full sm:w-auto"
               onClick={() => navigate("/auth")}
             >
-              Começar Agora
+              Sou Artista
             </Button>
             <Button
               size="lg"
               variant="outline"
               className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 border-2 border-white/50 bg-white/20 backdrop-blur-md hover:bg-white/30 hover:border-white transition-all duration-300 hover:scale-105 font-semibold text-white shadow-xl w-full sm:w-auto"
-              onClick={() => navigate("/auth")}
+              onClick={() => navigate("/buscar")}
             >
-              Sou Artista
+              Sou Cliente
             </Button>
           </div>
         </div>
