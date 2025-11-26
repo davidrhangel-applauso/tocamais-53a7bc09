@@ -40,7 +40,7 @@ const Landing = () => {
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${heroImage})` }}
         >
-          <div className="absolute inset-0 bg-[image:var(--gradient-hero)]"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80"></div>
         </div>
         
         {/* Animated Background Elements */}
@@ -52,26 +52,26 @@ const Landing = () => {
         <div className="relative z-10 text-center px-4 max-w-5xl mx-auto py-20">
           <div className="flex justify-center mb-8 animate-scale-in">
             <div className="p-6 bg-gradient-to-br from-primary to-primary-glow rounded-3xl shadow-2xl backdrop-blur-sm border border-primary/20">
-              <Music className="w-20 h-20 text-primary-foreground animate-float" />
+              <Music className="w-20 h-20 text-white animate-float" />
             </div>
           </div>
           
-          <h1 className="text-6xl md:text-8xl font-bold mb-6 animate-fade-in-up bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent">
+          <h1 className="text-6xl md:text-8xl font-bold mb-6 animate-fade-in-up bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent drop-shadow-2xl" style={{ textShadow: '0 0 40px rgba(168, 85, 247, 0.4)' }}>
             Toca+
           </h1>
           
-          <p className="text-xl md:text-3xl text-foreground mb-4 animate-fade-in font-light max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-3xl text-white mb-4 animate-fade-in font-light max-w-3xl mx-auto leading-relaxed drop-shadow-lg">
             Conecte-se com artistas e música ao vivo
           </p>
           
-          <p className="text-lg md:text-xl text-muted-foreground mb-12 animate-fade-in max-w-2xl mx-auto" style={{ animationDelay: '0.2s' }}>
+          <p className="text-lg md:text-xl text-gray-200 mb-12 animate-fade-in max-w-2xl mx-auto drop-shadow-lg" style={{ animationDelay: '0.2s' }}>
             Peça suas músicas favoritas e apoie artistas independentes de forma direta e segura
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
             <Button
               size="lg"
-              className="text-lg px-10 py-7 bg-gradient-to-r from-primary to-primary-glow hover:shadow-2xl hover:shadow-primary/50 transition-all duration-300 hover:scale-105 font-semibold"
+              className="text-lg px-10 py-7 bg-gradient-to-r from-primary to-primary-glow hover:shadow-2xl hover:shadow-primary/50 transition-all duration-300 hover:scale-105 font-semibold shadow-xl"
               onClick={() => navigate("/auth")}
             >
               Começar Agora
@@ -79,7 +79,7 @@ const Landing = () => {
             <Button
               size="lg"
               variant="outline"
-              className="text-lg px-10 py-7 border-2 border-primary/30 bg-background/80 backdrop-blur-sm hover:bg-primary/10 hover:border-primary transition-all duration-300 hover:scale-105 font-semibold"
+              className="text-lg px-10 py-7 border-2 border-white/50 bg-white/20 backdrop-blur-md hover:bg-white/30 hover:border-white transition-all duration-300 hover:scale-105 font-semibold text-white shadow-xl"
               onClick={() => navigate("/auth")}
             >
               Sou Artista
