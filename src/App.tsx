@@ -11,6 +11,7 @@ import SearchArtists from "./pages/SearchArtists";
 import ArtistProfile from "./pages/ArtistProfile";
 import ArtistPanel from "./pages/ArtistPanel";
 import Messages from "./pages/Messages";
+import Conversations from "./pages/Conversations";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/buscar" element={<SearchArtists />} />
           <Route path="/artista/:id" element={<ArtistProfile />} />
           <Route path="/painel" element={<ArtistPanel />} />
+          <Route path="/conversas" element={<Conversations />} />
           <Route path="/mensagens" element={<Messages />} />
           <Route path="/configuracoes" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

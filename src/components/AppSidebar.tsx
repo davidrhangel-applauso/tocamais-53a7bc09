@@ -36,7 +36,7 @@ const menuItems = [
 ];
 
 const secondaryItems = [
-  { title: "Mensagens", url: "/mensagens", icon: MessageCircle },
+  { title: "Mensagens", url: "/conversas", icon: MessageCircle },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
