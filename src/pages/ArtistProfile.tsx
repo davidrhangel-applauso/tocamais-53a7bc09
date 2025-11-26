@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Music, Heart, Instagram, Youtube, Music2, ExternalLink, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useProfilePermissions } from "@/hooks/useProfilePermissions";
+import { useSessionId } from "@/hooks/useSessionId";
 import { z } from "zod";
 import { PixPaymentDialog } from "@/components/PixPaymentDialog";
 
@@ -25,7 +26,8 @@ const songRequestSchema = z.object({
   mensagem: z.string()
     .trim()
     .max(500, "Mensagem deve ter no máximo 500 caracteres")
-    .optional()
+    .optional(),
+  clienteNome: z.string().trim().optional()
 });
 
 // Validation schema for tip amounts
@@ -60,7 +62,8 @@ const tipSchema = z.object({
       return decimals <= 2;
     }, {
       message: "Use no máximo 2 casas decimais"
-    })
+    }),
+  clienteNome: z.string().trim().optional()
 });
 
 interface Artist {
@@ -81,6 +84,7 @@ interface Artist {
 const ArtistProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const sessionId = useSessionId();
   const [artist, setArtist] = useState<Artist | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -88,10 +92,12 @@ const ArtistProfile = () => {
   // Request form state
   const [musica, setMusica] = useState("");
   const [mensagem, setMensagem] = useState("");
+  const [clienteNomePedido, setClienteNomePedido] = useState("");
   const [requestLoading, setRequestLoading] = useState(false);
   
   // Tip form state
   const [valorGorjeta, setValorGorjeta] = useState("");
+  const [clienteNomeGorjeta, setClienteNomeGorjeta] = useState("");
   const [tipLoading, setTipLoading] = useState(false);
   
   // Pix payment state
@@ -113,11 +119,7 @@ const ArtistProfile = () => {
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
-    setCurrentUserId(user.id);
+    setCurrentUserId(user?.id || null);
   };
 
   const fetchArtist = async () => {
@@ -140,10 +142,16 @@ const ArtistProfile = () => {
   };
 
   const handleSendRequest = async () => {
+    if (!sessionId || !artist) {
+      toast.error("Erro ao carregar sessão. Recarregue a página.");
+      return;
+    }
+
     // Validate song request with zod
     const validation = songRequestSchema.safeParse({ 
       musica, 
-      mensagem: mensagem || "" 
+      mensagem: mensagem || "",
+      clienteNome: clienteNomePedido || ""
     });
     
     if (!validation.success) {
@@ -152,13 +160,13 @@ const ArtistProfile = () => {
       return;
     }
 
-    if (!currentUserId || !artist) return;
-
     setRequestLoading(true);
     try {
       const { error } = await supabase.from("pedidos").insert({
         artista_id: artist.id,
-        cliente_id: currentUserId,
+        cliente_id: currentUserId || null,
+        cliente_nome: validation.data.clienteNome || null,
+        session_id: sessionId,
         musica: validation.data.musica,
         mensagem: validation.data.mensagem || null,
         status: "pendente",
@@ -169,6 +177,7 @@ const ArtistProfile = () => {
       toast.success("Pedido enviado com sucesso!");
       setMusica("");
       setMensagem("");
+      setClienteNomePedido("");
     } catch (error: any) {
       toast.error("Erro ao enviar pedido: " + error.message);
     } finally {
@@ -177,13 +186,16 @@ const ArtistProfile = () => {
   };
 
   const handleSendTip = async () => {
-    if (!currentUserId || !id) {
-      toast.error("Você precisa estar logado para enviar gorjetas");
+    if (!sessionId || !id) {
+      toast.error("Erro ao carregar sessão. Recarregue a página.");
       return;
     }
 
     // Validate form
-    const validationResult = tipSchema.safeParse({ valor: valorGorjeta });
+    const validationResult = tipSchema.safeParse({ 
+      valor: valorGorjeta,
+      clienteNome: clienteNomeGorjeta || ""
+    });
     
     if (!validationResult.success) {
       const firstError = validationResult.error.errors[0];
@@ -202,12 +214,13 @@ const ArtistProfile = () => {
       const valor = parseFloat(valorGorjeta);
 
       // Criar pagamento Pix via edge function
-      // O edge function já calcula automaticamente os 10% de taxa da plataforma e 1% de processamento
       const { data, error } = await supabase.functions.invoke('create-pix-payment', {
         body: {
-          valor, // Valor que o cliente deseja enviar
+          valor,
           artista_id: id,
-          cliente_id: currentUserId,
+          cliente_id: currentUserId || null,
+          cliente_nome: validationResult.data.clienteNome || null,
+          session_id: sessionId,
         },
       });
 
@@ -215,21 +228,22 @@ const ArtistProfile = () => {
         throw error;
       }
 
-      if (!data.success) {
-        throw new Error(data.error || 'Erro ao criar pagamento');
+      if (!data.id) {
+        throw new Error('Erro ao criar pagamento');
       }
 
       // Abrir dialog com QR Code
       setPixPaymentData({
-        gorjetaId: data.gorjeta_id,
-        qrCode: data.qr_code,
-        qrCodeBase64: data.qr_code_base64,
-        expiresAt: data.expires_at,
+        gorjetaId: data.id,
+        qrCode: data.qr_code || "",
+        qrCodeBase64: data.qr_code_base64 || "",
+        expiresAt: data.expires_at || "",
       });
       setPixDialogOpen(true);
       
       toast.success("QR Code gerado! Escaneie para pagar");
       setValorGorjeta("");
+      setClienteNomeGorjeta("");
     } catch (error: any) {
       console.error('Error creating Pix payment:', error);
       toast.error("Erro ao gerar pagamento Pix: " + (error.message || 'Tente novamente'));
@@ -353,6 +367,15 @@ const ArtistProfile = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
+                <Label htmlFor="clienteNomePedido">Seu nome (opcional)</Label>
+                <Input
+                  id="clienteNomePedido"
+                  placeholder="Ex: João da mesa 5"
+                  value={clienteNomePedido}
+                  onChange={(e) => setClienteNomePedido(e.target.value)}
+                />
+              </div>
+              <div>
                 <Label htmlFor="musica">Música *</Label>
                 <Input
                   id="musica"
@@ -393,6 +416,15 @@ const ArtistProfile = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="clienteNomeGorjeta">Seu nome (opcional)</Label>
+                <Input
+                  id="clienteNomeGorjeta"
+                  placeholder="Ex: Maria"
+                  value={clienteNomeGorjeta}
+                  onChange={(e) => setClienteNomeGorjeta(e.target.value)}
+                />
+              </div>
               <div>
                 <Label htmlFor="valor">Valor (R$) *</Label>
                 <Input

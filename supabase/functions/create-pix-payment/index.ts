@@ -3,13 +3,15 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-session-id',
 };
 
 interface PaymentRequest {
   valor: number;
   artista_id: string;
-  cliente_id: string;
+  cliente_id?: string | null;
+  cliente_nome?: string | null;
+  session_id?: string;
 }
 
 serve(async (req: Request) => {
@@ -18,17 +20,22 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { valor, artista_id, cliente_id }: PaymentRequest = await req.json();
+    const { valor, artista_id, cliente_id, cliente_nome, session_id }: PaymentRequest = await req.json();
 
-    console.log('Creating Pix payment:', { valor, artista_id, cliente_id });
+    console.log('Creating Pix payment:', { valor, artista_id, cliente_id, cliente_nome, session_id });
 
     // Validações básicas
     if (!valor || valor <= 0) {
       throw new Error('Valor inválido');
     }
 
-    if (!artista_id || !cliente_id) {
-      throw new Error('IDs de artista e cliente são obrigatórios');
+    if (!artista_id) {
+      throw new Error('ID do artista é obrigatório');
+    }
+
+    // Validar que temos identificação (cliente_id ou session_id)
+    if (!cliente_id && !session_id) {
+      throw new Error('É necessário fornecer cliente_id ou session_id');
     }
 
     // Inicializar Supabase client
@@ -129,7 +136,9 @@ serve(async (req: Request) => {
         valor_liquido_artista: valorLiquidoArtista, // 90% do valor bruto
         taxa_plataforma: taxaPlataforma, // 10% do valor bruto
         artista_id,
-        cliente_id,
+        cliente_id: cliente_id || null,
+        cliente_nome: cliente_nome || null,
+        session_id: session_id || null,
         payment_id: mpData.id.toString(),
         status_pagamento: 'pending',
         qr_code: mpData.point_of_interaction?.transaction_data?.qr_code || '',
@@ -148,8 +157,7 @@ serve(async (req: Request) => {
 
     return new Response(
       JSON.stringify({
-        success: true,
-        gorjeta_id: gorjeta.id,
+        id: gorjeta.id,
         payment_id: mpData.id,
         qr_code: mpData.point_of_interaction?.transaction_data?.qr_code,
         qr_code_base64: mpData.point_of_interaction?.transaction_data?.qr_code_base64,
@@ -165,7 +173,6 @@ serve(async (req: Request) => {
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     return new Response(
       JSON.stringify({
-        success: false,
         error: errorMessage,
       }),
       {
