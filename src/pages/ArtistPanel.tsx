@@ -425,7 +425,8 @@ const ArtistPanel = () => {
       .eq("id", pedidoId);
 
     if (error) {
-      toast.error("Erro ao atualizar pedido");
+      console.error("Erro ao atualizar pedido:", error);
+      toast.error(`Erro ao atualizar pedido: ${error.message ?? "tente novamente"}`);
       return;
     }
 
@@ -447,7 +448,8 @@ const ArtistPanel = () => {
       .in("id", selectedPedidos);
 
     if (error) {
-      toast.error("Erro ao atualizar pedidos");
+      console.error("Erro ao atualizar pedidos em massa:", error);
+      toast.error(`Erro ao atualizar pedidos: ${error.message ?? "tente novamente"}`);
       return;
     }
 
@@ -465,7 +467,8 @@ const ArtistPanel = () => {
       .eq("id", pedidoId);
 
     if (error) {
-      toast.error("Erro ao marcar como concluído");
+      console.error("Erro ao marcar pedido como concluído:", error);
+      toast.error(`Erro ao marcar como concluído: ${error.message ?? "tente novamente"}`);
       return;
     }
 
