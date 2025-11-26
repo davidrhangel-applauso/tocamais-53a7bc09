@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,12 +8,15 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Music, Heart, LogOut, Settings, TrendingUp, Check, X, MessageCircle, BarChart3 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Music, Heart, Check, X, CheckCheck, Menu } from "lucide-react";
 import { toast } from "sonner";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 import NotificationBell from "@/components/NotificationBell";
 import DebugUserInfo from "@/components/DebugUserInfo";
 import { MercadoPagoLink } from "@/components/MercadoPagoLink";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 
 interface Pedido {
   id: string;
@@ -60,11 +63,14 @@ interface AnalyticsData {
 
 const ArtistPanel = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [artistId, setArtistId] = useState<string | null>(null);
   const [artistName, setArtistName] = useState("");
+  const [artistPhoto, setArtistPhoto] = useState<string | undefined>();
   const [ativoAoVivo, setAtivoAoVivo] = useState(false);
   const [profileExists, setProfileExists] = useState(false);
+  const [selectedPedidos, setSelectedPedidos] = useState<string[]>([]);
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [gorjetas, setGorjetas] = useState<Gorjeta[]>([]);
   const [stats, setStats] = useState<Stats>({
@@ -144,7 +150,7 @@ const ArtistPanel = () => {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("tipo, nome, ativo_ao_vivo")
+      .select("tipo, nome, ativo_ao_vivo, foto_url")
       .eq("id", user.id)
       .single();
 
@@ -163,6 +169,7 @@ const ArtistPanel = () => {
 
     setArtistId(user.id);
     setArtistName(profile.nome);
+    setArtistPhoto(profile.foto_url || undefined);
     setAtivoAoVivo(profile.ativo_ao_vivo || false);
   };
 
@@ -400,14 +407,67 @@ const ArtistPanel = () => {
     fetchAnalytics();
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth");
+  const handleBulkAction = async (action: "aceito" | "recusado") => {
+    if (selectedPedidos.length === 0) {
+      toast.error("Selecione pelo menos um pedido");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("pedidos")
+      .update({ status: action })
+      .in("id", selectedPedidos);
+
+    if (error) {
+      toast.error("Erro ao atualizar pedidos");
+      return;
+    }
+
+    toast.success(`${selectedPedidos.length} pedido(s) ${action === "aceito" ? "aceito(s)" : "recusado(s)"}`);
+    setSelectedPedidos([]);
+    fetchPedidos();
+    fetchStats();
+    fetchAnalytics();
+  };
+
+  const handleMarkAsComplete = async (pedidoId: string) => {
+    const { error } = await supabase
+      .from("pedidos")
+      .update({ status: "concluido" })
+      .eq("id", pedidoId);
+
+    if (error) {
+      toast.error("Erro ao marcar como concluído");
+      return;
+    }
+
+    toast.success("Pedido marcado como concluído! 🎵");
+    fetchPedidos();
+    fetchStats();
+    fetchAnalytics();
+  };
+
+  const togglePedidoSelection = (pedidoId: string) => {
+    setSelectedPedidos(prev =>
+      prev.includes(pedidoId)
+        ? prev.filter(id => id !== pedidoId)
+        : [...prev, pedidoId]
+    );
+  };
+
+  const toggleAllPedidos = (pedidos: Pedido[]) => {
+    const pedidoIds = pedidos.map(p => p.id);
+    setSelectedPedidos(prev =>
+      prev.length === pedidoIds.length ? [] : pedidoIds
+    );
   };
 
   const pedidosPendentes = pedidos.filter((p) => p.status === "pendente");
   const pedidosAceitos = pedidos.filter((p) => p.status === "aceito");
   const pedidosRecusados = pedidos.filter((p) => p.status === "recusado");
+  const pedidosConcluidos = pedidos.filter((p) => p.status === "concluido");
+
+  const currentTab = searchParams.get("tab") || "analytics";
 
   if (loading) {
     return (
@@ -418,35 +478,32 @@ const ArtistPanel = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <header className="border-b border-border/40 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Music className="w-8 h-8 text-primary" />
-            <h1 className="text-2xl font-bold text-gradient">Painel do Artista</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <NotificationBell userId={artistId || undefined} />
-            <Button variant="outline" onClick={() => navigate("/mensagens")}>
-              <MessageCircle className="w-4 h-4 mr-2" />
-              Mensagens
-            </Button>
-            <Button variant="outline" onClick={() => navigate("/configuracoes")}>
-              <Settings className="w-4 h-4 mr-2" />
-              Configurações
-            </Button>
-            <Button variant="outline" onClick={() => navigate("/home")}>
-              Ver como Cliente
-            </Button>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Sair
-            </Button>
-          </div>
-        </div>
-      </header>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-background via-background to-primary/5">
+        <AppSidebar 
+          artistName={artistName} 
+          artistPhoto={artistPhoto}
+          ativoAoVivo={ativoAoVivo} 
+        />
 
-      <main className="container mx-auto px-4 py-8">
+        <div className="flex-1 flex flex-col">
+          <header className="border-b border-border/40 bg-background/80 backdrop-blur-sm sticky top-0 z-40 h-16 flex items-center px-6">
+            <SidebarTrigger className="mr-4">
+              <Menu className="w-5 h-5" />
+            </SidebarTrigger>
+            <div className="flex items-center gap-2 flex-1">
+              <Music className="w-6 h-6 text-primary" />
+              <h1 className="text-xl font-bold text-gradient">Painel do Artista</h1>
+            </div>
+            <div className="flex items-center gap-3">
+              <NotificationBell userId={artistId || undefined} />
+              <Button variant="outline" size="sm" onClick={() => navigate("/home")}>
+                Ver como Cliente
+              </Button>
+            </div>
+          </header>
+
+          <main className="flex-1 overflow-auto p-6">
         <DebugUserInfo 
           userId={artistId || undefined} 
           userType="artista" 
@@ -516,17 +573,19 @@ const ArtistPanel = () => {
         </div>
 
         {/* Tabs for Pedidos and Gorjetas */}
-        <Tabs defaultValue="pendentes" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+        <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="analytics">
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Analytics
+              Dashboard
             </TabsTrigger>
             <TabsTrigger value="pendentes">
               Pendentes ({pedidosPendentes.length})
             </TabsTrigger>
             <TabsTrigger value="aceitos">
               Aceitos ({pedidosAceitos.length})
+            </TabsTrigger>
+            <TabsTrigger value="concluidos">
+              Concluídos ({pedidosConcluidos.length})
             </TabsTrigger>
             <TabsTrigger value="recusados">
               Recusados ({pedidosRecusados.length})
@@ -553,11 +612,47 @@ const ArtistPanel = () => {
                 </CardContent>
               </Card>
             ) : (
-              pedidosPendentes.map((pedido) => (
-                <Card key={pedido.id} className="border-accent/20">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-4 flex-1">
+              <>
+                {/* Ações em massa */}
+                <Card className="border-primary/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <Checkbox
+                          checked={selectedPedidos.length === pedidosPendentes.length && pedidosPendentes.length > 0}
+                          onCheckedChange={() => toggleAllPedidos(pedidosPendentes)}
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          {selectedPedidos.length > 0 ? `${selectedPedidos.length} selecionado(s)` : "Selecionar todos"}
+                        </span>
+                      </div>
+                      {selectedPedidos.length > 0 && (
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => handleBulkAction("aceito")}>
+                            <Check className="w-4 h-4 mr-1" />
+                            Aceitar Selecionados
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleBulkAction("recusado")}>
+                            <X className="w-4 h-4 mr-1" />
+                            Recusar Selecionados
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {pedidosPendentes.map((pedido) => (
+                  <Card key={pedido.id} className="border-accent/20">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            checked={selectedPedidos.includes(pedido.id)}
+                            onCheckedChange={() => togglePedidoSelection(pedido.id)}
+                          />
+                        </div>
+                        <div className="flex items-start gap-4 flex-1">
                         <Avatar>
                           <AvatarImage src={pedido.profiles.foto_url} />
                           <AvatarFallback>{pedido.profiles.nome[0]}</AvatarFallback>
@@ -595,10 +690,12 @@ const ArtistPanel = () => {
                           Recusar
                         </Button>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              }
+              </>
             )}
           </TabsContent>
 
@@ -614,6 +711,56 @@ const ArtistPanel = () => {
               pedidosAceitos.map((pedido) => (
                 <Card key={pedido.id}>
                   <CardContent className="p-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-4 flex-1">
+                        <Avatar>
+                          <AvatarImage src={pedido.profiles.foto_url} />
+                          <AvatarFallback>{pedido.profiles.nome[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <p className="font-semibold">{pedido.profiles.nome}</p>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {new Date(pedido.created_at).toLocaleString("pt-BR")}
+                          </p>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Music className="w-4 h-4 text-primary" />
+                            <p className="font-medium text-lg">{pedido.musica}</p>
+                            <Badge variant="default" className="ml-2">Aceito</Badge>
+                          </div>
+                          {pedido.mensagem && (
+                            <p className="text-sm text-muted-foreground italic">
+                              "{pedido.mensagem}"
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleMarkAsComplete(pedido.id)}
+                      >
+                        <CheckCheck className="w-4 h-4 mr-1" />
+                        Marcar como Concluído
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </TabsContent>
+
+          {/* Pedidos Concluídos */}
+          <TabsContent value="concluidos" className="space-y-4">
+            {pedidosConcluidos.length === 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center text-muted-foreground">
+                  Nenhum pedido concluído ainda
+                </CardContent>
+              </Card>
+            ) : (
+              pedidosConcluidos.map((pedido) => (
+                <Card key={pedido.id} className="border-green-500/20">
+                  <CardContent className="p-6">
                     <div className="flex items-start gap-4">
                       <Avatar>
                         <AvatarImage src={pedido.profiles.foto_url} />
@@ -625,9 +772,9 @@ const ArtistPanel = () => {
                           {new Date(pedido.created_at).toLocaleString("pt-BR")}
                         </p>
                         <div className="flex items-center gap-2 mb-2">
-                          <Music className="w-4 h-4 text-primary" />
+                          <Music className="w-4 h-4 text-green-600" />
                           <p className="font-medium text-lg">{pedido.musica}</p>
-                          <Badge variant="default" className="ml-2">Aceito</Badge>
+                          <Badge className="ml-2 bg-green-600">✓ Concluído</Badge>
                         </div>
                         {pedido.mensagem && (
                           <p className="text-sm text-muted-foreground italic">
@@ -734,8 +881,10 @@ const ArtistPanel = () => {
             )}
           </TabsContent>
         </Tabs>
-      </main>
-    </div>
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
   );
 };
 
