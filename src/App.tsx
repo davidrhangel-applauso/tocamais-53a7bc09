@@ -7,6 +7,7 @@ import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import Home from "./pages/Home";
+import SearchArtists from "./pages/SearchArtists";
 import ArtistProfile from "./pages/ArtistProfile";
 import ArtistPanel from "./pages/ArtistPanel";
 import Messages from "./pages/Messages";
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/redefinir-senha" element={<ResetPassword />} />
           <Route path="/home" element={<Home />} />
+          <Route path="/buscar" element={<SearchArtists />} />
           <Route path="/artista/:id" element={<ArtistProfile />} />
           <Route path="/painel" element={<ArtistPanel />} />
           <Route path="/mensagens" element={<Messages />} />

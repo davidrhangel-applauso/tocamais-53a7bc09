@@ -142,6 +142,14 @@ const Auth = () => {
             💡 Clientes não precisam de cadastro! Acesse diretamente o perfil dos artistas.
           </div>
 
+          <Button 
+            variant="outline" 
+            className="w-full mb-4"
+            onClick={() => navigate("/buscar")}
+          >
+            Sou Cliente - Buscar Artista
+          </Button>
+
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Entrar</TabsTrigger>
