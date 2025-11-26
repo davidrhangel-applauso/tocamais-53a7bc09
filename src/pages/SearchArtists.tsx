@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Music, Search, MapPin, ArrowLeft, Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Music, Search, MapPin, ArrowLeft, Loader2, Filter } from "lucide-react";
 import { toast } from "sonner";
 
 interface Artist {
@@ -25,25 +26,64 @@ const SearchArtists = () => {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [filterCity, setFilterCity] = useState<string>("");
+  const [filterStyle, setFilterStyle] = useState<string>("");
+  const [filterLive, setFilterLive] = useState<string>("");
+  const [cities, setCities] = useState<string[]>([]);
+
+  // Carregar cidades disponíveis
+  useEffect(() => {
+    const fetchCities = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("cidade")
+        .eq("tipo", "artista")
+        .not("cidade", "is", null)
+        .order("cidade");
+      
+      if (data) {
+        const uniqueCities = Array.from(new Set(data.map(d => d.cidade).filter(Boolean))) as string[];
+        setCities(uniqueCities);
+      }
+    };
+    
+    fetchCities();
+  }, []);
 
   // Função de busca em tempo real (debounced)
-  const searchArtists = useCallback(async (term: string) => {
-    if (!term.trim()) {
-      setArtists([]);
-      setHasSearched(false);
-      return;
-    }
-
+  const searchArtists = useCallback(async (term: string, city: string, style: string, live: string) => {
     setLoading(true);
     setHasSearched(true);
 
     try {
-      // Busca por nome completo ou palavras que começam com o termo
-      const { data, error } = await supabase
+      let query = supabase
         .from("profiles")
         .select("id, nome, cidade, estilo_musical, foto_url, bio, ativo_ao_vivo")
-        .eq("tipo", "artista")
-        .or(`nome.ilike.${term}%,nome.ilike.% ${term}%,nome.ilike.%${term}%`)
+        .eq("tipo", "artista");
+
+      // Aplicar filtro de nome
+      if (term.trim()) {
+        query = query.or(`nome.ilike.${term}%,nome.ilike.% ${term}%,nome.ilike.%${term}%`);
+      }
+
+      // Aplicar filtro de cidade
+      if (city) {
+        query = query.eq("cidade", city);
+      }
+
+      // Aplicar filtro de estilo musical
+      if (style && style !== "") {
+        query = query.eq("estilo_musical", style as any);
+      }
+
+      // Aplicar filtro de disponibilidade ao vivo
+      if (live === "true") {
+        query = query.eq("ativo_ao_vivo", true);
+      } else if (live === "false") {
+        query = query.eq("ativo_ao_vivo", false);
+      }
+
+      const { data, error } = await query
         .order("ativo_ao_vivo", { ascending: false })
         .order("nome")
         .limit(20);
@@ -53,7 +93,6 @@ const SearchArtists = () => {
       setArtists(data || []);
     } catch (error: any) {
       console.error("Search error:", error);
-      // Não mostrar toast em busca automática para não ser intrusivo
     } finally {
       setLoading(false);
     }
@@ -62,20 +101,39 @@ const SearchArtists = () => {
   // Debounce da busca - aguarda 300ms após o usuário parar de digitar
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      searchArtists(searchTerm);
+      searchArtists(searchTerm, filterCity, filterStyle, filterLive);
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, searchArtists]);
+  }, [searchTerm, filterCity, filterStyle, filterLive, searchArtists]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchTerm.trim()) {
-      toast.error("Digite o nome do artista para buscar");
-      return;
-    }
     // A busca já está sendo feita em tempo real pelo useEffect
   };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setFilterCity("");
+    setFilterStyle("");
+    setFilterLive("");
+    setArtists([]);
+    setHasSearched(false);
+  };
+
+  const musicStyles = [
+    { value: "rock", label: "Rock" },
+    { value: "pop", label: "Pop" },
+    { value: "jazz", label: "Jazz" },
+    { value: "blues", label: "Blues" },
+    { value: "samba", label: "Samba" },
+    { value: "mpb", label: "MPB" },
+    { value: "sertanejo", label: "Sertanejo" },
+    { value: "eletronica", label: "Eletrônica" },
+    { value: "rap", label: "Rap" },
+    { value: "funk", label: "Funk" },
+    { value: "outros", label: "Outros" },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-4">
@@ -130,7 +188,79 @@ const SearchArtists = () => {
           </CardContent>
         </Card>
 
-        {hasSearched && (
+        {/* Filtros Avançados */}
+        <Card className="mb-8 border-primary/20">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Filter className="w-5 h-5 text-primary" />
+              <CardTitle className="text-xl">Filtros Avançados</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Cidade</label>
+                <Select value={filterCity} onValueChange={setFilterCity}>
+                  <SelectTrigger className="bg-background">
+                    <SelectValue placeholder="Todas as cidades" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    <SelectItem value="">Todas as cidades</SelectItem>
+                    {cities.map((city) => (
+                      <SelectItem key={city} value={city}>
+                        {city}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Estilo Musical</label>
+                <Select value={filterStyle} onValueChange={setFilterStyle}>
+                  <SelectTrigger className="bg-background">
+                    <SelectValue placeholder="Todos os estilos" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    <SelectItem value="">Todos os estilos</SelectItem>
+                    {musicStyles.map((style) => (
+                      <SelectItem key={style.value} value={style.value}>
+                        {style.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Disponibilidade</label>
+                <Select value={filterLive} onValueChange={setFilterLive}>
+                  <SelectTrigger className="bg-background">
+                    <SelectValue placeholder="Todas" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    <SelectItem value="">Todas</SelectItem>
+                    <SelectItem value="true">Ao Vivo</SelectItem>
+                    <SelectItem value="false">Offline</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {(filterCity || filterStyle || filterLive) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearFilters}
+                className="mt-4"
+              >
+                Limpar Filtros
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        {(hasSearched || filterCity || filterStyle || filterLive) && (
           <div className="space-y-4">
             {loading && artists.length === 0 ? (
               <Card className="border-dashed">
@@ -143,15 +273,34 @@ const SearchArtists = () => {
               </Card>
             ) : artists.length > 0 ? (
               <>
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-wrap items-center gap-2 mb-4">
                   <h2 className="text-xl font-semibold">
                     {artists.length} {artists.length === 1 ? "artista encontrado" : "artistas encontrados"}
                   </h2>
-                  {searchTerm && (
-                    <Badge variant="secondary">
-                      "{searchTerm}"
-                    </Badge>
-                  )}
+                  <div className="flex flex-wrap gap-2">
+                    {searchTerm && (
+                      <Badge variant="secondary">
+                        Nome: "{searchTerm}"
+                      </Badge>
+                    )}
+                    {filterCity && (
+                      <Badge variant="secondary">
+                        <MapPin className="w-3 h-3 mr-1" />
+                        {filterCity}
+                      </Badge>
+                    )}
+                    {filterStyle && (
+                      <Badge variant="secondary">
+                        <Music className="w-3 h-3 mr-1" />
+                        {musicStyles.find(s => s.value === filterStyle)?.label}
+                      </Badge>
+                    )}
+                    {filterLive === "true" && (
+                      <Badge variant="default" className="bg-green-500">
+                        Ao Vivo
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 {artists.map((artist) => (
                   <Card 
@@ -206,29 +355,29 @@ const SearchArtists = () => {
                   </Card>
                 ))}
               </>
-            ) : searchTerm ? (
+            ) : (
               <Card className="border-dashed">
                 <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                   <Search className="w-12 h-12 text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">
-                    Nenhum artista encontrado com "{searchTerm}"
+                    Nenhum artista encontrado com os filtros aplicados
                   </p>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Tente buscar por outro nome ou verifique a ortografia
+                    Tente ajustar os filtros ou limpar a busca
                   </p>
                 </CardContent>
               </Card>
-            ) : null}
+            )}
           </div>
         )}
         
-        {!hasSearched && !searchTerm && (
+        {!hasSearched && !searchTerm && !filterCity && !filterStyle && !filterLive && (
           <Card className="border-dashed">
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
               <Music className="w-16 h-16 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">Encontre artistas incríveis</h3>
               <p className="text-muted-foreground max-w-md">
-                Digite o nome ou as primeiras letras para ver sugestões em tempo real
+                Use os filtros acima para buscar artistas por nome, cidade, estilo musical ou disponibilidade
               </p>
             </CardContent>
           </Card>
