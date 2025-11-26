@@ -14,7 +14,6 @@ const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [userType, setUserType] = useState<"artist" | "client">("client");
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -35,7 +34,7 @@ const Auth = () => {
           data: {
             nome: name,
             cidade: city,
-            tipo: userType === "artist" ? "artista" : "cliente",
+            tipo: "artista",
           },
         },
       });
@@ -53,7 +52,7 @@ const Auth = () => {
           return;
         }
         
-        navigate(profile.tipo === "artista" ? "/painel" : "/home", { replace: true });
+        navigate("/painel", { replace: true });
       }
     } catch (error: any) {
       if (error.message?.includes("User already registered")) {
@@ -116,12 +115,7 @@ const Auth = () => {
         }
 
         toast.success("Login realizado com sucesso!");
-        
-        if (profile.tipo === "artista") {
-          navigate("/painel");
-        } else {
-          navigate("/home");
-        }
+        navigate("/painel");
       }
     } catch (error: any) {
       toast.error(error.message || "Erro ao fazer login");
@@ -141,24 +135,11 @@ const Auth = () => {
             </div>
           </div>
           <CardTitle className="text-3xl font-bold text-gradient">Toca+</CardTitle>
-          <CardDescription>Conecte-se com artistas e música ao vivo</CardDescription>
+          <CardDescription>Área exclusiva para artistas</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="mb-6 flex gap-2">
-            <Button
-              variant={userType === "client" ? "default" : "outline"}
-              className="flex-1"
-              onClick={() => setUserType("client")}
-            >
-              Sou Cliente
-            </Button>
-            <Button
-              variant={userType === "artist" ? "default" : "outline"}
-              className="flex-1"
-              onClick={() => setUserType("artist")}
-            >
-              Sou Artista
-            </Button>
+          <div className="mb-4 p-3 bg-muted/50 rounded-lg text-center text-sm text-muted-foreground">
+            💡 Clientes não precisam de cadastro! Acesse diretamente o perfil dos artistas.
           </div>
 
           <Tabs defaultValue="signin" className="w-full">
