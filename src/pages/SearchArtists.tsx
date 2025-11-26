@@ -26,9 +26,9 @@ const SearchArtists = () => {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [filterCity, setFilterCity] = useState<string>("");
-  const [filterStyle, setFilterStyle] = useState<string>("");
-  const [filterLive, setFilterLive] = useState<string>("");
+  const [filterCity, setFilterCity] = useState<string>("all");
+  const [filterStyle, setFilterStyle] = useState<string>("all");
+  const [filterLive, setFilterLive] = useState<string>("all");
   const [cities, setCities] = useState<string[]>([]);
 
   // Carregar cidades disponíveis
@@ -67,12 +67,12 @@ const SearchArtists = () => {
       }
 
       // Aplicar filtro de cidade
-      if (city) {
+      if (city && city !== "all") {
         query = query.eq("cidade", city);
       }
 
       // Aplicar filtro de estilo musical
-      if (style && style !== "") {
+      if (style && style !== "all") {
         query = query.eq("estilo_musical", style as any);
       }
 
@@ -114,9 +114,9 @@ const SearchArtists = () => {
 
   const clearFilters = () => {
     setSearchTerm("");
-    setFilterCity("");
-    setFilterStyle("");
-    setFilterLive("");
+    setFilterCity("all");
+    setFilterStyle("all");
+    setFilterLive("all");
     setArtists([]);
     setHasSearched(false);
   };
@@ -205,7 +205,7 @@ const SearchArtists = () => {
                     <SelectValue placeholder="Todas as cidades" />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
-                    <SelectItem value="">Todas as cidades</SelectItem>
+                    <SelectItem value="all">Todas as cidades</SelectItem>
                     {cities.map((city) => (
                       <SelectItem key={city} value={city}>
                         {city}
@@ -222,7 +222,7 @@ const SearchArtists = () => {
                     <SelectValue placeholder="Todos os estilos" />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
-                    <SelectItem value="">Todos os estilos</SelectItem>
+                    <SelectItem value="all">Todos os estilos</SelectItem>
                     {musicStyles.map((style) => (
                       <SelectItem key={style.value} value={style.value}>
                         {style.label}
@@ -239,7 +239,7 @@ const SearchArtists = () => {
                     <SelectValue placeholder="Todas" />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
-                    <SelectItem value="">Todas</SelectItem>
+                    <SelectItem value="all">Todas</SelectItem>
                     <SelectItem value="true">Ao Vivo</SelectItem>
                     <SelectItem value="false">Offline</SelectItem>
                   </SelectContent>
@@ -247,7 +247,7 @@ const SearchArtists = () => {
               </div>
             </div>
 
-            {(filterCity || filterStyle || filterLive) && (
+            {(filterCity !== "all" || filterStyle !== "all" || filterLive !== "all") && (
               <Button
                 variant="outline"
                 size="sm"
@@ -260,7 +260,7 @@ const SearchArtists = () => {
           </CardContent>
         </Card>
 
-        {(hasSearched || filterCity || filterStyle || filterLive) && (
+        {(hasSearched || filterCity !== "all" || filterStyle !== "all" || filterLive !== "all") && (
           <div className="space-y-4">
             {loading && artists.length === 0 ? (
               <Card className="border-dashed">
@@ -283,13 +283,13 @@ const SearchArtists = () => {
                         Nome: "{searchTerm}"
                       </Badge>
                     )}
-                    {filterCity && (
+                    {filterCity !== "all" && (
                       <Badge variant="secondary">
                         <MapPin className="w-3 h-3 mr-1" />
                         {filterCity}
                       </Badge>
                     )}
-                    {filterStyle && (
+                    {filterStyle !== "all" && (
                       <Badge variant="secondary">
                         <Music className="w-3 h-3 mr-1" />
                         {musicStyles.find(s => s.value === filterStyle)?.label}
@@ -371,7 +371,7 @@ const SearchArtists = () => {
           </div>
         )}
         
-        {!hasSearched && !searchTerm && !filterCity && !filterStyle && !filterLive && (
+        {!hasSearched && !searchTerm && filterCity === "all" && filterStyle === "all" && filterLive === "all" && (
           <Card className="border-dashed">
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
               <Music className="w-16 h-16 text-muted-foreground mb-4" />
