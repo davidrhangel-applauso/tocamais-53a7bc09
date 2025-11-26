@@ -72,20 +72,26 @@ serve(async (req: Request) => {
       notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-webhook`,
     };
 
-    // Se o artista tem Mercado Pago vinculado, adicionar split de pagamento
+    // Se o artista tem Mercado Pago vinculado, usar split de pagamento direto
     if (artista.mercadopago_seller_id) {
-      console.log('Adicionando split de pagamento para seller:', artista.mercadopago_seller_id);
+      console.log('Configurando split payment para seller:', artista.mercadopago_seller_id);
       
-      paymentData.marketplace = artista.mercadopago_seller_id;
-      paymentData.application_fee = taxaPlataforma; // 10% para a plataforma
+      // Usar headers de marketplace para split payment
+      paymentData.marketplace = 'NONE'; // Indica que não é marketplace, mas split direto
+      paymentData.marketplace_fee = taxaPlataforma; // Taxa da plataforma (10%)
       
-      console.log('Split configurado:', {
-        marketplace: paymentData.marketplace,
-        application_fee: paymentData.application_fee,
-        valor_para_artista: valorLiquidoArtista,
+      // Configurar o collector (quem recebe) como o artista
+      paymentData.collector_id = parseInt(artista.mercadopago_seller_id);
+      
+      console.log('Split payment configurado:', {
+        marketplace_fee: paymentData.marketplace_fee,
+        collector_id: paymentData.collector_id,
+        valor_total: valorTotal,
+        valor_artista_recebe: valorLiquidoArtista,
+        valor_plataforma_recebe: taxaPlataforma,
       });
     } else {
-      console.log('Artista não tem Mercado Pago vinculado, pagamento direto sem split');
+      console.log('Artista sem Mercado Pago vinculado - pagamento vai direto para plataforma');
     }
 
     console.log('Calling Mercado Pago API...');
