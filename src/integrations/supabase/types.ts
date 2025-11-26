@@ -17,13 +17,15 @@ export type Database = {
       gorjetas: {
         Row: {
           artista_id: string
-          cliente_id: string
+          cliente_id: string | null
+          cliente_nome: string | null
           created_at: string | null
           expires_at: string | null
           id: string
           payment_id: string | null
           qr_code: string | null
           qr_code_base64: string | null
+          session_id: string | null
           status_pagamento: string | null
           taxa_plataforma: number
           valor: number
@@ -31,13 +33,15 @@ export type Database = {
         }
         Insert: {
           artista_id: string
-          cliente_id: string
+          cliente_id?: string | null
+          cliente_nome?: string | null
           created_at?: string | null
           expires_at?: string | null
           id?: string
           payment_id?: string | null
           qr_code?: string | null
           qr_code_base64?: string | null
+          session_id?: string | null
           status_pagamento?: string | null
           taxa_plataforma: number
           valor: number
@@ -45,13 +49,15 @@ export type Database = {
         }
         Update: {
           artista_id?: string
-          cliente_id?: string
+          cliente_id?: string | null
+          cliente_nome?: string | null
           created_at?: string | null
           expires_at?: string | null
           id?: string
           payment_id?: string | null
           qr_code?: string | null
           qr_code_base64?: string | null
+          session_id?: string | null
           status_pagamento?: string | null
           taxa_plataforma?: number
           valor?: number
@@ -155,31 +161,37 @@ export type Database = {
       pedidos: {
         Row: {
           artista_id: string
-          cliente_id: string
+          cliente_id: string | null
+          cliente_nome: string | null
           created_at: string | null
           id: string
           mensagem: string | null
           musica: string
+          session_id: string | null
           status: string | null
           valor: number | null
         }
         Insert: {
           artista_id: string
-          cliente_id: string
+          cliente_id?: string | null
+          cliente_nome?: string | null
           created_at?: string | null
           id?: string
           mensagem?: string | null
           musica: string
+          session_id?: string | null
           status?: string | null
           valor?: number | null
         }
         Update: {
           artista_id?: string
-          cliente_id?: string
+          cliente_id?: string | null
+          cliente_nome?: string | null
           created_at?: string | null
           id?: string
           mensagem?: string | null
           musica?: string
+          session_id?: string | null
           status?: string | null
           valor?: number | null
         }
