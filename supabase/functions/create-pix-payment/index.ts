@@ -33,6 +33,12 @@ serve(async (req: Request) => {
       throw new Error('ID do artista é obrigatório');
     }
 
+    // Validar que artista_id é um UUID válido
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(artista_id)) {
+      throw new Error('ID do artista inválido');
+    }
+
     // Validar que temos identificação (cliente_id ou session_id)
     if (!cliente_id && !session_id) {
       throw new Error('É necessário fornecer cliente_id ou session_id');
@@ -47,12 +53,17 @@ serve(async (req: Request) => {
     // Buscar informações do artista incluindo mercadopago_seller_id
     const { data: artista, error: artistaError } = await supabase
       .from('profiles')
-      .select('nome, id, mercadopago_seller_id')
+      .select('nome, id, mercadopago_seller_id, tipo')
       .eq('id', artista_id)
       .single();
 
     if (artistaError || !artista) {
       throw new Error('Artista não encontrado');
+    }
+
+    // Validar que o perfil é realmente um artista
+    if (artista.tipo !== 'artista') {
+      throw new Error('Perfil não é um artista');
     }
 
     // Criar pagamento no Mercado Pago
