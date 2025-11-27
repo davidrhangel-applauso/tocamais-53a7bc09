@@ -29,8 +29,8 @@ interface AppSidebarProps {
 
 const menuItems = [
   { title: "Dashboard", url: "/painel?tab=analytics", icon: Home },
-  { title: "Pedidos Pendentes", url: "/painel?tab=pendentes", icon: Music },
-  { title: "Pedidos Aceitos", url: "/painel?tab=aceitos", icon: Music },
+  { title: "Repertório", url: "/painel?tab=repertorio", icon: Music },
+  { title: "Pedidos", url: "/painel?tab=pendentes", icon: Music },
   { title: "Gorjetas", url: "/painel?tab=gorjetas", icon: Heart },
   { title: "Analytics", url: "/painel?tab=analytics", icon: BarChart3 },
 ];
