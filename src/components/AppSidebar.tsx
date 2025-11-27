@@ -1,4 +1,4 @@
-import { Home, Music, Heart, BarChart3, Settings, MessageCircle, LogOut } from "lucide-react";
+import { Home, Music, Heart, BarChart3, Settings, MessageCircle, LogOut, Clock, CheckCircle, XCircle, CircleCheck, ChevronDown } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -13,7 +13,11 @@ import {
   SidebarHeader,
   SidebarFooter,
   useSidebar,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,9 +34,14 @@ interface AppSidebarProps {
 const menuItems = [
   { title: "Dashboard", url: "/painel?tab=analytics", icon: Home },
   { title: "Repertório", url: "/painel?tab=repertorio", icon: Music },
-  { title: "Pedidos", url: "/painel?tab=pendentes", icon: Music },
   { title: "Gorjetas", url: "/painel?tab=gorjetas", icon: Heart },
-  { title: "Analytics", url: "/painel?tab=analytics", icon: BarChart3 },
+];
+
+const pedidosItems = [
+  { title: "Pendentes", url: "/painel?tab=pendentes", icon: Clock },
+  { title: "Aceitos", url: "/painel?tab=aceitos", icon: CheckCircle },
+  { title: "Concluídos", url: "/painel?tab=concluidos", icon: CircleCheck },
+  { title: "Recusados", url: "/painel?tab=recusados", icon: XCircle },
 ];
 
 const secondaryItems = [
@@ -101,6 +110,37 @@ export function AppSidebar({ artistName, artistPhoto, ativoAoVivo }: AppSidebarP
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              
+              {/* Pedidos com sub-menu */}
+              <Collapsible defaultOpen className="group/collapsible">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton className="hover:bg-muted/50">
+                      <BarChart3 className="w-4 h-4" />
+                      {!collapsed && <span>Pedidos</span>}
+                      {!collapsed && <ChevronDown className="ml-auto w-4 h-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />}
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {pedidosItems.map((item) => (
+                        <SidebarMenuSubItem key={item.title}>
+                          <SidebarMenuSubButton asChild>
+                            <NavLink 
+                              to={item.url}
+                              className="hover:bg-muted/50"
+                              activeClassName="bg-muted text-primary font-medium"
+                            >
+                              <item.icon className="w-4 h-4" />
+                              <span>{item.title}</span>
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
