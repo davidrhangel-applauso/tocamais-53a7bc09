@@ -23,6 +23,8 @@ export type Database = {
           expires_at: string | null
           id: string
           payment_id: string | null
+          pedido_mensagem: string | null
+          pedido_musica: string | null
           qr_code: string | null
           qr_code_base64: string | null
           session_id: string | null
@@ -39,6 +41,8 @@ export type Database = {
           expires_at?: string | null
           id?: string
           payment_id?: string | null
+          pedido_mensagem?: string | null
+          pedido_musica?: string | null
           qr_code?: string | null
           qr_code_base64?: string | null
           session_id?: string | null
@@ -55,6 +59,8 @@ export type Database = {
           expires_at?: string | null
           id?: string
           payment_id?: string | null
+          pedido_mensagem?: string | null
+          pedido_musica?: string | null
           qr_code?: string | null
           qr_code_base64?: string | null
           session_id?: string | null

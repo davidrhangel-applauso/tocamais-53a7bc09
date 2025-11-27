@@ -12,6 +12,8 @@ interface PaymentRequest {
   cliente_id?: string | null;
   cliente_nome?: string | null;
   session_id?: string;
+  pedido_musica?: string | null;
+  pedido_mensagem?: string | null;
 }
 
 serve(async (req: Request) => {
@@ -20,9 +22,9 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { valor, artista_id, cliente_id, cliente_nome, session_id }: PaymentRequest = await req.json();
+    const { valor, artista_id, cliente_id, cliente_nome, session_id, pedido_musica, pedido_mensagem }: PaymentRequest = await req.json();
 
-    console.log('Creating Pix payment:', { valor, artista_id, cliente_id, cliente_nome, session_id });
+    console.log('Creating Pix payment:', { valor, artista_id, cliente_id, cliente_nome, session_id, pedido_musica, pedido_mensagem });
 
     // Validações básicas
     if (!valor || valor <= 0) {
@@ -155,6 +157,8 @@ serve(async (req: Request) => {
         qr_code: mpData.point_of_interaction?.transaction_data?.qr_code || '',
         qr_code_base64: mpData.point_of_interaction?.transaction_data?.qr_code_base64 || '',
         expires_at: expiresAt,
+        pedido_musica: pedido_musica || null,
+        pedido_mensagem: pedido_mensagem || null,
       })
       .select()
       .single();
