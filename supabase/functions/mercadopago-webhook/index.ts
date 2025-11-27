@@ -6,6 +6,66 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+async function verifySignature(req: Request, body: any): Promise<boolean> {
+  const signature = req.headers.get('x-signature');
+  const requestId = req.headers.get('x-request-id');
+  
+  if (!signature || !requestId) {
+    console.error('Missing signature headers');
+    return false;
+  }
+
+  const secret = Deno.env.get('MERCADO_PAGO_WEBHOOK_SECRET');
+  if (!secret) {
+    console.error('MERCADO_PAGO_WEBHOOK_SECRET not configured');
+    return false;
+  }
+
+  try {
+    // Mercado Pago envia: ts=timestamp,v1=hash
+    const parts = signature.split(',');
+    const ts = parts.find(p => p.startsWith('ts='))?.split('=')[1];
+    const hash = parts.find(p => p.startsWith('v1='))?.split('=')[1];
+    
+    if (!ts || !hash) {
+      console.error('Invalid signature format');
+      return false;
+    }
+
+    // Criar string de manifest: id;request-id;ts
+    const dataId = body.data?.id || body.id;
+    const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
+    
+    // Calcular HMAC SHA256
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(secret);
+    const messageData = encoder.encode(manifest);
+    
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    const signature_bytes = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+    const calculatedHash = Array.from(new Uint8Array(signature_bytes))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    const isValid = calculatedHash === hash;
+    if (!isValid) {
+      console.error('Signature verification failed');
+    }
+    
+    return isValid;
+  } catch (error) {
+    console.error('Error verifying signature:', error);
+    return false;
+  }
+}
+
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -14,6 +74,16 @@ serve(async (req: Request) => {
   try {
     const body = await req.json();
     console.log('Webhook received:', JSON.stringify(body));
+
+    // Verificar assinatura
+    const isValidSignature = await verifySignature(req, body);
+    if (!isValidSignature) {
+      console.error('Invalid webhook signature');
+      return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
 
     // Mercado Pago envia notificações de diferentes tipos
     // Apenas processar notificações do tipo 'payment'
