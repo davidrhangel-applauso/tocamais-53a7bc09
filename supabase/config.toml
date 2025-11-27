@@ -3,9 +3,6 @@ project_id = "tnhbijlskoffgoocftfq"
 [functions.mercadopago-webhook]
 verify_jwt = false
 
-[functions.approve-payment-demo]
-verify_jwt = false
-
 [functions.mercadopago-oauth-callback]
 verify_jwt = false
 
