@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Music, Heart, Instagram, Youtube, Music2, ExternalLink, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useProfilePermissions } from "@/hooks/useProfilePermissions";
@@ -89,6 +90,12 @@ interface Artist {
   ativo_ao_vivo: boolean;
 }
 
+interface Musica {
+  id: string;
+  titulo: string;
+  artista_original: string | null;
+}
+
 const ArtistProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -96,6 +103,8 @@ const ArtistProfile = () => {
   const [artist, setArtist] = useState<Artist | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [musicas, setMusicas] = useState<Musica[]>([]);
+  const [musicaCustomizada, setMusicaCustomizada] = useState(false);
   
   // Request form state
   const [musica, setMusica] = useState("");
@@ -143,6 +152,15 @@ const ArtistProfile = () => {
 
       if (error) throw error;
       setArtist(data);
+
+      // Buscar músicas do repertório
+      const { data: musicasData } = await supabase
+        .from("musicas_repertorio")
+        .select("*")
+        .eq("artista_id", id)
+        .order("titulo", { ascending: true });
+
+      setMusicas(musicasData || []);
     } catch (error: any) {
       toast.error("Erro ao carregar perfil do artista");
       navigate("/home");
@@ -391,15 +409,69 @@ const ArtistProfile = () => {
                   onChange={(e) => setClienteNomePedido(e.target.value)}
                 />
               </div>
-              <div>
-                <Label htmlFor="musica">Música *</Label>
-                <Input
-                  id="musica"
-                  placeholder="Nome da música ou artista"
-                  value={musica}
-                  onChange={(e) => setMusica(e.target.value)}
-                />
-              </div>
+              
+              {musicas.length > 0 && !musicaCustomizada ? (
+                <div>
+                  <Label htmlFor="musica-select">Escolha uma música do repertório *</Label>
+                  <Select value={musica} onValueChange={setMusica}>
+                    <SelectTrigger id="musica-select">
+                      <SelectValue placeholder="Selecione uma música" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {musicas.map((m) => (
+                        <SelectItem key={m.id} value={m.titulo}>
+                          <div className="flex flex-col">
+                            <span>{m.titulo}</span>
+                            {m.artista_original && (
+                              <span className="text-xs text-muted-foreground">
+                                {m.artista_original}
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="mt-1 px-0"
+                    onClick={() => {
+                      setMusicaCustomizada(true);
+                      setMusica("");
+                    }}
+                  >
+                    Ou digite outra música
+                  </Button>
+                </div>
+              ) : (
+                <div>
+                  <Label htmlFor="musica">
+                    Música * 
+                    {musicas.length > 0 && (
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="ml-2 h-auto p-0"
+                        onClick={() => {
+                          setMusicaCustomizada(false);
+                          setMusica("");
+                        }}
+                      >
+                        Ver repertório
+                      </Button>
+                    )}
+                  </Label>
+                  <Input
+                    id="musica"
+                    placeholder="Nome da música ou artista"
+                    value={musica}
+                    onChange={(e) => setMusica(e.target.value)}
+                  />
+                </div>
+              )}
               <div>
                 <Label htmlFor="mensagem">Mensagem (opcional)</Label>
                 <Textarea

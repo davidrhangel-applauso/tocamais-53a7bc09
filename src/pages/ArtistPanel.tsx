@@ -16,6 +16,7 @@ import NotificationBell from "@/components/NotificationBell";
 import { MercadoPagoLink } from "@/components/MercadoPagoLink";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import MusicRepertoire from "@/components/MusicRepertoire";
 
 interface Pedido {
   id: string;
@@ -598,7 +599,7 @@ const ArtistPanel = () => {
 
         {/* Tabs for Pedidos and Gorjetas */}
         <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="analytics">
               Dashboard
             </TabsTrigger>
@@ -616,6 +617,9 @@ const ArtistPanel = () => {
             </TabsTrigger>
             <TabsTrigger value="gorjetas">
               Gorjetas ({gorjetas.length})
+            </TabsTrigger>
+            <TabsTrigger value="repertorio">
+              Repertório
             </TabsTrigger>
           </TabsList>
 
@@ -903,6 +907,11 @@ const ArtistPanel = () => {
                 </Card>
               ))
             )}
+          </TabsContent>
+
+          {/* Repertório Musical */}
+          <TabsContent value="repertorio">
+            {artistId && <MusicRepertoire artistaId={artistId} />}
           </TabsContent>
         </Tabs>
           </main>
