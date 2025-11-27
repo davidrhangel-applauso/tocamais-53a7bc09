@@ -599,27 +599,27 @@ const ArtistPanel = () => {
 
         {/* Tabs for Pedidos and Gorjetas */}
         <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
-            <TabsTrigger value="analytics">
+          <TabsList className="inline-flex w-full justify-start overflow-x-auto">
+            <TabsTrigger value="analytics" className="whitespace-nowrap">
               Dashboard
             </TabsTrigger>
-            <TabsTrigger value="pendentes">
+            <TabsTrigger value="pendentes" className="whitespace-nowrap">
               Pendentes ({pedidosPendentes.length})
             </TabsTrigger>
-            <TabsTrigger value="aceitos">
+            <TabsTrigger value="aceitos" className="whitespace-nowrap">
               Aceitos ({pedidosAceitos.length})
             </TabsTrigger>
-            <TabsTrigger value="concluidos">
+            <TabsTrigger value="concluidos" className="whitespace-nowrap">
               Concluídos ({pedidosConcluidos.length})
             </TabsTrigger>
-            <TabsTrigger value="recusados">
+            <TabsTrigger value="recusados" className="whitespace-nowrap">
               Recusados ({pedidosRecusados.length})
             </TabsTrigger>
-            <TabsTrigger value="gorjetas">
+            <TabsTrigger value="gorjetas" className="whitespace-nowrap">
               Gorjetas ({gorjetas.length})
             </TabsTrigger>
-            <TabsTrigger value="repertorio">
-              Repertório
+            <TabsTrigger value="repertorio" className="whitespace-nowrap">
+              🎵 Repertório
             </TabsTrigger>
           </TabsList>
 
