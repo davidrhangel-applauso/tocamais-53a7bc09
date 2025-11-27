@@ -128,6 +128,41 @@ export type Database = {
           },
         ]
       }
+      musicas_repertorio: {
+        Row: {
+          artista_id: string
+          artista_original: string | null
+          created_at: string
+          id: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          artista_id: string
+          artista_original?: string | null
+          created_at?: string
+          id?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          artista_id?: string
+          artista_original?: string | null
+          created_at?: string
+          id?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "musicas_repertorio_artista_id_fkey"
+            columns: ["artista_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notificacoes: {
         Row: {
           created_at: string
