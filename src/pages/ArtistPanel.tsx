@@ -13,7 +13,6 @@ import { Music, Heart, Check, X, CheckCheck, Menu } from "lucide-react";
 import { toast } from "sonner";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 import NotificationBell from "@/components/NotificationBell";
-import DebugUserInfo from "@/components/DebugUserInfo";
 import { MercadoPagoLink } from "@/components/MercadoPagoLink";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -535,12 +534,6 @@ const ArtistPanel = () => {
           </header>
 
           <main className="flex-1 overflow-auto p-6">
-        <DebugUserInfo 
-          userId={artistId || undefined} 
-          userType="artista" 
-          profileExists={profileExists} 
-        />
-
         {/* Welcome and Live Status */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold mb-4">Olá, {artistName}! 👋</h2>
