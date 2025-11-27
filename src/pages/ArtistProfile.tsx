@@ -410,46 +410,46 @@ const ArtistProfile = () => {
                 />
               </div>
               
-              {musicas.length > 0 && !musicaCustomizada ? (
-                <div>
-                  <Label htmlFor="musica-select">Escolha uma música do repertório *</Label>
-                  <Select value={musica} onValueChange={setMusica}>
-                    <SelectTrigger id="musica-select">
-                      <SelectValue placeholder="Selecione uma música" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {musicas.map((m) => (
-                        <SelectItem key={m.id} value={m.titulo}>
-                          <div className="flex flex-col">
-                            <span>{m.titulo}</span>
-                            {m.artista_original && (
-                              <span className="text-xs text-muted-foreground">
-                                {m.artista_original}
-                              </span>
-                            )}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    type="button"
-                    variant="link"
-                    size="sm"
-                    className="mt-1 px-0"
-                    onClick={() => {
-                      setMusicaCustomizada(true);
-                      setMusica("");
-                    }}
-                  >
-                    Ou digite outra música
-                  </Button>
-                </div>
-              ) : (
-                <div>
-                  <Label htmlFor="musica">
-                    Música * 
-                    {musicas.length > 0 && (
+              {musicas.length > 0 ? (
+                !musicaCustomizada ? (
+                  <div>
+                    <Label htmlFor="musica-select">Escolha uma música do repertório *</Label>
+                    <Select value={musica} onValueChange={setMusica}>
+                      <SelectTrigger id="musica-select">
+                        <SelectValue placeholder="Selecione uma música" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {musicas.map((m) => (
+                          <SelectItem key={m.id} value={m.titulo}>
+                            <div className="flex flex-col">
+                              <span>{m.titulo}</span>
+                              {m.artista_original && (
+                                <span className="text-xs text-muted-foreground">
+                                  {m.artista_original}
+                                </span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="link"
+                      size="sm"
+                      className="mt-1 px-0"
+                      onClick={() => {
+                        setMusicaCustomizada(true);
+                        setMusica("");
+                      }}
+                    >
+                      Ou digite outra música
+                    </Button>
+                  </div>
+                ) : (
+                  <div>
+                    <Label htmlFor="musica">
+                      Música *
                       <Button
                         type="button"
                         variant="link"
@@ -462,14 +462,27 @@ const ArtistProfile = () => {
                       >
                         Ver repertório
                       </Button>
-                    )}
-                  </Label>
+                    </Label>
+                    <Input
+                      id="musica"
+                      placeholder="Nome da música ou artista"
+                      value={musica}
+                      onChange={(e) => setMusica(e.target.value)}
+                    />
+                  </div>
+                )
+              ) : (
+                <div>
+                  <Label htmlFor="musica">Música *</Label>
                   <Input
                     id="musica"
                     placeholder="Nome da música ou artista"
                     value={musica}
                     onChange={(e) => setMusica(e.target.value)}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    💡 O artista ainda não cadastrou seu repertório
+                  </p>
                 </div>
               )}
               <div>
