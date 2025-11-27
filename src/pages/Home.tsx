@@ -10,7 +10,6 @@ import { Music, Search, LogOut, Star, MessageCircle, Settings } from "lucide-rea
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import { waitForProfile } from "@/lib/auth-utils";
-import DebugUserInfo from "@/components/DebugUserInfo";
 
 interface Artist {
   id: string;
@@ -153,12 +152,6 @@ const Home = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <DebugUserInfo 
-          userId={userId} 
-          userType={userType} 
-          profileExists={profileExists} 
-        />
-
         <div className="mb-8">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
