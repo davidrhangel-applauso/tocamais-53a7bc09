@@ -69,12 +69,11 @@ export default function Conversations() {
       return;
     }
 
-    // Buscar pedidos com mensagens do artista
+    // Buscar todos os pedidos do artista
     const { data: pedidos } = await supabase
       .from("pedidos")
       .select("*")
       .eq("artista_id", currentUser)
-      .not("mensagem", "is", null)
       .order("created_at", { ascending: false });
 
     // Agrupar mensagens por conversa
@@ -113,26 +112,36 @@ export default function Conversations() {
       }
     }
 
-    // Adicionar pedidos com mensagens
+    // Adicionar pedidos musicais
     for (const pedido of pedidos || []) {
-      if (pedido.cliente_id && !conversationsMap.has(pedido.cliente_id)) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("nome, foto_url")
-          .eq("id", pedido.cliente_id)
-          .single();
+      const clientId = pedido.cliente_id || pedido.session_id || `anon-${pedido.id}`;
+      
+      if (!conversationsMap.has(clientId)) {
+        let profile = null;
+        if (pedido.cliente_id) {
+          const { data } = await supabase
+            .from("profiles")
+            .select("nome, foto_url")
+            .eq("id", pedido.cliente_id)
+            .single();
+          profile = data;
+        }
         
-        conversationsMap.set(pedido.cliente_id, {
-          userId: pedido.cliente_id,
+        const mensagemPedido = pedido.mensagem 
+          ? `🎵 ${pedido.musica} - ${pedido.mensagem}` 
+          : `🎵 ${pedido.musica}`;
+        
+        conversationsMap.set(clientId, {
+          userId: clientId,
           userName: profile?.nome || pedido.cliente_nome || "Cliente",
           userPhoto: profile?.foto_url || null,
-          lastMessage: `🎵 Pedido: ${pedido.musica} - ${pedido.mensagem}`,
+          lastMessage: mensagemPedido,
           lastMessageTime: pedido.created_at,
           unreadCount: 0,
           isPedido: true,
           pedidoId: pedido.id,
-          isPinned: pinnedConversations.has(pedido.cliente_id),
-          isImportant: importantConversations.has(pedido.cliente_id),
+          isPinned: pinnedConversations.has(clientId),
+          isImportant: importantConversations.has(clientId),
         });
       }
     }
