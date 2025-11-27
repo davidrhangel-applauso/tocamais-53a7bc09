@@ -63,7 +63,15 @@ const tipSchema = z.object({
     }, {
       message: "Use no máximo 2 casas decimais"
     }),
-  clienteNome: z.string().trim().optional()
+  clienteNome: z.string().trim().optional(),
+  pedidoMusica: z.string()
+    .trim()
+    .max(200, "Nome da música deve ter no máximo 200 caracteres")
+    .optional(),
+  pedidoMensagem: z.string()
+    .trim()
+    .max(500, "Dedicatória deve ter no máximo 500 caracteres")
+    .optional()
 });
 
 interface Artist {
@@ -98,6 +106,8 @@ const ArtistProfile = () => {
   // Tip form state
   const [valorGorjeta, setValorGorjeta] = useState("");
   const [clienteNomeGorjeta, setClienteNomeGorjeta] = useState("");
+  const [pedidoMusica, setPedidoMusica] = useState("");
+  const [pedidoMensagem, setPedidoMensagem] = useState("");
   const [tipLoading, setTipLoading] = useState(false);
   
   // Pix payment state
@@ -194,7 +204,9 @@ const ArtistProfile = () => {
     // Validate form
     const validationResult = tipSchema.safeParse({ 
       valor: valorGorjeta,
-      clienteNome: clienteNomeGorjeta || ""
+      clienteNome: clienteNomeGorjeta || "",
+      pedidoMusica: pedidoMusica || "",
+      pedidoMensagem: pedidoMensagem || ""
     });
     
     if (!validationResult.success) {
@@ -221,6 +233,8 @@ const ArtistProfile = () => {
           cliente_id: currentUserId || null,
           cliente_nome: validationResult.data.clienteNome || null,
           session_id: sessionId,
+          pedido_musica: validationResult.data.pedidoMusica || null,
+          pedido_mensagem: validationResult.data.pedidoMensagem || null,
         },
       });
 
@@ -244,6 +258,8 @@ const ArtistProfile = () => {
       toast.success("QR Code gerado! Escaneie para pagar");
       setValorGorjeta("");
       setClienteNomeGorjeta("");
+      setPedidoMusica("");
+      setPedidoMensagem("");
     } catch (error: any) {
       console.error('Error creating Pix payment:', error);
       toast.error("Erro ao gerar pagamento Pix: " + (error.message || 'Tente novamente'));
@@ -437,6 +453,36 @@ const ArtistProfile = () => {
                   onChange={(e) => setValorGorjeta(e.target.value)}
                 />
               </div>
+              
+              <Separator className="my-4" />
+              
+              {/* Campos opcionais de pedido */}
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-muted-foreground">
+                  Adicionar pedido musical (opcional)
+                </p>
+                <div>
+                  <Label htmlFor="pedidoMusica">Música</Label>
+                  <Input
+                    id="pedidoMusica"
+                    placeholder="Nome da música ou artista"
+                    value={pedidoMusica}
+                    onChange={(e) => setPedidoMusica(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="pedidoMensagem">Dedicatória</Label>
+                  <Textarea
+                    id="pedidoMensagem"
+                    placeholder="Adicione uma dedicatória especial..."
+                    value={pedidoMensagem}
+                    onChange={(e) => setPedidoMensagem(e.target.value)}
+                    rows={2}
+                  />
+                </div>
+              </div>
+              
+              <Separator className="my-4" />
               
               {/* Quick amounts */}
               <div className="space-y-2">
