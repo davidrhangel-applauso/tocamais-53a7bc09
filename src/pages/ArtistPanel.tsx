@@ -599,27 +599,27 @@ const ArtistPanel = () => {
 
         {/* Tabs for Pedidos and Gorjetas */}
         <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="space-y-6">
-          <TabsList className="inline-flex w-full justify-start overflow-x-auto">
+          <TabsList className="inline-flex w-full justify-start overflow-x-auto gap-1 pb-1">
             <TabsTrigger value="analytics" className="whitespace-nowrap">
-              Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="pendentes" className="whitespace-nowrap">
-              Pendentes ({pedidosPendentes.length})
-            </TabsTrigger>
-            <TabsTrigger value="aceitos" className="whitespace-nowrap">
-              Aceitos ({pedidosAceitos.length})
-            </TabsTrigger>
-            <TabsTrigger value="concluidos" className="whitespace-nowrap">
-              Concluídos ({pedidosConcluidos.length})
-            </TabsTrigger>
-            <TabsTrigger value="recusados" className="whitespace-nowrap">
-              Recusados ({pedidosRecusados.length})
-            </TabsTrigger>
-            <TabsTrigger value="gorjetas" className="whitespace-nowrap">
-              Gorjetas ({gorjetas.length})
+              📊 Dashboard
             </TabsTrigger>
             <TabsTrigger value="repertorio" className="whitespace-nowrap">
               🎵 Repertório
+            </TabsTrigger>
+            <TabsTrigger value="pendentes" className="whitespace-nowrap">
+              ⏳ Pendentes ({pedidosPendentes.length})
+            </TabsTrigger>
+            <TabsTrigger value="aceitos" className="whitespace-nowrap">
+              ✅ Aceitos ({pedidosAceitos.length})
+            </TabsTrigger>
+            <TabsTrigger value="concluidos" className="whitespace-nowrap">
+              ✔ Concluídos ({pedidosConcluidos.length})
+            </TabsTrigger>
+            <TabsTrigger value="recusados" className="whitespace-nowrap">
+              ❌ Recusados ({pedidosRecusados.length})
+            </TabsTrigger>
+            <TabsTrigger value="gorjetas" className="whitespace-nowrap">
+              💝 Gorjetas ({gorjetas.length})
             </TabsTrigger>
           </TabsList>
 
