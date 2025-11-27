@@ -34,6 +34,7 @@ interface AppSidebarProps {
 const menuItems = [
   { title: "Dashboard", url: "/painel?tab=analytics", icon: Home },
   { title: "Repertório", url: "/painel?tab=repertorio", icon: Music },
+  { title: "Gorjetas", url: "/painel?tab=gorjetas", icon: Heart },
 ];
 
 const pedidosItems = [
@@ -41,12 +42,6 @@ const pedidosItems = [
   { title: "Aceitos", url: "/painel?tab=aceitos", icon: CheckCircle },
   { title: "Concluídos", url: "/painel?tab=concluidos", icon: CircleCheck },
   { title: "Recusados", url: "/painel?tab=recusados", icon: XCircle },
-];
-
-const gorjetasItems = [
-  { title: "Todas", url: "/painel?tab=gorjetas", icon: Heart },
-  { title: "Aprovadas", url: "/painel?tab=gorjetas-aprovadas", icon: CheckCircle },
-  { title: "Pendentes", url: "/painel?tab=gorjetas-pendentes", icon: Clock },
 ];
 
 const secondaryItems = [
@@ -147,36 +142,6 @@ export function AppSidebar({ artistName, artistPhoto, ativoAoVivo }: AppSidebarP
                 </SidebarMenuItem>
               </Collapsible>
 
-              {/* Gorjetas com sub-menu */}
-              <Collapsible defaultOpen className="group/collapsible">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton className="hover:bg-muted/50">
-                      <Heart className="w-4 h-4" />
-                      {!collapsed && <span>Gorjetas</span>}
-                      {!collapsed && <ChevronDown className="ml-auto w-4 h-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />}
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {gorjetasItems.map((item) => (
-                        <SidebarMenuSubItem key={item.title}>
-                          <SidebarMenuSubButton asChild>
-                            <NavLink 
-                              to={item.url}
-                              className="hover:bg-muted/50"
-                              activeClassName="bg-muted text-primary font-medium"
-                            >
-                              <item.icon className="w-4 h-4" />
-                              <span>{item.title}</span>
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
