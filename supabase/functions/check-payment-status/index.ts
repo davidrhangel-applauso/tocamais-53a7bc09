@@ -19,6 +19,12 @@ serve(async (req: Request) => {
       throw new Error('gorjeta_id é obrigatório');
     }
 
+    // Validar que gorjetaId é um UUID válido
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(gorjetaId)) {
+      throw new Error('gorjeta_id inválido');
+    }
+
     console.log('Checking payment status for gorjeta:', gorjetaId);
 
     // Inicializar Supabase client
