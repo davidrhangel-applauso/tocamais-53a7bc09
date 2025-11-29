@@ -18,6 +18,7 @@ import { useSessionId } from "@/hooks/useSessionId";
 import { z } from "zod";
 import { PixPaymentDialog } from "@/components/PixPaymentDialog";
 import { useMercadoPago } from "@/hooks/useMercadoPago";
+import { validarCPF, formatarCPF, limparCPF } from "@/lib/cpf-utils";
 
 // Validation schema for song requests
 const songRequestSchema = z.object({
@@ -65,7 +66,16 @@ const tipSchema = z.object({
     }, {
       message: "Use no máximo 2 casas decimais"
     }),
-  clienteNome: z.string().trim().optional(),
+  clienteNome: z.string()
+    .trim()
+    .min(1, "Por favor, digite seu nome")
+    .max(100, "Nome deve ter no máximo 100 caracteres"),
+  clienteCpf: z.string()
+    .trim()
+    .min(1, "CPF é obrigatório")
+    .refine((cpf) => validarCPF(cpf), {
+      message: "CPF inválido"
+    }),
   pedidoMusica: z.string()
     .trim()
     .max(200, "Nome da música deve ter no máximo 200 caracteres")
@@ -118,6 +128,7 @@ const ArtistProfile = () => {
   // Tip form state
   const [valorGorjeta, setValorGorjeta] = useState("");
   const [clienteNomeGorjeta, setClienteNomeGorjeta] = useState("");
+  const [clienteCpfGorjeta, setClienteCpfGorjeta] = useState("");
   const [pedidoMusica, setPedidoMusica] = useState("");
   const [pedidoMensagem, setPedidoMensagem] = useState("");
   const [tipLoading, setTipLoading] = useState(false);
@@ -225,7 +236,8 @@ const ArtistProfile = () => {
     // Validate form
     const validationResult = tipSchema.safeParse({ 
       valor: valorGorjeta,
-      clienteNome: clienteNomeGorjeta || "",
+      clienteNome: clienteNomeGorjeta,
+      clienteCpf: clienteCpfGorjeta,
       pedidoMusica: pedidoMusica || "",
       pedidoMensagem: pedidoMensagem || ""
     });
@@ -252,7 +264,8 @@ const ArtistProfile = () => {
           valor,
           artista_id: id,
           cliente_id: currentUserId || null,
-          cliente_nome: validationResult.data.clienteNome || null,
+          cliente_nome: validationResult.data.clienteNome,
+          cliente_cpf: limparCPF(validationResult.data.clienteCpf),
           session_id: sessionId,
           pedido_musica: validationResult.data.pedidoMusica || null,
           pedido_mensagem: validationResult.data.pedidoMensagem || null,
@@ -280,6 +293,7 @@ const ArtistProfile = () => {
       toast.success("QR Code gerado! Escaneie para pagar");
       setValorGorjeta("");
       setClienteNomeGorjeta("");
+      setClienteCpfGorjeta("");
       setPedidoMusica("");
       setPedidoMensagem("");
     } catch (error: any) {
@@ -522,13 +536,26 @@ const ArtistProfile = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="clienteNomeGorjeta">Seu nome (opcional)</Label>
+                <Label htmlFor="clienteNomeGorjeta">Seu nome *</Label>
                 <Input
                   id="clienteNomeGorjeta"
                   placeholder="Ex: Maria"
                   value={clienteNomeGorjeta}
                   onChange={(e) => setClienteNomeGorjeta(e.target.value)}
                 />
+              </div>
+              <div>
+                <Label htmlFor="clienteCpfGorjeta">CPF *</Label>
+                <Input
+                  id="clienteCpfGorjeta"
+                  placeholder="000.000.000-00"
+                  value={clienteCpfGorjeta}
+                  onChange={(e) => setClienteCpfGorjeta(formatarCPF(e.target.value))}
+                  maxLength={14}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Necessário para melhor pontuação no Mercado Pago
+                </p>
               </div>
               <div>
                 <Label htmlFor="valor">Valor (R$) *</Label>
