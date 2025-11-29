@@ -96,13 +96,6 @@ serve(async (req: Request) => {
       notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-webhook`,
     };
 
-    // Adicionar additional_info com device_id se disponível
-    if (device_id) {
-      paymentData.additional_info = {
-        device: device_id, // Device ID para tracking
-      };
-    }
-
     // Se o artista tem Mercado Pago vinculado, usar split de pagamento direto
     if (artista.mercadopago_seller_id) {
       console.log('Configurando split payment para seller:', artista.mercadopago_seller_id);
