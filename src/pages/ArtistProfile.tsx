@@ -17,6 +17,7 @@ import { useProfilePermissions } from "@/hooks/useProfilePermissions";
 import { useSessionId } from "@/hooks/useSessionId";
 import { z } from "zod";
 import { PixPaymentDialog } from "@/components/PixPaymentDialog";
+import { useMercadoPago } from "@/hooks/useMercadoPago";
 
 // Validation schema for song requests
 const songRequestSchema = z.object({
@@ -100,6 +101,7 @@ const ArtistProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const sessionId = useSessionId();
+  const { deviceId } = useMercadoPago();
   const [artist, setArtist] = useState<Artist | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -254,6 +256,7 @@ const ArtistProfile = () => {
           session_id: sessionId,
           pedido_musica: validationResult.data.pedidoMusica || null,
           pedido_mensagem: validationResult.data.pedidoMensagem || null,
+          device_id: deviceId,
         },
       });
 

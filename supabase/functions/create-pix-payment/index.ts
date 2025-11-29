@@ -14,6 +14,7 @@ interface PaymentRequest {
   session_id?: string;
   pedido_musica?: string | null;
   pedido_mensagem?: string | null;
+  device_id?: string | null;
 }
 
 serve(async (req: Request) => {
@@ -22,9 +23,9 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { valor, artista_id, cliente_id, cliente_nome, session_id, pedido_musica, pedido_mensagem }: PaymentRequest = await req.json();
+    const { valor, artista_id, cliente_id, cliente_nome, session_id, pedido_musica, pedido_mensagem, device_id }: PaymentRequest = await req.json();
 
-    console.log('Creating Pix payment:', { valor, artista_id, cliente_id, cliente_nome, session_id, pedido_musica, pedido_mensagem });
+    console.log('Creating Pix payment:', { valor, artista_id, cliente_id, cliente_nome, session_id, pedido_musica, pedido_mensagem, device_id });
 
     // Validações básicas
     if (!valor || valor <= 0) {
@@ -88,9 +89,40 @@ serve(async (req: Request) => {
       payment_method_id: 'pix',
       payer: {
         email: 'cliente@example.com', // Email genérico
+        first_name: cliente_nome || 'Cliente',
+        last_name: 'Anônimo',
       },
+      items: [{
+        id: 'gorjeta',
+        title: `Gorjeta para ${artista.nome}`,
+        description: pedido_musica ? `Pedido: ${pedido_musica}` : 'Gorjeta musical',
+        category_id: 'art', // Categoria de entretenimento/arte
+        quantity: 1,
+        unit_price: valorTotal,
+      }],
       notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-webhook`,
     };
+
+    // Adicionar additional_info se temos device_id
+    if (device_id) {
+      paymentData.additional_info = {
+        items: [{
+          id: 'gorjeta',
+          title: `Gorjeta para ${artista.nome}`,
+          description: pedido_musica ? `Pedido: ${pedido_musica}` : 'Gorjeta musical',
+          category_id: 'art',
+          quantity: 1,
+          unit_price: valorTotal,
+        }],
+        payer: {
+          first_name: cliente_nome || 'Cliente',
+          last_name: 'Anônimo',
+        },
+      };
+      
+      // Adicionar device_id ao payer
+      paymentData.payer.device_id = device_id;
+    }
 
     // Se o artista tem Mercado Pago vinculado, usar split de pagamento direto
     if (artista.mercadopago_seller_id) {

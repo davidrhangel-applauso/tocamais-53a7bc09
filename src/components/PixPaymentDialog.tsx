@@ -172,36 +172,6 @@ export const PixPaymentDialog = ({
 
   const statusInfo = getStatusMessage();
 
-  const handleDemoApproval = async () => {
-    try {
-      setChecking(true);
-      const { data, error } = await supabase.functions.invoke('approve-payment-demo', {
-        body: { gorjeta_id: gorjetaId },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data.success) {
-        setStatus('approved');
-        toast({
-          title: "Pagamento Aprovado (Demo)",
-          description: "Pagamento aprovado em modo de teste.",
-        });
-      }
-    } catch (error) {
-      console.error('Error approving payment:', error);
-      toast({
-        title: "Erro ao aprovar",
-        description: "Tente novamente",
-        variant: "destructive",
-      });
-    } finally {
-      setChecking(false);
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
