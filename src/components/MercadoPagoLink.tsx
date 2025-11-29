@@ -53,11 +53,24 @@ export function MercadoPagoLink({ userId }: MercadoPagoLinkProps) {
   };
 
   const handleLink = () => {
+    // Verificar se CLIENT_ID está configurado
+    const clientId = import.meta.env.VITE_MERCADO_PAGO_CLIENT_ID;
+    
+    if (!clientId) {
+      toast({
+        title: "Configuração Pendente",
+        description: "O Client ID do Mercado Pago ainda não foi configurado. Entre em contato com o suporte.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // URL de autorização do Mercado Pago
-    const clientId = import.meta.env.VITE_MERCADO_PAGO_CLIENT_ID || '4085949071616879';
     const redirectUri = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mercadopago-oauth-callback`;
     
     const authUrl = `https://auth.mercadopago.com.br/authorization?client_id=${clientId}&response_type=code&platform_id=mp&state=${userId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    
+    console.log('Redirecionando para OAuth do Mercado Pago:', authUrl);
     
     // Redirecionar para OAuth
     window.location.href = authUrl;
@@ -178,14 +191,44 @@ export function MercadoPagoLink({ userId }: MercadoPagoLinkProps) {
             {!testMode && (
               <Alert>
                 <Info className="h-4 w-4" />
-                <AlertDescription className="text-xs space-y-1">
-                  <p className="font-semibold">Para ativar o Split em Produção:</p>
-                  <ol className="list-decimal list-inside space-y-1 ml-2">
-                    <li>Acesse o painel de desenvolvedor do Mercado Pago</li>
-                    <li>Configure a Redirect URI: <code className="text-xs bg-muted px-1 py-0.5 rounded">https://tnhbijlskoffgoocftfq.supabase.co/functions/v1/mercadopago-oauth-callback</code></li>
-                    <li>Faça pagamentos de teste para aumentar a pontuação (73+ pontos)</li>
-                    <li>Ative a aplicação no modo produção</li>
+                <AlertDescription className="text-xs space-y-2">
+                  <p className="font-semibold text-sm">📋 Checklist para Ativar Split:</p>
+                  <ol className="list-decimal list-inside space-y-2 ml-2">
+                    <li>
+                      <strong>Criar Aplicação no Mercado Pago</strong>
+                      <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                        <li>Acesse: <a href="https://www.mercadopago.com.br/developers/panel" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Painel de Desenvolvedores</a></li>
+                        <li>Crie uma nova aplicação de tipo "Online payments"</li>
+                      </ul>
+                    </li>
+                    <li>
+                      <strong>Configurar Redirect URI</strong>
+                      <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                        <li>Nas configurações da aplicação, adicione:</li>
+                        <li><code className="text-xs bg-muted px-1 py-0.5 rounded block mt-1">https://tnhbijlskoffgoocftfq.supabase.co/functions/v1/mercadopago-oauth-callback</code></li>
+                      </ul>
+                    </li>
+                    <li>
+                      <strong>Ativar Modo Produção</strong>
+                      <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                        <li>Fazer pelo menos 5 pagamentos de teste</li>
+                        <li>Atingir 73+ pontos de qualidade</li>
+                        <li>Solicitar ativação em produção</li>
+                      </ul>
+                    </li>
+                    <li>
+                      <strong>Informar Client ID e Secret</strong>
+                      <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                        <li>Copie o Client ID e Client Secret da sua aplicação</li>
+                        <li>Entre em contato para configurar na plataforma</li>
+                      </ul>
+                    </li>
                   </ol>
+                  <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-950 rounded border border-yellow-200 dark:border-yellow-800">
+                    <p className="text-yellow-800 dark:text-yellow-200 font-medium">
+                      ⚠️ Importante: O split só funciona em modo produção. Use o Modo de Teste enquanto aguarda aprovação.
+                    </p>
+                  </div>
                 </AlertDescription>
               </Alert>
             )}
