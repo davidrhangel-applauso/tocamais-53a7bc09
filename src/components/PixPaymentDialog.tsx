@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Copy, Check, Loader2, XCircle, CheckCircle2, AlertCircle } from "lucide-react";
+import { Copy, Check, Loader2, XCircle, CheckCircle2, AlertCircle, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "./ui/alert";
@@ -132,6 +132,17 @@ export const PixPaymentDialog = ({
     }
   };
 
+  const handleShareWhatsApp = () => {
+    const message = encodeURIComponent(
+      `Realize o pagamento Pix usando este código:\n\n${qrCode}`
+    );
+    window.open(`https://wa.me/?text=${message}`, '_blank');
+    toast({
+      title: "Compartilhando no WhatsApp",
+      description: "Enviando código Pix...",
+    });
+  };
+
   const getStatusIcon = () => {
     switch (status) {
       case 'approved':
@@ -218,6 +229,16 @@ export const PixPaymentDialog = ({
                   </Button>
                 </div>
               </div>
+
+              {/* Botão Compartilhar WhatsApp */}
+              <Button
+                onClick={handleShareWhatsApp}
+                variant="outline"
+                className="w-full"
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                Compartilhar no WhatsApp
+              </Button>
 
               {/* Tempo Restante */}
               <div className="text-center">

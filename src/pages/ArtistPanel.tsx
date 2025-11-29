@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Music, Heart, Check, X, CheckCheck, Menu } from "lucide-react";
 import { toast } from "sonner";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
+import PaymentHistory from "@/components/PaymentHistory";
 import NotificationBell from "@/components/NotificationBell";
 import { MercadoPagoLink } from "@/components/MercadoPagoLink";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -41,6 +42,8 @@ interface Gorjeta {
   cliente_id: string | null;
   cliente_nome: string | null;
   status_pagamento: string;
+  pedido_musica: string | null;
+  pedido_mensagem: string | null;
   profiles: {
     nome: string;
     foto_url: string;
@@ -223,7 +226,6 @@ const ArtistPanel = () => {
       .from("gorjetas")
       .select("*")
       .eq("artista_id", artistId)
-      .eq("status_pagamento", "approved")
       .order("created_at", { ascending: false })
       .limit(50);
 
@@ -603,6 +605,9 @@ const ArtistPanel = () => {
             <TabsTrigger value="analytics" className="whitespace-nowrap">
               📊 Dashboard
             </TabsTrigger>
+            <TabsTrigger value="historico" className="whitespace-nowrap">
+              💰 Histórico de Pagamentos
+            </TabsTrigger>
             <TabsTrigger value="repertorio" className="whitespace-nowrap">
               🎵 Repertório
             </TabsTrigger>
@@ -629,6 +634,16 @@ const ArtistPanel = () => {
             
             {/* Mercado Pago Split Payment */}
             {artistId && <MercadoPagoLink userId={artistId} />}
+          </TabsContent>
+
+          {/* Histórico de Pagamentos */}
+          <TabsContent value="historico" className="space-y-6">
+            <PaymentHistory gorjetas={gorjetas} />
+          </TabsContent>
+
+          {/* Repertório */}
+          <TabsContent value="repertorio" className="space-y-6">
+            {artistId && <MusicRepertoire artistaId={artistId} />}
           </TabsContent>
 
           {/* Pedidos Pendentes */}
