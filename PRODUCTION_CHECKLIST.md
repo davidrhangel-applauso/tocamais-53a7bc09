@@ -7,6 +7,7 @@
 - [x] Autenticação implementada
 - [x] Sistema de gorjetas com Pix
 - [x] Secrets do Mercado Pago configurados
+- [x] **Client ID do Mercado Pago adicionado** ✨
 - [x] Split de pagamentos implementado
 - [x] CPF obrigatório para maximizar pontuação
 - [x] Webhook do Mercado Pago configurado
@@ -15,46 +16,56 @@
 
 ## 1. 🏦 Mercado Pago em Produção
 
-**Status**: ⚠️ Necessário ativar aplicação em produção
+**Status**: ⚠️ **PRÓXIMO PASSO CRÍTICO**
 
-### Passos:
-1. **Criar/Configurar Aplicação no Mercado Pago**
-   - Acesse: https://www.mercadopago.com.br/developers/panel
-   - Crie uma nova aplicação ou use uma existente
-   - Configure o **Redirect URI**:
-     ```
-     https://tnhbijlskoffgoocftfq.supabase.co/functions/v1/mercadopago-oauth-callback
-     ```
+### ✅ Passo 1.1: Client ID Configurado
+- [x] Client ID adicionado ao sistema
+- [x] Botão "Vincular Conta do Mercado Pago" já funciona
 
-2. **Ativar Modo Produção**
+### ⚠️ Passo 1.2: Configurar Redirect URI no Mercado Pago
+**FAÇA AGORA**: 
+1. Acesse: https://www.mercadopago.com.br/developers/panel/app
+2. Selecione sua aplicação
+3. Vá em **"Redirect URIs"** ou **"URLs de redirecionamento"**
+4. Adicione esta URL EXATA:
+   ```
+   https://tnhbijlskoffgoocftfq.supabase.co/functions/v1/mercadopago-oauth-callback
+   ```
+5. Salve as alterações
+
+### ⚠️ Passo 1.3: Verificar se Credenciais são de PRODUÇÃO
+**IMPORTANTE**: Confirme que os secrets foram configurados com credenciais de **PRODUÇÃO** (não Sandbox):
+
+1. No Mercado Pago, verifique se está em **"Credenciais de Produção"**
+2. Credenciais de produção começam com:
+   - Access Token: `APP_USR-` (não `TEST-`)
+   - Client ID: número longo
+   - Client Secret: string alfanumérica longa
+
+3. **Se você usou credenciais de TESTE/SANDBOX**, atualize os secrets:
+   - Vá em Settings → Cloud → Secrets
+   - Atualize com valores de PRODUÇÃO:
+     - `MERCADO_PAGO_ACCESS_TOKEN`
+     - `MERCADO_PAGO_CLIENT_ID`
+     - `MERCADO_PAGO_CLIENT_SECRET`
+     - `VITE_MERCADO_PAGO_CLIENT_ID`
+
+### ⏭️ Passo 1.4: Ativar Modo Produção (Depois dos testes)
    - No painel da aplicação, clique em "Ativar produção"
    - Complete os requisitos:
-     - ✅ Fazer 5-10 pagamentos de teste em produção
-     - ✅ Atingir 73+ pontos de qualidade (já otimizado!)
-     - ✅ Preencher dados da empresa
+     - Fazer 5-10 pagamentos de teste em produção
+     - Atingir 73+ pontos de qualidade (já otimizado!)
+     - Preencher dados da empresa
    - Aguarde aprovação (1-3 dias úteis)
 
-3. **Atualizar Credenciais de Produção**
-   - Copie as credenciais de **PRODUÇÃO** (não sandbox):
-     - Client ID
-     - Client Secret
-     - Access Token
-   
-   - Atualize os secrets no Lovable:
-     1. Vá em Settings → Cloud → Secrets
-     2. Atualize cada secret com os valores de produção:
-        - `MERCADO_PAGO_ACCESS_TOKEN`
-        - `MERCADO_PAGO_CLIENT_ID`
-        - `MERCADO_PAGO_CLIENT_SECRET`
-
-4. **Configurar Webhook** (se ainda não feito)
+### ⏭️ Passo 1.5: Configurar Webhook (se ainda não feito)
    - No Mercado Pago, vá em Configurações → Webhooks
    - Adicione a URL:
      ```
      https://tnhbijlskoffgoocftfq.supabase.co/functions/v1/mercadopago-webhook
      ```
    - Copie o **Secret** do webhook
-   - Adicione como secret `MERCADO_PAGO_WEBHOOK_SECRET` no Lovable
+   - Adicione como secret `MERCADO_PAGO_WEBHOOK_SECRET` no Lovable (se necessário)
 
 ---
 
@@ -217,17 +228,13 @@ Se quiser usar seu próprio domínio (ex: `minhaapp.com.br`):
 ## 📋 Resumo: Ordem de Execução
 
 ```
-1. ✅ Secrets já configurados
+1. ✅ Client ID configurado
 
-2. 🏦 Ativar Mercado Pago em produção
-   ├─ Criar aplicação
-   ├─ Configurar Redirect URI
-   ├─ Fazer pagamentos de teste
-   ├─ Atingir 73+ pontos
-   └─ Aguardar aprovação
+2. ⚠️ **AGORA**: Configurar Redirect URI no Mercado Pago
+   └─ https://tnhbijlskoffgoocftfq.supabase.co/functions/v1/mercadopago-oauth-callback
 
-3. 🔄 Atualizar credenciais para produção
-   └─ Atualizar secrets com valores reais
+3. ⚠️ **AGORA**: Verificar se secrets são de PRODUÇÃO
+   └─ Access Token deve começar com APP_USR- (não TEST-)
 
 4. 🚀 Publicar o frontend
    └─ Clicar em "Publish" → "Update"
