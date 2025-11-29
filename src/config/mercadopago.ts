@@ -8,9 +8,7 @@
  */
 
 export const MERCADO_PAGO_CONFIG = {
-  // TODO: Substitua pelo seu Client ID real do Mercado Pago
-  // Exemplo: "1234567890123456"
-  clientId: "YOUR_CLIENT_ID_HERE",
+  clientId: "8365357642150667",
   
   // URL de redirecionamento após OAuth (configurado no Mercado Pago)
   redirectUri: "https://tnhbijlskoffgoocftfq.supabase.co/functions/v1/mercadopago-oauth-callback",
