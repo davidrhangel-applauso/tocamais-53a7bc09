@@ -1,0 +1,17 @@
+/**
+ * Configurações do Mercado Pago
+ * 
+ * IMPORTANTE: O Client ID é uma identificação pública da aplicação
+ * e é seguro expô-lo no frontend. Ele é usado apenas para iniciar
+ * o fluxo OAuth. O Client Secret (sensível) permanece protegido
+ * nos Secrets do Cloud.
+ */
+
+export const MERCADO_PAGO_CONFIG = {
+  // TODO: Substitua pelo seu Client ID real do Mercado Pago
+  // Exemplo: "1234567890123456"
+  clientId: "YOUR_CLIENT_ID_HERE",
+  
+  // URL de redirecionamento após OAuth (configurado no Mercado Pago)
+  redirectUri: "https://tnhbijlskoffgoocftfq.supabase.co/functions/v1/mercadopago-oauth-callback",
+};
