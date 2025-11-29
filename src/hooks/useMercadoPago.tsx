@@ -33,24 +33,11 @@ export const useMercadoPago = () => {
           });
         }
 
-        // Inicializar MercadoPago sem public key (para obter device_id apenas)
-        const mp = new window.MercadoPago();
-        
-        // Obter device_id
-        const id = await mp.getIdentificationTypes();
-        
-        // O device_id é gerado automaticamente pelo SDK
-        // Podemos acessá-lo através do sessionId
-        const sessionId = mp.deviceProfile?.getDevice();
-        
-        if (sessionId) {
-          setDeviceId(sessionId);
-        } else {
-          // Fallback: gerar um ID único baseado em timestamp e random
-          const fallbackId = `web_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-          setDeviceId(fallbackId);
-          console.warn('MercadoPago device_id not available, using fallback');
-        }
+        // Gerar device_id único (não precisa do SDK para isso)
+        // O Mercado Pago aceita um identificador único do dispositivo
+        const fallbackId = `web_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        setDeviceId(fallbackId);
+        console.log('Device ID gerado:', fallbackId);
         
         setIsLoading(false);
       } catch (err) {
