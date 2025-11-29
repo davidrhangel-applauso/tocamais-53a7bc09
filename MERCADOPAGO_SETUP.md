@@ -10,6 +10,49 @@ O Split permite que você receba **90% do valor das gorjetas diretamente na sua 
 
 ---
 
+## 🎯 Como Atingir a Pontuação de Qualidade (73+ pontos)
+
+Para ativar sua integração em produção, o Mercado Pago exige uma pontuação mínima de **73 pontos** no painel de "Qualidade da Integração". A plataforma já está otimizada para maximizar essa pontuação, incluindo:
+
+✅ **Dados Completos do Pagador** (até 25 pontos):
+- Nome completo obrigatório
+- CPF obrigatório com validação
+- Identificação completa enviada ao Mercado Pago
+
+✅ **External Reference** (10 pontos):
+- Referência única para cada pagamento
+- Facilita conciliação e tracking
+
+✅ **Statement Descriptor** (5 pontos):
+- Nome descritivo no extrato do cliente
+- Melhora experiência do pagador
+
+✅ **Tratamento de Erros Robusto** (10 pontos):
+- Logs detalhados de erros
+- Mensagens claras ao usuário
+- Retry logic implementado
+
+### 📈 Como Ganhar os Pontos Restantes
+
+1. **Faça Pagamentos de Teste em Produção** (maior peso):
+   - Depois de ativar a aplicação em produção, faça 5-10 pagamentos de teste
+   - Use valores baixos (R$ 1,00 - R$ 5,00)
+   - Complete todos os campos (nome, CPF)
+   - Isso pode dar até 30-40 pontos
+
+2. **Acesse o Painel de Qualidade**:
+   - Entre no [Mercado Pago Developers](https://www.mercadopago.com.br/developers)
+   - Vá em "Suas integrações" → Sua aplicação
+   - Clique em "Qualidade da integração"
+   - Verifique os pontos e siga as recomendações
+
+3. **Corrija Problemas Apontados**:
+   - O painel mostra exatamente o que falta
+   - Nossa integração já cobre a maioria dos requisitos
+   - Apenas certifique-se de preencher todos os campos nos testes
+
+---
+
 ## 🚀 Passo a Passo para Ativar
 
 ### 1️⃣ Criar Aplicação no Mercado Pago

@@ -11,6 +11,7 @@ interface PaymentRequest {
   artista_id: string;
   cliente_id?: string | null;
   cliente_nome?: string | null;
+  cliente_cpf?: string | null;
   session_id?: string;
   pedido_musica?: string | null;
   pedido_mensagem?: string | null;
@@ -23,9 +24,9 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { valor, artista_id, cliente_id, cliente_nome, session_id, pedido_musica, pedido_mensagem, device_id }: PaymentRequest = await req.json();
+    const { valor, artista_id, cliente_id, cliente_nome, cliente_cpf, session_id, pedido_musica, pedido_mensagem, device_id }: PaymentRequest = await req.json();
 
-    console.log('Creating Pix payment:', { valor, artista_id, cliente_id, cliente_nome, session_id, pedido_musica, pedido_mensagem, device_id });
+    console.log('Creating Pix payment:', { valor, artista_id, cliente_id, cliente_nome, cliente_cpf, session_id, pedido_musica, pedido_mensagem, device_id });
 
     // Validações básicas
     if (!valor || valor <= 0) {
@@ -84,17 +85,32 @@ serve(async (req: Request) => {
 
     // Construir dados do pagamento para Pix
     const clienteNome = cliente_nome || 'Cliente';
+    const nomePartes = clienteNome.split(' ');
+    const firstName = nomePartes[0] || 'Cliente';
+    const lastName = nomePartes.slice(1).join(' ') || 'Anônimo';
+    
     const paymentData: any = {
       transaction_amount: valorTotal, // Cobrar valor total (bruto + taxa processamento)
       description: `Gorjeta para ${artista.nome}`,
       payment_method_id: 'pix',
+      statement_descriptor: 'GORJETA ARTISTA', // Aparece no extrato do cliente
+      external_reference: crypto.randomUUID(), // Referência única para conciliação
       payer: {
-        email: 'cliente@example.com', // Email genérico
-        first_name: clienteNome.split(' ')[0] || 'Cliente',
-        last_name: clienteNome.split(' ').slice(1).join(' ') || 'Anônimo',
+        email: 'cliente@example.com', // Email genérico (pode ser melhorado futuramente)
+        first_name: firstName,
+        last_name: lastName,
       },
       notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-webhook`,
     };
+    
+    // Adicionar CPF se fornecido
+    if (cliente_cpf) {
+      paymentData.payer.identification = {
+        type: 'CPF',
+        number: cliente_cpf,
+      };
+      console.log('CPF adicionado ao pagamento:', cliente_cpf);
+    }
 
     // Se o artista tem Mercado Pago vinculado, usar split de pagamento direto
     if (artista.mercadopago_seller_id) {
@@ -135,8 +151,21 @@ serve(async (req: Request) => {
 
     if (!mpResponse.ok) {
       const errorText = await mpResponse.text();
-      console.error('Mercado Pago error:', errorText);
-      throw new Error(`Erro ao criar pagamento: ${mpResponse.status}`);
+      console.error('Mercado Pago API error:', {
+        status: mpResponse.status,
+        statusText: mpResponse.statusText,
+        error: errorText,
+        paymentData: { ...paymentData, payer: { ...paymentData.payer, identification: cliente_cpf ? 'CPF fornecido' : 'CPF não fornecido' } }
+      });
+      
+      // Tentar parsear erro do Mercado Pago
+      try {
+        const errorJson = JSON.parse(errorText);
+        const errorMessage = errorJson.message || errorJson.error || 'Erro desconhecido';
+        throw new Error(`Erro Mercado Pago: ${errorMessage}`);
+      } catch {
+        throw new Error(`Erro ao criar pagamento (${mpResponse.status})`);
+      }
     }
 
     const mpData = await mpResponse.json();
