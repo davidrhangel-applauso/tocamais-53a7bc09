@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle2, ExternalLink, AlertCircle, TestTube, Info } from "lucide-react";
+import { MERCADO_PAGO_CONFIG } from "@/config/mercadopago";
 
 interface MercadoPagoLinkProps {
   userId: string;
@@ -54,9 +55,9 @@ export function MercadoPagoLink({ userId }: MercadoPagoLinkProps) {
 
   const handleLink = () => {
     // Verificar se CLIENT_ID está configurado
-    const clientId = import.meta.env.VITE_MERCADO_PAGO_CLIENT_ID;
+    const clientId = MERCADO_PAGO_CONFIG.clientId;
     
-    if (!clientId) {
+    if (!clientId || clientId === "YOUR_CLIENT_ID_HERE") {
       toast({
         title: "Configuração Pendente",
         description: "O Client ID do Mercado Pago ainda não foi configurado. Entre em contato com o suporte.",
@@ -66,7 +67,7 @@ export function MercadoPagoLink({ userId }: MercadoPagoLinkProps) {
     }
     
     // URL de autorização do Mercado Pago
-    const redirectUri = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mercadopago-oauth-callback`;
+    const redirectUri = MERCADO_PAGO_CONFIG.redirectUri;
     
     const authUrl = `https://auth.mercadopago.com.br/authorization?client_id=${clientId}&response_type=code&platform_id=mp&state=${userId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
     
