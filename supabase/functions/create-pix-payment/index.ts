@@ -82,46 +82,25 @@ serve(async (req: Request) => {
     const taxaProcessamento = Number((valorBruto * 0.01).toFixed(2)); // 1% taxa Mercado Pago
     const valorTotal = Number((valorBruto + taxaProcessamento).toFixed(2)); // Total a cobrar do cliente
 
-    // Construir dados do pagamento
+    // Construir dados do pagamento para Pix
+    const clienteNome = cliente_nome || 'Cliente';
     const paymentData: any = {
       transaction_amount: valorTotal, // Cobrar valor total (bruto + taxa processamento)
       description: `Gorjeta para ${artista.nome}`,
       payment_method_id: 'pix',
       payer: {
         email: 'cliente@example.com', // Email genérico
-        first_name: cliente_nome || 'Cliente',
-        last_name: 'Anônimo',
+        first_name: clienteNome.split(' ')[0] || 'Cliente',
+        last_name: clienteNome.split(' ').slice(1).join(' ') || 'Anônimo',
       },
-      items: [{
-        id: 'gorjeta',
-        title: `Gorjeta para ${artista.nome}`,
-        description: pedido_musica ? `Pedido: ${pedido_musica}` : 'Gorjeta musical',
-        category_id: 'art', // Categoria de entretenimento/arte
-        quantity: 1,
-        unit_price: valorTotal,
-      }],
       notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-webhook`,
     };
 
-    // Adicionar additional_info se temos device_id
+    // Adicionar additional_info com device_id se disponível
     if (device_id) {
       paymentData.additional_info = {
-        items: [{
-          id: 'gorjeta',
-          title: `Gorjeta para ${artista.nome}`,
-          description: pedido_musica ? `Pedido: ${pedido_musica}` : 'Gorjeta musical',
-          category_id: 'art',
-          quantity: 1,
-          unit_price: valorTotal,
-        }],
-        payer: {
-          first_name: cliente_nome || 'Cliente',
-          last_name: 'Anônimo',
-        },
+        device: device_id, // Device ID para tracking
       };
-      
-      // Adicionar device_id ao payer
-      paymentData.payer.device_id = device_id;
     }
 
     // Se o artista tem Mercado Pago vinculado, usar split de pagamento direto
