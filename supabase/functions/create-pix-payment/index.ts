@@ -105,6 +105,24 @@ serve(async (req: Request) => {
       payment_method_id: 'pix',
       statement_descriptor: 'GORJETA ARTISTA',
       external_reference: gorjetaId,
+      additional_info: {
+        items: [
+          {
+            id: gorjetaId,
+            title: `Gorjeta para ${artista.nome}`,
+            description: pedido_musica 
+              ? `Gorjeta com pedido musical: ${pedido_musica}` 
+              : `Gorjeta para o artista ${artista.nome}`,
+            quantity: 1,
+            unit_price: valorTotal,
+            category_id: 'entertainment',
+          }
+        ],
+        payer: {
+          first_name: firstName,
+          last_name: lastName,
+        }
+      },
       payer: {
         email: 'cliente@example.com',
         first_name: firstName,

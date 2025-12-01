@@ -103,6 +103,20 @@ serve(async (req: Request) => {
       issuer_id,
       external_reference: gorjetaId,
       statement_descriptor: 'GORJETA ARTISTA',
+      additional_info: {
+        items: [
+          {
+            id: gorjetaId,
+            title: `Gorjeta para ${artista.nome}`,
+            description: pedido_musica 
+              ? `Gorjeta com pedido musical: ${pedido_musica}` 
+              : `Gorjeta para o artista ${artista.nome}`,
+            quantity: 1,
+            unit_price: valorTotal,
+            category_id: 'entertainment',
+          }
+        ],
+      },
       notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-webhook`,
     };
 
