@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { MercadoPagoConfig, Payment } from "https://esm.sh/mercadopago@2.0.15";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -109,21 +108,31 @@ serve(async (req: Request) => {
 
     console.log('Processing payment ID:', paymentId);
 
-    // Inicializar SDK do Mercado Pago
+    // Token do Mercado Pago
     const mercadoPagoToken = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN');
     if (!mercadoPagoToken) {
       throw new Error('Token do Mercado Pago não configurado');
     }
 
-    const client = new MercadoPagoConfig({ 
-      accessToken: mercadoPagoToken,
-      options: { timeout: 5000 }
-    });
-    const payment = new Payment(client);
+    // Buscar detalhes do pagamento usando API REST diretamente
+    const response = await fetch(
+      `https://api.mercadopago.com/v1/payments/${paymentId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${mercadoPagoToken}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
-    // Buscar detalhes do pagamento usando SDK
-    const paymentData = await payment.get({ id: paymentId });
-    console.log('Payment data from MP:', paymentData);
+    if (!response.ok) {
+      console.error('MP API error:', response.status, await response.text());
+      throw new Error(`Mercado Pago API error: ${response.status}`);
+    }
+
+    const paymentData = await response.json();
+    console.log('Payment data from MP:', JSON.stringify(paymentData));
 
     // Inicializar Supabase client
     const supabase = createClient(
