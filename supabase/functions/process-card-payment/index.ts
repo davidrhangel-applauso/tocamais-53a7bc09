@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { MercadoPagoConfig, Payment } from "https://esm.sh/mercadopago@2.0.15";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -71,17 +70,11 @@ serve(async (req: Request) => {
       throw new Error('Artista não encontrado');
     }
 
-    // Inicializar SDK do Mercado Pago
+    // Token do Mercado Pago
     const mercadoPagoToken = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN');
     if (!mercadoPagoToken) {
       throw new Error('Token do Mercado Pago não configurado');
     }
-
-    const client = new MercadoPagoConfig({
-      accessToken: mercadoPagoToken,
-      options: { timeout: 5000 }
-    });
-    const payment = new Payment(client);
 
     // Calcular valores
     const valorBruto = valor;
@@ -138,14 +131,24 @@ serve(async (req: Request) => {
     // Gerar chave de idempotência
     const idempotencyKey = crypto.randomUUID();
 
-    // Criar pagamento
-    const mpData = await payment.create({
-      body: paymentData,
-      requestOptions: {
-        idempotencyKey,
-      }
+    // Criar pagamento usando API REST diretamente
+    const response = await fetch('https://api.mercadopago.com/v1/payments', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${mercadoPagoToken}`,
+        'Content-Type': 'application/json',
+        'X-Idempotency-Key': idempotencyKey,
+      },
+      body: JSON.stringify(paymentData),
     });
 
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('MP API error:', response.status, errorText);
+      throw new Error(`Erro ao criar pagamento: ${response.status} - ${errorText}`);
+    }
+
+    const mpData = await response.json();
     console.log('Pagamento criado:', mpData.id, 'Status:', mpData.status);
 
     // Salvar gorjeta no banco
