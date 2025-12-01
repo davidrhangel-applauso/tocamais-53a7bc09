@@ -45,13 +45,18 @@ export const CardPaymentForm = ({
 
   // Inicializar Secure Fields quando o MP SDK estiver pronto
   useEffect(() => {
-    if (!mp || !cardNumberRef.current || cardFormInstance) return;
+    if (!mp || !cardNumberRef.current) return;
+    
+    // Evitar múltiplas instâncias
+    if (cardFormInstance) return;
 
     console.log('Inicializando Secure Fields...');
 
+    let cardForm: any = null;
+
     try {
       // Criar instância do CardForm com Secure Fields
-      const cardForm = mp.cardForm({
+      cardForm = mp.cardForm({
         amount: String(valor),
         iframe: true,
         form: {
@@ -117,7 +122,19 @@ export const CardPaymentForm = ({
       console.error('Erro ao inicializar CardForm:', err);
       setError('Erro ao inicializar formulário de pagamento');
     }
-  }, [mp, valor, cardFormInstance]);
+
+    // Cleanup quando o componente desmontar
+    return () => {
+      if (cardForm && typeof cardForm.unmount === 'function') {
+        try {
+          cardForm.unmount();
+          console.log('CardForm desmontado');
+        } catch (err) {
+          console.error('Erro ao desmontar CardForm:', err);
+        }
+      }
+    };
+  }, [mp, valor]);
 
   const handleSubmit = async () => {
     if (!cardFormInstance) {
