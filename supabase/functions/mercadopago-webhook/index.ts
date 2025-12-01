@@ -136,15 +136,28 @@ serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Buscar gorjeta pelo payment_id
-    const { data: gorjeta, error: findError } = await supabase
+    // Buscar gorjeta pelo payment_id primeiro
+    let { data: gorjeta, error: findError } = await supabase
       .from('gorjetas')
       .select('*')
       .eq('payment_id', paymentId.toString())
-      .single();
+      .maybeSingle();
+
+    // Se não encontrar por payment_id, tentar por external_reference (que é o id da gorjeta)
+    if (!gorjeta && paymentData.external_reference) {
+      console.log('Gorjeta not found by payment_id, trying external_reference:', paymentData.external_reference);
+      const { data: gorjetaByRef, error: refError } = await supabase
+        .from('gorjetas')
+        .select('*')
+        .eq('id', paymentData.external_reference)
+        .maybeSingle();
+      
+      gorjeta = gorjetaByRef;
+      findError = refError;
+    }
 
     if (findError || !gorjeta) {
-      console.error('Gorjeta not found for payment_id:', paymentId);
+      console.error('Gorjeta not found for payment_id or external_reference:', paymentId);
       return new Response(JSON.stringify({ error: 'Gorjeta not found' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 404,

@@ -83,6 +83,9 @@ serve(async (req: Request) => {
     const taxaProcessamento = Number((valorBruto * 0.01).toFixed(2)); // 1% taxa Mercado Pago
     const valorTotal = Number((valorBruto + taxaProcessamento).toFixed(2)); // Total a cobrar do cliente
 
+    // Gerar UUID da gorjeta ANTES de criar o pagamento para usar como external_reference
+    const gorjetaId = crypto.randomUUID();
+    
     // Construir dados do pagamento para Pix
     const clienteNome = cliente_nome || 'Cliente';
     const nomePartes = clienteNome.split(' ');
@@ -94,7 +97,7 @@ serve(async (req: Request) => {
       description: `Gorjeta para ${artista.nome}`,
       payment_method_id: 'pix',
       statement_descriptor: 'GORJETA ARTISTA', // Aparece no extrato do cliente
-      external_reference: crypto.randomUUID(), // Referência única para conciliação
+      external_reference: gorjetaId, // Usar o ID da gorjeta como referência para correlação
       payer: {
         email: 'cliente@example.com', // Email genérico (pode ser melhorado futuramente)
         first_name: firstName,
@@ -178,6 +181,7 @@ serve(async (req: Request) => {
     const { data: gorjeta, error: gorjetaError } = await supabase
       .from('gorjetas')
       .insert({
+        id: gorjetaId, // Usar o mesmo UUID enviado como external_reference
         valor: valorBruto, // Valor bruto (sem taxa de processamento)
         valor_liquido_artista: valorLiquidoArtista, // 90% do valor bruto
         taxa_plataforma: taxaPlataforma, // 10% do valor bruto
