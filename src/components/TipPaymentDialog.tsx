@@ -104,7 +104,7 @@ export const TipPaymentDialog = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Escolha a forma de pagamento</DialogTitle>
             <DialogDescription>

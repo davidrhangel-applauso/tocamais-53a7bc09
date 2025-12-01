@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Alert, AlertDescription } from "./ui/alert";
-import { Loader2, CreditCard, AlertCircle } from "lucide-react";
+import { Loader2, CreditCard, AlertCircle, Calendar, Lock, User, Mail, FileText } from "lucide-react";
 import { useMercadoPago } from "@/hooks/useMercadoPago";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,9 +36,6 @@ export const CardPaymentForm = ({
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [cardholderName, setCardholderName] = useState("");
-  const [cardholderEmail, setCardholderEmail] = useState("");
-  const [cpf, setCpf] = useState("");
   
   const cardNumberRef = useRef<HTMLDivElement>(null);
   const expirationDateRef = useRef<HTMLDivElement>(null);
@@ -60,7 +58,7 @@ export const CardPaymentForm = ({
           id: "card-payment-form",
           cardNumber: {
             id: "card-number",
-            placeholder: "Número do cartão",
+            placeholder: "0000 0000 0000 0000",
           },
           expirationDate: {
             id: "expiration-date",
@@ -68,31 +66,31 @@ export const CardPaymentForm = ({
           },
           securityCode: {
             id: "security-code",
-            placeholder: "CVV",
+            placeholder: "123",
           },
           cardholderName: {
             id: "cardholder-name",
-            placeholder: "Nome (como está no cartão)",
+            placeholder: "Nome completo",
           },
           issuer: {
             id: "issuer",
-            placeholder: "Banco emissor",
+            placeholder: "Selecione o banco",
           },
           installments: {
             id: "installments",
-            placeholder: "Parcelas",
+            placeholder: "Escolha as parcelas",
           },
           identificationType: {
             id: "identification-type",
-            placeholder: "Tipo de documento",
+            placeholder: "Tipo",
           },
           identificationNumber: {
             id: "identification-number",
-            placeholder: "Número do documento",
+            placeholder: "000.000.000-00",
           },
           cardholderEmail: {
             id: "cardholder-email",
-            placeholder: "E-mail",
+            placeholder: "seu@email.com",
           },
         },
         callbacks: {
@@ -199,15 +197,15 @@ export const CardPaymentForm = ({
 
   if (mpLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <span className="ml-2 text-sm text-muted-foreground">Carregando formulário...</span>
+        <span className="ml-3 text-sm text-muted-foreground">Carregando formulário de pagamento...</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-6 max-h-[60vh] overflow-y-auto px-1">
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -215,113 +213,175 @@ export const CardPaymentForm = ({
         </Alert>
       )}
 
-      <form id="card-payment-form" className="space-y-2">
-        {/* Secure Fields - renderizados automaticamente pelo SDK */}
-        <div className="space-y-1">
-          <Label htmlFor="card-number">Número do Cartão</Label>
-          <div 
-            id="card-number" 
-            ref={cardNumberRef}
-            className="min-h-[36px] border rounded-md"
-          />
-        </div>
+      <form id="card-payment-form" className="space-y-6">
+        {/* Seção: Dados do Cartão */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 pb-2 border-b">
+            <CreditCard className="w-4 h-4 text-primary" />
+            <h3 className="font-semibold text-sm">Dados do Cartão</h3>
+          </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <Label htmlFor="expiration-date">Validade</Label>
+          <div className="space-y-2">
+            <Label htmlFor="card-number" className="text-sm font-medium">
+              Número do Cartão *
+            </Label>
             <div 
-              id="expiration-date" 
-              ref={expirationDateRef}
-              className="min-h-[36px] border rounded-md"
+              id="card-number" 
+              ref={cardNumberRef}
+              className="min-h-[44px] w-full border border-input bg-background rounded-md px-3 py-2 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-all"
             />
           </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="security-code">CVV</Label>
-            <div 
-              id="security-code" 
-              ref={securityCodeRef}
-              className="min-h-[36px] border rounded-md"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="expiration-date" className="text-sm font-medium flex items-center gap-2">
+                <Calendar className="w-3 h-3" />
+                Validade *
+              </Label>
+              <div 
+                id="expiration-date" 
+                ref={expirationDateRef}
+                className="min-h-[44px] w-full border border-input bg-background rounded-md px-3 py-2 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-all"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="security-code" className="text-sm font-medium flex items-center gap-2">
+                <Lock className="w-3 h-3" />
+                CVV *
+              </Label>
+              <div 
+                id="security-code" 
+                ref={securityCodeRef}
+                className="min-h-[44px] w-full border border-input bg-background rounded-md px-3 py-2 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-all"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="space-y-1">
-          <Label htmlFor="cardholder-name">Nome do Titular</Label>
-          <input
-            type="text"
-            id="cardholder-name"
-            className="w-full h-9 px-3 py-1.5 text-sm border rounded-md"
-          />
-        </div>
-
-        <div className="space-y-1">
-          <Label htmlFor="cardholder-email">E-mail</Label>
-          <input
-            type="email"
-            id="cardholder-email"
-            className="w-full h-9 px-3 py-1.5 text-sm border rounded-md"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <Label htmlFor="identification-type">Tipo de Documento</Label>
-            <select
-              id="identification-type"
-              className="w-full h-9 px-3 py-1.5 text-sm border rounded-md"
-            >
-              <option value="">Selecione</option>
-            </select>
+        {/* Seção: Dados do Titular */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 pb-2 border-b">
+            <User className="w-4 h-4 text-primary" />
+            <h3 className="font-semibold text-sm">Dados do Titular</h3>
           </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="identification-number">CPF</Label>
-            <input
-              type="text"
-              id="identification-number"
-              className="w-full h-9 px-3 py-1.5 text-sm border rounded-md"
-            />
+          <div className="space-y-2">
+            <Label htmlFor="cardholder-name" className="text-sm font-medium">
+              Nome Completo (como está no cartão) *
+            </Label>
+            <div className="min-h-[44px] w-full border border-input bg-background rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-all">
+              <input
+                type="text"
+                id="cardholder-name"
+                className="w-full h-full px-3 py-2 bg-transparent outline-none text-sm"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="cardholder-email" className="text-sm font-medium flex items-center gap-2">
+              <Mail className="w-3 h-3" />
+              E-mail *
+            </Label>
+            <div className="min-h-[44px] w-full border border-input bg-background rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-all">
+              <input
+                type="email"
+                id="cardholder-email"
+                className="w-full h-full px-3 py-2 bg-transparent outline-none text-sm"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="identification-type" className="text-sm font-medium flex items-center gap-2">
+                <FileText className="w-3 h-3" />
+                Tipo de Documento *
+              </Label>
+              <div className="min-h-[44px] w-full border border-input bg-background rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-all">
+                <select
+                  id="identification-type"
+                  className="w-full h-full px-3 py-2 bg-transparent outline-none text-sm appearance-none cursor-pointer"
+                >
+                  <option value="">Selecione</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="identification-number" className="text-sm font-medium">
+                Número do Documento *
+              </Label>
+              <div className="min-h-[44px] w-full border border-input bg-background rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-all">
+                <input
+                  type="text"
+                  id="identification-number"
+                  className="w-full h-full px-3 py-2 bg-transparent outline-none text-sm"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="space-y-1">
-          <Label htmlFor="issuer">Banco Emissor</Label>
-          <select
-            id="issuer"
-            className="w-full h-9 px-3 py-1.5 text-sm border rounded-md"
+        {/* Seção: Opções de Pagamento */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 pb-2 border-b">
+            <CreditCard className="w-4 h-4 text-primary" />
+            <h3 className="font-semibold text-sm">Opções de Pagamento</h3>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="issuer" className="text-sm font-medium">
+              Banco Emissor *
+            </Label>
+            <div className="min-h-[44px] w-full border border-input bg-background rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-all">
+              <select
+                id="issuer"
+                className="w-full h-full px-3 py-2 bg-transparent outline-none text-sm appearance-none cursor-pointer"
+              >
+                <option value="">Carregando opções...</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="installments" className="text-sm font-medium">
+              Número de Parcelas *
+            </Label>
+            <div className="min-h-[44px] w-full border border-input bg-background rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-all">
+              <select
+                id="installments"
+                className="w-full h-full px-3 py-2 bg-transparent outline-none text-sm appearance-none cursor-pointer"
+              >
+                <option value="">Carregando parcelas...</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-2">
+          <Button
+            type="submit"
+            className="w-full h-12 text-base font-semibold"
+            disabled={loading || !cardFormInstance}
           >
-            <option value="">Carregando...</option>
-          </select>
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Processando pagamento...
+              </>
+            ) : (
+              <>
+                <CreditCard className="w-5 h-5 mr-2" />
+                Pagar R$ {valor.toFixed(2)}
+              </>
+            )}
+          </Button>
+          <p className="text-xs text-muted-foreground text-center mt-3">
+            * Campos obrigatórios
+          </p>
         </div>
-
-        <div className="space-y-1">
-          <Label htmlFor="installments">Parcelas</Label>
-          <select
-            id="installments"
-            className="w-full h-9 px-3 py-1.5 text-sm border rounded-md"
-          >
-            <option value="">Carregando...</option>
-          </select>
-        </div>
-
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={loading || !cardFormInstance}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Processando...
-            </>
-          ) : (
-            <>
-              <CreditCard className="w-4 h-4 mr-2" />
-              Pagar R$ {valor.toFixed(2)}
-            </>
-          )}
-        </Button>
       </form>
     </div>
   );
