@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { MERCADO_PAGO_CONFIG } from '@/config/mercadopago';
 
 declare global {
   interface Window {
@@ -7,6 +8,7 @@ declare global {
 }
 
 export const useMercadoPago = () => {
+  const [mp, setMp] = useState<any>(null);
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,16 +35,29 @@ export const useMercadoPago = () => {
           });
         }
 
-        // Gerar device_id único (não precisa do SDK para isso)
-        // O Mercado Pago aceita um identificador único do dispositivo
-        const fallbackId = `web_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        setDeviceId(fallbackId);
-        console.log('Device ID gerado:', fallbackId);
+        // Inicializar SDK V2 com Public Key
+        const mpInstance = new window.MercadoPago(MERCADO_PAGO_CONFIG.publicKey, {
+          locale: 'pt-BR'
+        });
+        
+        setMp(mpInstance);
+        console.log('MercadoPago SDK V2 inicializado com sucesso');
+        
+        // Tentar obter device_id do SDK (método pode variar conforme versão)
+        let deviceIdValue: string;
+        if (typeof mpInstance.getDeviceId === 'function') {
+          deviceIdValue = mpInstance.getDeviceId();
+        } else {
+          // Fallback: gerar device_id único
+          deviceIdValue = `web_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        }
+        
+        setDeviceId(deviceIdValue);
+        console.log('Device ID:', deviceIdValue);
         
         setIsLoading(false);
       } catch (err) {
         console.error('Error initializing MercadoPago:', err);
-        // Mesmo com erro, criar um fallback device_id
         const fallbackId = `web_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         setDeviceId(fallbackId);
         setError('Failed to initialize MercadoPago SDK');
@@ -53,5 +68,5 @@ export const useMercadoPago = () => {
     initializeMercadoPago();
   }, []);
 
-  return { deviceId, isLoading, error };
+  return { mp, deviceId, isLoading, error };
 };
