@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { MercadoPagoConfig, Payment } from "https://esm.sh/mercadopago@2.0.15";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,9 +24,29 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { valor, artista_id, cliente_id, cliente_nome, cliente_cpf, session_id, pedido_musica, pedido_mensagem, device_id }: PaymentRequest = await req.json();
+    const {
+      valor,
+      artista_id,
+      cliente_id,
+      cliente_nome,
+      cliente_cpf,
+      session_id,
+      pedido_musica,
+      pedido_mensagem,
+      device_id,
+    }: PaymentRequest = await req.json();
 
-    console.log('Creating Pix payment:', { valor, artista_id, cliente_id, cliente_nome, cliente_cpf, session_id, pedido_musica, pedido_mensagem, device_id });
+    console.log('Creating Pix payment:', {
+      valor,
+      artista_id,
+      cliente_id,
+      cliente_nome,
+      cliente_cpf,
+      session_id,
+      pedido_musica,
+      pedido_mensagem,
+      device_id,
+    });
 
     // Validações básicas
     if (!valor || valor <= 0) {
@@ -52,7 +71,7 @@ serve(async (req: Request) => {
     // Inicializar Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
     // Buscar informações do artista incluindo mercadopago_seller_id
@@ -71,34 +90,28 @@ serve(async (req: Request) => {
       throw new Error('Perfil não é um artista');
     }
 
-    // Inicializar SDK do Mercado Pago
+    // Token do Mercado Pago
     const mercadoPagoToken = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN');
     if (!mercadoPagoToken) {
       throw new Error('Token do Mercado Pago não configurado');
     }
 
-    const client = new MercadoPagoConfig({ 
-      accessToken: mercadoPagoToken,
-      options: { timeout: 5000 }
-    });
-    const payment = new Payment(client);
-
     // Calcular valores com taxa da plataforma (10%) e taxa de processamento (1%)
     const valorBruto = valor; // Valor que o cliente deseja enviar
-    const taxaPlataforma = Number((valorBruto * 0.10).toFixed(2)); // 10% para a plataforma
-    const valorLiquidoArtista = Number((valorBruto * 0.90).toFixed(2)); // 90% para o artista
+    const taxaPlataforma = Number((valorBruto * 0.1).toFixed(2)); // 10% para a plataforma
+    const valorLiquidoArtista = Number((valorBruto * 0.9).toFixed(2)); // 90% para o artista
     const taxaProcessamento = Number((valorBruto * 0.01).toFixed(2)); // 1% taxa Mercado Pago
     const valorTotal = Number((valorBruto + taxaProcessamento).toFixed(2)); // Total a cobrar do cliente
 
     // Gerar UUID da gorjeta ANTES de criar o pagamento para usar como external_reference
     const gorjetaId = crypto.randomUUID();
-    
+
     // Construir dados do pagamento para Pix
-    const clienteNome = cliente_nome || 'Cliente';
-    const nomePartes = clienteNome.split(' ');
+    const nomeCliente = cliente_nome || 'Cliente';
+    const nomePartes = nomeCliente.split(' ');
     const firstName = nomePartes[0] || 'Cliente';
     const lastName = nomePartes.slice(1).join(' ') || 'Anônimo';
-    
+
     const paymentData: any = {
       transaction_amount: valorTotal, // Cobrar valor total (bruto + taxa processamento)
       description: `Gorjeta para ${artista.nome}`,
@@ -110,18 +123,18 @@ serve(async (req: Request) => {
           {
             id: gorjetaId,
             title: `Gorjeta para ${artista.nome}`,
-            description: pedido_musica 
-              ? `Gorjeta com pedido musical: ${pedido_musica}` 
+            description: pedido_musica
+              ? `Gorjeta com pedido musical: ${pedido_musica}`
               : `Gorjeta para o artista ${artista.nome}`,
             quantity: 1,
             unit_price: valorTotal,
             category_id: 'entertainment',
-          }
+          },
         ],
         payer: {
           first_name: firstName,
           last_name: lastName,
-        }
+        },
       },
       payer: {
         email: 'cliente@example.com',
@@ -130,7 +143,7 @@ serve(async (req: Request) => {
       },
       notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-webhook`,
     };
-    
+
     // Adicionar CPF se fornecido
     if (cliente_cpf) {
       paymentData.payer.identification = {
@@ -143,11 +156,11 @@ serve(async (req: Request) => {
     // Se o artista tem Mercado Pago vinculado, usar split de pagamento direto
     if (artista.mercadopago_seller_id) {
       console.log('Configurando split payment para seller:', artista.mercadopago_seller_id);
-      
+
       paymentData.marketplace = 'NONE';
       paymentData.marketplace_fee = taxaPlataforma;
       paymentData.collector_id = parseInt(artista.mercadopago_seller_id);
-      
+
       console.log('Split payment configurado:', {
         marketplace_fee: paymentData.marketplace_fee,
         collector_id: paymentData.collector_id,
@@ -159,20 +172,31 @@ serve(async (req: Request) => {
       console.log('Artista sem Mercado Pago vinculado - pagamento vai direto para plataforma');
     }
 
-    console.log('Chamando SDK do Mercado Pago...');
+    console.log('Chamando API do Mercado Pago via fetch...');
 
     // Gerar chave de idempotência única
     const idempotencyKey = crypto.randomUUID();
 
-    // Criar pagamento usando SDK
-    const mpData = await payment.create({
-      body: paymentData,
-      requestOptions: {
-        idempotencyKey: idempotencyKey,
-      }
+    const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${mercadoPagoToken}`,
+        'X-Idempotency-Key': idempotencyKey,
+      },
+      body: JSON.stringify(paymentData),
     });
 
-    console.log('Mercado Pago response:', mpData);
+    console.log('Mercado Pago raw response status:', mpResponse.status);
+
+    if (!mpResponse.ok) {
+      const errorBody = await mpResponse.text();
+      console.error('Mercado Pago error body:', errorBody);
+      throw new Error('Erro ao criar pagamento Pix no Mercado Pago');
+    }
+
+    const mpData: any = await mpResponse.json();
+    console.log('Mercado Pago response JSON:', mpData);
 
     // Calcular expiração (30 minutos)
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
@@ -189,7 +213,7 @@ serve(async (req: Request) => {
         cliente_id: cliente_id || null,
         cliente_nome: cliente_nome || null,
         session_id: session_id || null,
-        payment_id: mpData.id!.toString(),
+        payment_id: mpData.id ? mpData.id.toString() : null,
         status_pagamento: 'pending',
         qr_code: mpData.point_of_interaction?.transaction_data?.qr_code || '',
         qr_code_base64: mpData.point_of_interaction?.transaction_data?.qr_code_base64 || '',
@@ -218,7 +242,7 @@ serve(async (req: Request) => {
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
-      }
+      },
     );
   } catch (error) {
     console.error('Error in create-pix-payment:', error);
@@ -230,7 +254,7 @@ serve(async (req: Request) => {
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
-      }
+      },
     );
   }
 });

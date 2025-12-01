@@ -207,7 +207,7 @@ export const CardPaymentForm = ({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -215,7 +215,7 @@ export const CardPaymentForm = ({
         </Alert>
       )}
 
-      <form id="card-payment-form" className="space-y-3">
+      <form id="card-payment-form" className="space-y-2">
         {/* Secure Fields - renderizados automaticamente pelo SDK */}
         <div className="space-y-1">
           <Label htmlFor="card-number">Número do Cartão</Label>
@@ -226,7 +226,7 @@ export const CardPaymentForm = ({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
             <Label htmlFor="expiration-date">Validade</Label>
             <div 
