@@ -40,6 +40,8 @@ export const CardPaymentForm = ({
   const cardNumberRef = useRef<HTMLDivElement>(null);
   const expirationDateRef = useRef<HTMLDivElement>(null);
   const securityCodeRef = useRef<HTMLDivElement>(null);
+  const cardFormRef = useRef<any>(null);
+  const isInitializedRef = useRef(false);
   
   const [cardFormInstance, setCardFormInstance] = useState<any>(null);
 
@@ -47,16 +49,14 @@ export const CardPaymentForm = ({
   useEffect(() => {
     if (!mp || !cardNumberRef.current) return;
     
-    // Evitar múltiplas instâncias
-    if (cardFormInstance) return;
+    // Evitar múltiplas inicializações
+    if (isInitializedRef.current) return;
 
     console.log('Inicializando Secure Fields...');
 
-    let cardForm: any = null;
-
     try {
       // Criar instância do CardForm com Secure Fields
-      cardForm = mp.cardForm({
+      const cardForm = mp.cardForm({
         amount: String(valor),
         iframe: true,
         form: {
@@ -117,7 +117,9 @@ export const CardPaymentForm = ({
         },
       });
 
+      cardFormRef.current = cardForm;
       setCardFormInstance(cardForm);
+      isInitializedRef.current = true;
     } catch (err) {
       console.error('Erro ao inicializar CardForm:', err);
       setError('Erro ao inicializar formulário de pagamento');
@@ -125,14 +127,15 @@ export const CardPaymentForm = ({
 
     // Cleanup quando o componente desmontar
     return () => {
-      if (cardForm && typeof cardForm.unmount === 'function') {
+      if (cardFormRef.current && typeof cardFormRef.current.unmount === 'function') {
         try {
-          cardForm.unmount();
+          cardFormRef.current.unmount();
           console.log('CardForm desmontado');
         } catch (err) {
           console.error('Erro ao desmontar CardForm:', err);
         }
       }
+      isInitializedRef.current = false;
     };
   }, [mp, valor]);
 
