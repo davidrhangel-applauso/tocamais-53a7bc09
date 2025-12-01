@@ -42,8 +42,6 @@ export const CardPaymentForm = ({
   const securityCodeRef = useRef<HTMLDivElement>(null);
   const cardFormRef = useRef<any>(null);
   const isInitializedRef = useRef(false);
-  
-  const [cardFormInstance, setCardFormInstance] = useState<any>(null);
 
   // Inicializar Secure Fields quando o MP SDK estiver pronto
   useEffect(() => {
@@ -118,7 +116,6 @@ export const CardPaymentForm = ({
       });
 
       cardFormRef.current = cardForm;
-      setCardFormInstance(cardForm);
       isInitializedRef.current = true;
     } catch (err) {
       console.error('Erro ao inicializar CardForm:', err);
@@ -140,7 +137,7 @@ export const CardPaymentForm = ({
   }, [mp, valor]);
 
   const handleSubmit = async () => {
-    if (!cardFormInstance) {
+    if (!cardFormRef.current || typeof cardFormRef.current.getCardFormData !== 'function') {
       setError('Formulário não inicializado');
       return;
     }
@@ -150,7 +147,7 @@ export const CardPaymentForm = ({
 
     try {
       // Obter token do cartão usando Secure Fields
-      const cardData = await cardFormInstance.getCardFormData();
+      const cardData = await cardFormRef.current.getCardFormData();
       
       if (!cardData.token) {
         throw new Error('Não foi possível gerar token do cartão');
@@ -384,7 +381,7 @@ export const CardPaymentForm = ({
           <Button
             type="submit"
             className="w-full h-12 text-base font-semibold"
-            disabled={loading || !cardFormInstance}
+            disabled={loading}
           >
             {loading ? (
               <>
