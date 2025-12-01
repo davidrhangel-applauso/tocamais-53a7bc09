@@ -10,7 +10,7 @@ interface CardPaymentRequest {
   token: string;
   payment_method_id: string;
   issuer_id: string;
-  installments: number;
+  installments: number | string;
   valor: number;
   artista_id: string;
   cliente_id?: string | null;
@@ -83,6 +83,14 @@ serve(async (req: Request) => {
     const taxaProcessamento = Number((valorBruto * 0.01).toFixed(2));
     const valorTotal = Number((valorBruto + taxaProcessamento).toFixed(2));
 
+    // Garantir que installments seja numérico
+    const installmentsNumber =
+      typeof installments === 'string' ? parseInt(installments, 10) : installments;
+
+    if (!installmentsNumber || isNaN(installmentsNumber)) {
+      throw new Error('Número de parcelas inválido');
+    }
+
     // Gerar UUID da gorjeta
     const gorjetaId = crypto.randomUUID();
 
@@ -91,7 +99,7 @@ serve(async (req: Request) => {
       transaction_amount: valorTotal,
       token,
       description: `Gorjeta para ${artista.nome}`,
-      installments,
+      installments: installmentsNumber,
       payment_method_id,
       issuer_id,
       external_reference: gorjetaId,
