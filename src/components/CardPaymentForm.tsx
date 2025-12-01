@@ -222,7 +222,7 @@ export const CardPaymentForm = ({
           <div 
             id="card-number" 
             ref={cardNumberRef}
-            className="h-9 border rounded-md"
+            className="min-h-[36px] border rounded-md"
           />
         </div>
 
@@ -232,7 +232,7 @@ export const CardPaymentForm = ({
             <div 
               id="expiration-date" 
               ref={expirationDateRef}
-              className="h-9 border rounded-md"
+              className="min-h-[36px] border rounded-md"
             />
           </div>
 
@@ -241,7 +241,7 @@ export const CardPaymentForm = ({
             <div 
               id="security-code" 
               ref={securityCodeRef}
-              className="h-9 border rounded-md"
+              className="min-h-[36px] border rounded-md"
             />
           </div>
         </div>
