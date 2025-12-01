@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { MercadoPagoConfig, Payment } from "https://esm.sh/mercadopago@2.0.15";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -44,7 +45,7 @@ serve(async (req: Request) => {
       throw new Error('Gorjeta não encontrada');
     }
 
-    // Se ainda estiver pendente, consultar API do Mercado Pago
+    // Se ainda estiver pendente, consultar API do Mercado Pago usando SDK
     if (gorjeta.status_pagamento === 'pending' && gorjeta.payment_id) {
       const mercadoPagoToken = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN');
       if (!mercadoPagoToken) {
@@ -53,17 +54,16 @@ serve(async (req: Request) => {
 
       console.log('Checking status on Mercado Pago for payment:', gorjeta.payment_id);
 
-      const paymentResponse = await fetch(
-        `https://api.mercadopago.com/v1/payments/${gorjeta.payment_id}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${mercadoPagoToken}`,
-          },
-        }
-      );
+      // Inicializar SDK do Mercado Pago
+      const client = new MercadoPagoConfig({ 
+        accessToken: mercadoPagoToken,
+        options: { timeout: 5000 }
+      });
+      const payment = new Payment(client);
 
-      if (paymentResponse.ok) {
-        const paymentData = await paymentResponse.json();
+      try {
+        // Buscar status do pagamento usando SDK
+        const paymentData = await payment.get({ id: gorjeta.payment_id });
         console.log('Payment status from MP:', paymentData.status);
 
         // Atualizar status se mudou
@@ -87,6 +87,9 @@ serve(async (req: Request) => {
             gorjeta.status_pagamento = newStatus;
           }
         }
+      } catch (error) {
+        console.error('Error fetching payment from MP:', error);
+        // Continuar com o status atual se falhar
       }
     }
 
