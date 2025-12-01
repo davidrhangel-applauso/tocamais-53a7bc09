@@ -16,8 +16,7 @@ import { toast } from "sonner";
 import { useProfilePermissions } from "@/hooks/useProfilePermissions";
 import { useSessionId } from "@/hooks/useSessionId";
 import { z } from "zod";
-import { PixPaymentDialog } from "@/components/PixPaymentDialog";
-import { useMercadoPago } from "@/hooks/useMercadoPago";
+import { TipPaymentDialog } from "@/components/TipPaymentDialog";
 import { validarCPF, formatarCPF, limparCPF } from "@/lib/cpf-utils";
 
 // Validation schema for song requests
@@ -111,7 +110,6 @@ const ArtistProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const sessionId = useSessionId();
-  const { deviceId } = useMercadoPago();
   const [artist, setArtist] = useState<Artist | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -131,16 +129,9 @@ const ArtistProfile = () => {
   const [clienteCpfGorjeta, setClienteCpfGorjeta] = useState("");
   const [pedidoMusica, setPedidoMusica] = useState("");
   const [pedidoMensagem, setPedidoMensagem] = useState("");
-  const [tipLoading, setTipLoading] = useState(false);
   
-  // Pix payment state
-  const [pixDialogOpen, setPixDialogOpen] = useState(false);
-  const [pixPaymentData, setPixPaymentData] = useState<{
-    gorjetaId: string;
-    qrCode: string;
-    qrCodeBase64: string;
-    expiresAt: string;
-  } | null>(null);
+  // Tip payment dialog state
+  const [tipDialogOpen, setTipDialogOpen] = useState(false);
   
   // Check permissions for sensitive data
   const { canViewSensitiveData, loading: permissionsLoading } = useProfilePermissions(id);
@@ -227,13 +218,8 @@ const ArtistProfile = () => {
     }
   };
 
-  const handleSendTip = async () => {
-    if (!sessionId || !id) {
-      toast.error("Erro ao carregar sessão. Recarregue a página.");
-      return;
-    }
-
-    // Validate form
+  const handleOpenTipDialog = () => {
+    // Validate form before opening dialog
     const validationResult = tipSchema.safeParse({ 
       valor: valorGorjeta,
       clienteNome: clienteNomeGorjeta,
@@ -253,55 +239,7 @@ const ArtistProfile = () => {
       return;
     }
 
-    setTipLoading(true);
-
-    try {
-      const valor = parseFloat(valorGorjeta);
-
-      // Criar pagamento Pix via edge function
-      const { data, error } = await supabase.functions.invoke('create-pix-payment', {
-        body: {
-          valor,
-          artista_id: id,
-          cliente_id: currentUserId || null,
-          cliente_nome: validationResult.data.clienteNome,
-          cliente_cpf: limparCPF(validationResult.data.clienteCpf),
-          session_id: sessionId,
-          pedido_musica: validationResult.data.pedidoMusica || null,
-          pedido_mensagem: validationResult.data.pedidoMensagem || null,
-          device_id: deviceId,
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (!data.id) {
-        throw new Error('Erro ao criar pagamento');
-      }
-
-      // Abrir dialog com QR Code
-      setPixPaymentData({
-        gorjetaId: data.id,
-        qrCode: data.qr_code || "",
-        qrCodeBase64: data.qr_code_base64 || "",
-        expiresAt: data.expires_at || "",
-      });
-      setPixDialogOpen(true);
-      
-      toast.success("QR Code gerado! Escaneie para pagar");
-      setValorGorjeta("");
-      setClienteNomeGorjeta("");
-      setClienteCpfGorjeta("");
-      setPedidoMusica("");
-      setPedidoMensagem("");
-    } catch (error: any) {
-      console.error('Error creating Pix payment:', error);
-      toast.error("Erro ao gerar pagamento Pix: " + (error.message || 'Tente novamente'));
-    } finally {
-      setTipLoading(false);
-    }
+    setTipDialogOpen(true);
   };
 
   if (loading) {
@@ -730,10 +668,10 @@ const ArtistProfile = () => {
 
               <Button
                 className="w-full"
-                onClick={handleSendTip}
-                disabled={tipLoading || !valorGorjeta || parseFloat(valorGorjeta) <= 0}
+                onClick={handleOpenTipDialog}
+                disabled={!valorGorjeta || parseFloat(valorGorjeta) <= 0 || !clienteNomeGorjeta.trim() || !clienteCpfGorjeta.trim()}
               >
-                {tipLoading ? "Processando..." : "Enviar Gorjeta via Pix"}
+                Continuar para Pagamento
               </Button>
               
               {!canViewSensitiveData && (
@@ -752,17 +690,19 @@ const ArtistProfile = () => {
         </div>
       </main>
 
-      {/* Pix Payment Dialog */}
-      {pixPaymentData && (
-        <PixPaymentDialog
-          open={pixDialogOpen}
-          onOpenChange={setPixDialogOpen}
-          gorjetaId={pixPaymentData.gorjetaId}
-          qrCode={pixPaymentData.qrCode}
-          qrCodeBase64={pixPaymentData.qrCodeBase64}
-          expiresAt={pixPaymentData.expiresAt}
-        />
-      )}
+      {/* Tip Payment Dialog */}
+      <TipPaymentDialog
+        open={tipDialogOpen}
+        onOpenChange={setTipDialogOpen}
+        valor={parseFloat(valorGorjeta) || 0}
+        artistaId={id || ""}
+        clienteId={currentUserId}
+        clienteNome={clienteNomeGorjeta}
+        clienteCpf={limparCPF(clienteCpfGorjeta)}
+        sessionId={sessionId}
+        pedidoMusica={pedidoMusica || null}
+        pedidoMensagem={pedidoMensagem || null}
+      />
     </div>
   );
 };
