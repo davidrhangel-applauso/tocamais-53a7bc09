@@ -207,7 +207,7 @@ export const CardPaymentForm = ({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -215,91 +215,91 @@ export const CardPaymentForm = ({
         </Alert>
       )}
 
-      <form id="card-payment-form" className="space-y-4">
+      <form id="card-payment-form" className="space-y-3">
         {/* Secure Fields - renderizados automaticamente pelo SDK */}
-        <div className="space-y-2">
+        <div className="space-y-1">
           <Label htmlFor="card-number">Número do Cartão</Label>
           <div 
             id="card-number" 
             ref={cardNumberRef}
-            className="min-h-[40px] border rounded-md"
+            className="h-9 border rounded-md"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="expiration-date">Validade</Label>
             <div 
               id="expiration-date" 
               ref={expirationDateRef}
-              className="min-h-[40px] border rounded-md"
+              className="h-9 border rounded-md"
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="security-code">CVV</Label>
             <div 
               id="security-code" 
               ref={securityCodeRef}
-              className="min-h-[40px] border rounded-md"
+              className="h-9 border rounded-md"
             />
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1">
           <Label htmlFor="cardholder-name">Nome do Titular</Label>
           <input
             type="text"
             id="cardholder-name"
-            className="w-full px-3 py-2 border rounded-md"
+            className="w-full h-9 px-3 py-1.5 text-sm border rounded-md"
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1">
           <Label htmlFor="cardholder-email">E-mail</Label>
           <input
             type="email"
             id="cardholder-email"
-            className="w-full px-3 py-2 border rounded-md"
+            className="w-full h-9 px-3 py-1.5 text-sm border rounded-md"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="identification-type">Tipo de Documento</Label>
             <select
               id="identification-type"
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full h-9 px-3 py-1.5 text-sm border rounded-md"
             >
               <option value="">Selecione</option>
             </select>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="identification-number">CPF</Label>
             <input
               type="text"
               id="identification-number"
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full h-9 px-3 py-1.5 text-sm border rounded-md"
             />
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1">
           <Label htmlFor="issuer">Banco Emissor</Label>
           <select
             id="issuer"
-            className="w-full px-3 py-2 border rounded-md"
+            className="w-full h-9 px-3 py-1.5 text-sm border rounded-md"
           >
             <option value="">Carregando...</option>
           </select>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1">
           <Label htmlFor="installments">Parcelas</Label>
           <select
             id="installments"
-            className="w-full px-3 py-2 border rounded-md"
+            className="w-full h-9 px-3 py-1.5 text-sm border rounded-md"
           >
             <option value="">Carregando...</option>
           </select>
