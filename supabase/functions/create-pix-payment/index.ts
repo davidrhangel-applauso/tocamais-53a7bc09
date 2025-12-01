@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { MercadoPagoConfig, Payment } from "https://esm.sh/mercadopago@2.0.15";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -70,11 +71,17 @@ serve(async (req: Request) => {
       throw new Error('Perfil não é um artista');
     }
 
-    // Criar pagamento no Mercado Pago
+    // Inicializar SDK do Mercado Pago
     const mercadoPagoToken = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN');
     if (!mercadoPagoToken) {
       throw new Error('Token do Mercado Pago não configurado');
     }
+
+    const client = new MercadoPagoConfig({ 
+      accessToken: mercadoPagoToken,
+      options: { timeout: 5000 }
+    });
+    const payment = new Payment(client);
 
     // Calcular valores com taxa da plataforma (10%) e taxa de processamento (1%)
     const valorBruto = valor; // Valor que o cliente deseja enviar
@@ -96,10 +103,10 @@ serve(async (req: Request) => {
       transaction_amount: valorTotal, // Cobrar valor total (bruto + taxa processamento)
       description: `Gorjeta para ${artista.nome}`,
       payment_method_id: 'pix',
-      statement_descriptor: 'GORJETA ARTISTA', // Aparece no extrato do cliente
-      external_reference: gorjetaId, // Usar o ID da gorjeta como referência para correlação
+      statement_descriptor: 'GORJETA ARTISTA',
+      external_reference: gorjetaId,
       payer: {
-        email: 'cliente@example.com', // Email genérico (pode ser melhorado futuramente)
+        email: 'cliente@example.com',
         first_name: firstName,
         last_name: lastName,
       },
@@ -119,11 +126,8 @@ serve(async (req: Request) => {
     if (artista.mercadopago_seller_id) {
       console.log('Configurando split payment para seller:', artista.mercadopago_seller_id);
       
-      // Usar headers de marketplace para split payment
-      paymentData.marketplace = 'NONE'; // Indica que não é marketplace, mas split direto
-      paymentData.marketplace_fee = taxaPlataforma; // Taxa da plataforma (10%)
-      
-      // Configurar o collector (quem recebe) como o artista
+      paymentData.marketplace = 'NONE';
+      paymentData.marketplace_fee = taxaPlataforma;
       paymentData.collector_id = parseInt(artista.mercadopago_seller_id);
       
       console.log('Split payment configurado:', {
@@ -137,41 +141,19 @@ serve(async (req: Request) => {
       console.log('Artista sem Mercado Pago vinculado - pagamento vai direto para plataforma');
     }
 
-    console.log('Calling Mercado Pago API...');
+    console.log('Chamando SDK do Mercado Pago...');
 
     // Gerar chave de idempotência única
     const idempotencyKey = crypto.randomUUID();
 
-    const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${mercadoPagoToken}`,
-        'X-Idempotency-Key': idempotencyKey,
-      },
-      body: JSON.stringify(paymentData),
+    // Criar pagamento usando SDK
+    const mpData = await payment.create({
+      body: paymentData,
+      requestOptions: {
+        idempotencyKey: idempotencyKey,
+      }
     });
 
-    if (!mpResponse.ok) {
-      const errorText = await mpResponse.text();
-      console.error('Mercado Pago API error:', {
-        status: mpResponse.status,
-        statusText: mpResponse.statusText,
-        error: errorText,
-        paymentData: { ...paymentData, payer: { ...paymentData.payer, identification: cliente_cpf ? 'CPF fornecido' : 'CPF não fornecido' } }
-      });
-      
-      // Tentar parsear erro do Mercado Pago
-      try {
-        const errorJson = JSON.parse(errorText);
-        const errorMessage = errorJson.message || errorJson.error || 'Erro desconhecido';
-        throw new Error(`Erro Mercado Pago: ${errorMessage}`);
-      } catch {
-        throw new Error(`Erro ao criar pagamento (${mpResponse.status})`);
-      }
-    }
-
-    const mpData = await mpResponse.json();
     console.log('Mercado Pago response:', mpData);
 
     // Calcular expiração (30 minutos)
@@ -181,15 +163,15 @@ serve(async (req: Request) => {
     const { data: gorjeta, error: gorjetaError } = await supabase
       .from('gorjetas')
       .insert({
-        id: gorjetaId, // Usar o mesmo UUID enviado como external_reference
-        valor: valorBruto, // Valor bruto (sem taxa de processamento)
-        valor_liquido_artista: valorLiquidoArtista, // 90% do valor bruto
-        taxa_plataforma: taxaPlataforma, // 10% do valor bruto
+        id: gorjetaId,
+        valor: valorBruto,
+        valor_liquido_artista: valorLiquidoArtista,
+        taxa_plataforma: taxaPlataforma,
         artista_id,
         cliente_id: cliente_id || null,
         cliente_nome: cliente_nome || null,
         session_id: session_id || null,
-        payment_id: mpData.id.toString(),
+        payment_id: mpData.id!.toString(),
         status_pagamento: 'pending',
         qr_code: mpData.point_of_interaction?.transaction_data?.qr_code || '',
         qr_code_base64: mpData.point_of_interaction?.transaction_data?.qr_code_base64 || '',

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { MercadoPagoConfig, OAuth } from "https://esm.sh/mercadopago@2.0.15";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -41,40 +42,33 @@ serve(async (req) => {
       );
     }
 
-    // Trocar o código por access token
+    // Configurar SDK do Mercado Pago
     const clientId = Deno.env.get('MERCADO_PAGO_CLIENT_ID');
     const clientSecret = Deno.env.get('MERCADO_PAGO_CLIENT_SECRET');
     const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-oauth-callback`;
 
-    console.log('Trocando código por token...');
-
-    const tokenResponse = await fetch('https://api.mercadopago.com/oauth/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        client_id: clientId!,
-        client_secret: clientSecret!,
-        code: code,
-        redirect_uri: redirectUri,
-      }).toString(),
-    });
-
-    if (!tokenResponse.ok) {
-      const errorData = await tokenResponse.text();
-      console.error('Erro ao trocar código por token:', errorData);
-      return new Response(
-        JSON.stringify({ error: 'Erro ao obter token do Mercado Pago' }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+    if (!clientId || !clientSecret) {
+      throw new Error('Credenciais do Mercado Pago não configuradas');
     }
 
-    const tokenData = await tokenResponse.json();
+    console.log('Trocando código por token usando SDK...');
+
+    // Inicializar SDK do Mercado Pago
+    const client = new MercadoPagoConfig({ 
+      accessToken: '', // Não precisa de token para OAuth
+    });
+    const oauth = new OAuth(client);
+
+    // Trocar código por access token usando SDK
+    const tokenData = await oauth.create({
+      body: {
+        client_id: clientId,
+        client_secret: clientSecret,
+        code: code,
+        redirect_uri: redirectUri,
+      }
+    });
+
     console.log('Token recebido com sucesso');
 
     // Buscar informações do vendedor
