@@ -11,6 +11,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Obter URL do app das variáveis de ambiente ou usar fallback
+  const appUrl = Deno.env.get('APP_URL') || 'https://id-preview--be6d7b14-8d70-4f34-91f4-6a3fe00db815.lovable.app';
+
   try {
     const url = new URL(req.url);
     const code = url.searchParams.get('code');
@@ -22,11 +25,12 @@ serve(async (req) => {
     // Erro do Mercado Pago
     if (error) {
       console.error('Erro no OAuth do MP:', error);
-      return redirectWithError(url.origin, 'auth_error', 'Autorização negada pelo Mercado Pago');
+      return redirectWithError(appUrl, 'auth_error', 'Autorização negada pelo Mercado Pago');
     }
 
     if (!code || !state) {
-      return redirectWithError(url.origin, 'missing_params', 'Parâmetros obrigatórios ausentes');
+      console.error('Parâmetros ausentes:', { code: !!code, state: !!state });
+      return redirectWithError(appUrl, 'missing_params', 'Parâmetros obrigatórios ausentes');
     }
 
     // Configurar Supabase
@@ -45,7 +49,7 @@ serve(async (req) => {
       console.log('Artista já possui conta vinculada, redirecionando...');
       return new Response(null, {
         status: 302,
-        headers: { 'Location': `${url.origin}/painel?mp_linked=true` },
+        headers: { 'Location': `${appUrl}/painel?mp_linked=true` },
       });
     }
 
@@ -56,7 +60,7 @@ serve(async (req) => {
 
     if (!clientId || !clientSecret) {
       console.error('Credenciais do MP não configuradas');
-      return redirectWithError(url.origin, 'config_error', 'Configuração do servidor incompleta');
+      return redirectWithError(appUrl, 'config_error', 'Configuração do servidor incompleta');
     }
 
     console.log('Trocando código por token via HTTP fetch...');
@@ -83,7 +87,7 @@ serve(async (req) => {
       const errorMsg = tokenData.error === 'invalid_grant' 
         ? 'Código expirado. Por favor, tente vincular novamente.'
         : 'Erro ao autorizar com Mercado Pago';
-      return redirectWithError(url.origin, 'token_error', errorMsg);
+      return redirectWithError(appUrl, 'token_error', errorMsg);
     }
 
     console.log('Token obtido com sucesso');
@@ -97,7 +101,7 @@ serve(async (req) => {
 
     if (!userResponse.ok) {
       console.error('Erro ao buscar dados do vendedor');
-      return redirectWithError(url.origin, 'user_error', 'Erro ao obter dados da conta');
+      return redirectWithError(appUrl, 'user_error', 'Erro ao obter dados da conta');
     }
 
     const userInfo = await userResponse.json();
@@ -112,20 +116,19 @@ serve(async (req) => {
 
     if (updateError) {
       console.error('Erro ao atualizar perfil:', updateError);
-      return redirectWithError(url.origin, 'db_error', 'Erro ao salvar vinculação');
+      return redirectWithError(appUrl, 'db_error', 'Erro ao salvar vinculação');
     }
 
     console.log('Conta vinculada com sucesso!');
 
     return new Response(null, {
       status: 302,
-      headers: { 'Location': `${url.origin}/painel?mp_linked=true` },
+      headers: { 'Location': `${appUrl}/painel?mp_linked=true` },
     });
 
   } catch (error) {
     console.error('Erro inesperado no callback:', error);
-    const url = new URL(req.url);
-    return redirectWithError(url.origin, 'server_error', 'Erro interno do servidor');
+    return redirectWithError(appUrl, 'server_error', 'Erro interno do servidor');
   }
 });
 
