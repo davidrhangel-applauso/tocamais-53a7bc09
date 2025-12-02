@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { MercadoPagoConfig, OAuth } from "https://esm.sh/mercadopago@2.0.15";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,7 +7,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -16,89 +14,97 @@ serve(async (req) => {
   try {
     const url = new URL(req.url);
     const code = url.searchParams.get('code');
-    const state = url.searchParams.get('state'); // state contém o artist_id
+    const state = url.searchParams.get('state'); // artist_id
     const error = url.searchParams.get('error');
 
-    console.log('OAuth callback recebido:', { code, state, error });
+    console.log('OAuth callback recebido:', { code: code ? 'presente' : 'ausente', state, error });
 
+    // Erro do Mercado Pago
     if (error) {
-      console.error('Erro no OAuth:', error);
-      return new Response(
-        JSON.stringify({ error: 'Erro na autorização do Mercado Pago' }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      console.error('Erro no OAuth do MP:', error);
+      return redirectWithError(url.origin, 'auth_error', 'Autorização negada pelo Mercado Pago');
     }
 
-    if (!code) {
-      return new Response(
-        JSON.stringify({ error: 'Código de autorização não fornecido' }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+    if (!code || !state) {
+      return redirectWithError(url.origin, 'missing_params', 'Parâmetros obrigatórios ausentes');
     }
 
-    // Configurar SDK do Mercado Pago
+    // Configurar Supabase
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Verificar se artista já está vinculado (proteção contra refresh)
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('mercadopago_seller_id')
+      .eq('id', state)
+      .single();
+
+    if (existingProfile?.mercadopago_seller_id) {
+      console.log('Artista já possui conta vinculada, redirecionando...');
+      return new Response(null, {
+        status: 302,
+        headers: { 'Location': `${url.origin}/painel?mp_linked=true` },
+      });
+    }
+
+    // Trocar código por token usando HTTP fetch direto
     const clientId = Deno.env.get('MERCADO_PAGO_CLIENT_ID');
     const clientSecret = Deno.env.get('MERCADO_PAGO_CLIENT_SECRET');
-    const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-oauth-callback`;
+    const redirectUri = `${supabaseUrl}/functions/v1/mercadopago-oauth-callback`;
 
     if (!clientId || !clientSecret) {
-      throw new Error('Credenciais do Mercado Pago não configuradas');
+      console.error('Credenciais do MP não configuradas');
+      return redirectWithError(url.origin, 'config_error', 'Configuração do servidor incompleta');
     }
 
-    console.log('Trocando código por token usando SDK...');
+    console.log('Trocando código por token via HTTP fetch...');
 
-    // Inicializar SDK do Mercado Pago
-    const client = new MercadoPagoConfig({ 
-      accessToken: '', // Não precisa de token para OAuth
-    });
-    const oauth = new OAuth(client);
-
-    // Trocar código por access token usando SDK
-    const tokenData = await oauth.create({
-      body: {
+    const tokenResponse = await fetch('https://api.mercadopago.com/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+      },
+      body: new URLSearchParams({
         client_id: clientId,
         client_secret: clientSecret,
+        grant_type: 'authorization_code',
         code: code,
         redirect_uri: redirectUri,
-      }
+      }).toString(),
     });
 
-    console.log('Token recebido com sucesso');
+    const tokenData = await tokenResponse.json();
+
+    if (!tokenResponse.ok || !tokenData.access_token) {
+      console.error('Erro ao trocar código por token:', tokenData);
+      const errorMsg = tokenData.error === 'invalid_grant' 
+        ? 'Código expirado. Por favor, tente vincular novamente.'
+        : 'Erro ao autorizar com Mercado Pago';
+      return redirectWithError(url.origin, 'token_error', errorMsg);
+    }
+
+    console.log('Token obtido com sucesso');
 
     // Buscar informações do vendedor
-    const userInfoResponse = await fetch('https://api.mercadopago.com/users/me', {
+    const userResponse = await fetch('https://api.mercadopago.com/users/me', {
       headers: {
         'Authorization': `Bearer ${tokenData.access_token}`,
       },
     });
 
-    if (!userInfoResponse.ok) {
-      const errorData = await userInfoResponse.text();
-      console.error('Erro ao buscar informações do usuário:', errorData);
-      return new Response(
-        JSON.stringify({ error: 'Erro ao buscar dados do vendedor' }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+    if (!userResponse.ok) {
+      console.error('Erro ao buscar dados do vendedor');
+      return redirectWithError(url.origin, 'user_error', 'Erro ao obter dados da conta');
     }
 
-    const userInfo = await userInfoResponse.json();
+    const userInfo = await userResponse.json();
     const sellerId = userInfo.id.toString();
-    console.log('Seller ID:', sellerId);
+    console.log('Seller ID obtido:', sellerId);
 
-    // Atualizar o perfil do artista no Supabase
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
+    // Atualizar perfil do artista
     const { error: updateError } = await supabase
       .from('profiles')
       .update({ mercadopago_seller_id: sellerId })
@@ -106,36 +112,27 @@ serve(async (req) => {
 
     if (updateError) {
       console.error('Erro ao atualizar perfil:', updateError);
-      return new Response(
-        JSON.stringify({ error: 'Erro ao salvar dados no perfil' }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      return redirectWithError(url.origin, 'db_error', 'Erro ao salvar vinculação');
     }
 
-    console.log('Perfil atualizado com sucesso');
+    console.log('Conta vinculada com sucesso!');
 
-    // Redirecionar de volta para o painel do artista
-    const redirectUrl = `${url.origin}/painel?mp_linked=true`;
-    
     return new Response(null, {
       status: 302,
-      headers: {
-        ...corsHeaders,
-        'Location': redirectUrl,
-      },
+      headers: { 'Location': `${url.origin}/painel?mp_linked=true` },
     });
 
   } catch (error) {
-    console.error('Erro no callback OAuth:', error);
-    return new Response(
-      JSON.stringify({ error: 'Erro interno do servidor' }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
+    console.error('Erro inesperado no callback:', error);
+    const url = new URL(req.url);
+    return redirectWithError(url.origin, 'server_error', 'Erro interno do servidor');
   }
 });
+
+function redirectWithError(origin: string, code: string, message: string): Response {
+  const params = new URLSearchParams({ mp_error: code, mp_message: message });
+  return new Response(null, {
+    status: 302,
+    headers: { 'Location': `${origin}/painel?${params.toString()}` },
+  });
+}
