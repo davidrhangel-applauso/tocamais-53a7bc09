@@ -1,72 +1,31 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { initMercadoPago } from '@mercadopago/sdk-react';
 import { MERCADO_PAGO_CONFIG } from '@/config/mercadopago';
 
-declare global {
-  interface Window {
-    MercadoPago: any;
-  }
-}
-
 export const useMercadoPago = () => {
-  const [mp, setMp] = useState<any>(null);
-  const [deviceId, setDeviceId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const initializeMercadoPago = async () => {
-      try {
-        // Aguardar o SDK carregar
-        if (typeof window.MercadoPago === 'undefined') {
-          let attempts = 0;
-          const maxAttempts = 50; // 5 segundos (100ms * 50)
-          
-          await new Promise<void>((resolve, reject) => {
-            const checkSDK = setInterval(() => {
-              attempts++;
-              if (typeof window.MercadoPago !== 'undefined') {
-                clearInterval(checkSDK);
-                resolve();
-              } else if (attempts >= maxAttempts) {
-                clearInterval(checkSDK);
-                reject(new Error('MercadoPago SDK failed to load'));
-              }
-            }, 100);
-          });
-        }
-
-        // Inicializar SDK V2 com Public Key
-        const mpInstance = new window.MercadoPago(MERCADO_PAGO_CONFIG.publicKey, {
-          locale: 'pt-BR'
-        });
-        
-        setMp(mpInstance);
-        console.log('MercadoPago SDK V2 inicializado com sucesso');
-        
-        // Tentar obter device_id do SDK (método pode variar conforme versão)
-        let deviceIdValue: string;
-        if (typeof mpInstance.getDeviceId === 'function') {
-          deviceIdValue = mpInstance.getDeviceId();
-        } else {
-          // Fallback: gerar device_id único
-          deviceIdValue = `web_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        }
-        
-        setDeviceId(deviceIdValue);
-        console.log('Device ID:', deviceIdValue);
-        
-        setIsLoading(false);
-      } catch (err) {
-        console.error('Error initializing MercadoPago:', err);
-        const fallbackId = `web_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        setDeviceId(fallbackId);
-        setError('Failed to initialize MercadoPago SDK');
-        setIsLoading(false);
-      }
-    };
-
-    initializeMercadoPago();
+    try {
+      console.log('Inicializando Mercado Pago SDK React...');
+      initMercadoPago(MERCADO_PAGO_CONFIG.publicKey, {
+        locale: 'pt-BR',
+      });
+      setIsInitialized(true);
+      console.log('Mercado Pago SDK React inicializado com sucesso');
+    } catch (err) {
+      console.error('Erro ao inicializar Mercado Pago:', err);
+      setError('Erro ao inicializar Mercado Pago');
+    }
   }, []);
 
-  return { mp, deviceId, isLoading, error };
+  return { 
+    isInitialized, 
+    error,
+    // Mantém compatibilidade com código existente
+    mp: null,
+    deviceId: null,
+    isLoading: !isInitialized,
+  };
 };
