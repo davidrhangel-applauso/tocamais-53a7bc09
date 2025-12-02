@@ -155,6 +155,15 @@ export const CardPaymentForm = ({
 
       console.log('Token do cartão gerado:', cardData.token);
 
+      // Obter dados do pagador do formulário
+      const emailInput = document.getElementById('cardholder-email') as HTMLInputElement;
+      const identificationTypeInput = document.getElementById('identification-type') as HTMLSelectElement;
+      const identificationNumberInput = document.getElementById('identification-number') as HTMLInputElement;
+
+      if (!emailInput?.value || !identificationTypeInput?.value || !identificationNumberInput?.value) {
+        throw new Error('Por favor, preencha todos os campos obrigatórios');
+      }
+
       // Enviar para a edge function processar o pagamento
       const { data, error: functionError } = await supabase.functions.invoke(
         'process-card-payment',
@@ -172,6 +181,13 @@ export const CardPaymentForm = ({
             pedido_musica: pedidoMusica,
             pedido_mensagem: pedidoMensagem,
             device_id: deviceId,
+            payer: {
+              email: emailInput.value,
+              identification: {
+                type: identificationTypeInput.value,
+                number: identificationNumberInput.value,
+              },
+            },
           },
         }
       );

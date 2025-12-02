@@ -19,6 +19,13 @@ interface CardPaymentRequest {
   pedido_musica?: string | null;
   pedido_mensagem?: string | null;
   device_id?: string | null;
+  payer: {
+    email: string;
+    identification: {
+      type: string;
+      number: string;
+    };
+  };
 }
 
 serve(async (req: Request) => {
@@ -40,6 +47,7 @@ serve(async (req: Request) => {
       pedido_musica,
       pedido_mensagem,
       device_id,
+      payer,
     }: CardPaymentRequest = await req.json();
 
     console.log('Processing card payment:', { payment_method_id, valor, artista_id });
@@ -47,6 +55,10 @@ serve(async (req: Request) => {
     // Validações
     if (!token || !payment_method_id || !valor || !artista_id) {
       throw new Error('Dados obrigatórios ausentes');
+    }
+
+    if (!payer || !payer.email || !payer.identification || !payer.identification.type || !payer.identification.number) {
+      throw new Error('Informações do pagador são obrigatórias');
     }
 
     if (!cliente_id && !session_id) {
@@ -102,6 +114,13 @@ serve(async (req: Request) => {
       installments: installmentsNumber,
       payment_method_id,
       issuer_id,
+      payer: {
+        email: payer.email,
+        identification: {
+          type: payer.identification.type,
+          number: payer.identification.number,
+        },
+      },
       external_reference: gorjetaId,
       statement_descriptor: 'GORJETA ARTISTA',
       additional_info: {
