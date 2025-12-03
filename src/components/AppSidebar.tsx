@@ -81,7 +81,7 @@ export function AppSidebar({ artistName, artistPhoto, ativoAoVivo }: AppSidebarP
             <div className="flex-1 overflow-hidden">
               <p className="font-semibold truncate">{artistName}</p>
               <div className="flex items-center gap-2 mt-1">
-                <div className={`w-2 h-2 rounded-full ${ativoAoVivo ? 'bg-red-500 animate-pulse' : 'bg-muted'}`} />
+                <div className={`w-2 h-2 rounded-full ${ativoAoVivo ? 'bg-green-500 animate-pulse' : 'bg-muted'}`} />
                 <p className="text-xs text-muted-foreground">
                   {ativoAoVivo ? "Ao Vivo" : "Offline"}
                 </p>
