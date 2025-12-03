@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Music, Search, LogOut, Star, MessageCircle, Settings } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Music, Search, LogOut, Star, MessageCircle, Settings, Eye, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import { waitForProfile } from "@/lib/auth-utils";
@@ -24,6 +25,7 @@ interface Artist {
 
 const Home = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [artists, setArtists] = useState<Artist[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -31,6 +33,8 @@ const Home = () => {
   const [userId, setUserId] = useState<string | undefined>();
   const [userType, setUserType] = useState<"artista" | "cliente">("cliente");
   const [profileExists, setProfileExists] = useState(false);
+  
+  const isPreviewMode = searchParams.get('preview') === 'true';
 
   useEffect(() => {
     checkAuth();
@@ -65,14 +69,14 @@ const Home = () => {
       setProfileExists(true);
       setUserType(profile.tipo);
 
-      // Redirect artists to their panel
-      if (profile.tipo === "artista") {
+      // Redirect artists to their panel (unless in preview mode)
+      if (profile.tipo === "artista" && !isPreviewMode) {
         navigate("/painel", { replace: true });
         return;
       }
       
-      // Client stays on home page
-      console.log("Client authenticated successfully", { userId: user.id, tipo: profile.tipo });
+      // Client stays on home page (or artist in preview mode)
+      console.log("User authenticated successfully", { userId: user.id, tipo: profile.tipo, isPreviewMode });
     } catch (error) {
       console.error("Auth check error:", error);
       navigate("/auth", { replace: true });
@@ -127,6 +131,22 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      {/* Preview Mode Banner */}
+      {isPreviewMode && (
+        <Alert className="rounded-none border-x-0 border-t-0 bg-primary/10 border-primary/20">
+          <Eye className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>
+              <strong>Modo Visualização:</strong> Você está vendo a página como um cliente vê.
+            </span>
+            <Button variant="outline" size="sm" onClick={() => navigate("/painel")}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Voltar ao Painel
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <header className="border-b border-border/40 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -134,19 +154,23 @@ const Home = () => {
             <h1 className="text-2xl font-bold text-gradient">Toca+</h1>
           </div>
           <div className="flex gap-2">
-            <NotificationBell userId={userId} />
-            <Button variant="outline" onClick={() => navigate("/mensagens")}>
-              <MessageCircle className="w-4 h-4 mr-2" />
-              Mensagens
-            </Button>
-            <Button variant="outline" onClick={() => navigate("/configuracoes")}>
-              <Settings className="w-4 h-4 mr-2" />
-              Configurações
-            </Button>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Sair
-            </Button>
+            {!isPreviewMode && (
+              <>
+                <NotificationBell userId={userId} />
+                <Button variant="outline" onClick={() => navigate("/mensagens")}>
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Mensagens
+                </Button>
+                <Button variant="outline" onClick={() => navigate("/configuracoes")}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Configurações
+                </Button>
+                <Button variant="outline" onClick={handleLogout}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sair
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>

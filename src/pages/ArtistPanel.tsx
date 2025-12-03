@@ -530,7 +530,7 @@ const ArtistPanel = () => {
             </div>
             <div className="flex items-center gap-3">
               <NotificationBell userId={artistId || undefined} />
-              <Button variant="outline" size="sm" onClick={() => navigate("/home")}>
+              <Button variant="outline" size="sm" onClick={() => navigate("/home?preview=true")}>
                 Ver como Cliente
               </Button>
             </div>
