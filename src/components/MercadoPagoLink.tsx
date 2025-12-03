@@ -2,11 +2,10 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, ExternalLink, AlertCircle, TestTube, Info } from "lucide-react";
+import { CheckCircle2, ExternalLink, AlertCircle, Info } from "lucide-react";
 import { MERCADO_PAGO_CONFIG } from "@/config/mercadopago";
 
 interface MercadoPagoLinkProps {
@@ -16,7 +15,6 @@ interface MercadoPagoLinkProps {
 export function MercadoPagoLink({ userId }: MercadoPagoLinkProps) {
   const [isLinked, setIsLinked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [testMode, setTestMode] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -77,16 +75,6 @@ export function MercadoPagoLink({ userId }: MercadoPagoLinkProps) {
     window.location.href = authUrl;
   };
 
-  const handleTestMode = () => {
-    setTestMode(!testMode);
-    toast({
-      title: testMode ? "Modo Teste Desativado" : "Modo Teste Ativado",
-      description: testMode 
-        ? "Voltou para o modo de produção" 
-        : "Agora você pode simular splits de pagamento sem conexão real",
-    });
-  };
-
   if (isLoading) {
     return <div>Carregando...</div>;
   }
@@ -94,19 +82,11 @@ export function MercadoPagoLink({ userId }: MercadoPagoLinkProps) {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <CardTitle>Receber Split de Pagamentos</CardTitle>
-            <CardDescription>
-              Vincule sua conta do Mercado Pago para receber 90% das gorjetas automaticamente
-            </CardDescription>
-          </div>
-          {testMode && (
-            <Badge variant="outline" className="gap-1">
-              <TestTube className="h-3 w-3" />
-              Modo Teste
-            </Badge>
-          )}
+        <div className="space-y-1">
+          <CardTitle>Receber Split de Pagamentos</CardTitle>
+          <CardDescription>
+            Vincule sua conta do Mercado Pago para receber 90% das gorjetas automaticamente
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -120,20 +100,11 @@ export function MercadoPagoLink({ userId }: MercadoPagoLinkProps) {
         ) : (
           <>
             {/* Status Alert */}
-            <Alert variant={testMode ? "default" : "destructive"}>
+            <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                {testMode ? (
-                  <>
-                    <strong>Modo de Teste Ativo:</strong> Simule o fluxo de split sem conectar ao Mercado Pago.
-                    Os pagamentos reais ainda vão para a plataforma.
-                  </>
-                ) : (
-                  <>
-                    <strong>Não Vinculado:</strong> Os pagamentos vão para a plataforma.
-                    Você precisa solicitar transferências manualmente.
-                  </>
-                )}
+                <strong>Não Vinculado:</strong> Os pagamentos vão para a plataforma.
+                Você precisa solicitar transferências manualmente.
               </AlertDescription>
             </Alert>
 
@@ -167,72 +138,60 @@ export function MercadoPagoLink({ userId }: MercadoPagoLinkProps) {
               </ul>
             </div>
 
-            {/* Ações */}
-            <div className="space-y-2 pt-2">
+            {/* Ação */}
+            <div className="pt-2">
               <Button 
                 onClick={handleLink}
                 className="w-full"
-                disabled={testMode}
               >
                 <ExternalLink className="mr-2 h-4 w-4" />
                 Vincular Conta do Mercado Pago
               </Button>
-              
-              <Button 
-                onClick={handleTestMode}
-                variant="outline"
-                className="w-full"
-              >
-                <TestTube className="mr-2 h-4 w-4" />
-                {testMode ? "Desativar" : "Ativar"} Modo de Teste
-              </Button>
             </div>
 
-            {/* Instruções para Produção */}
-            {!testMode && (
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertDescription className="text-xs space-y-2">
-                  <p className="font-semibold text-sm">📋 Checklist para Ativar Split:</p>
-                  <ol className="list-decimal list-inside space-y-2 ml-2">
-                    <li>
-                      <strong>Criar Aplicação no Mercado Pago</strong>
-                      <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
-                        <li>Acesse: <a href="https://www.mercadopago.com.br/developers/panel" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Painel de Desenvolvedores</a></li>
-                        <li>Crie uma nova aplicação de tipo "Online payments"</li>
-                      </ul>
-                    </li>
-                    <li>
-                      <strong>Configurar Redirect URI</strong>
-                      <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
-                        <li>Nas configurações da aplicação, adicione:</li>
-                        <li><code className="text-xs bg-muted px-1 py-0.5 rounded block mt-1">https://tnhbijlskoffgoocftfq.supabase.co/functions/v1/mercadopago-oauth-callback</code></li>
-                      </ul>
-                    </li>
-                    <li>
-                      <strong>Ativar Modo Produção</strong>
-                      <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
-                        <li>Fazer pelo menos 5 pagamentos de teste</li>
-                        <li>Atingir 73+ pontos de qualidade</li>
-                        <li>Solicitar ativação em produção</li>
-                      </ul>
-                    </li>
-                    <li>
-                      <strong>Informar Client ID e Secret</strong>
-                      <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
-                        <li>Copie o Client ID e Client Secret da sua aplicação</li>
-                        <li>Entre em contato para configurar na plataforma</li>
-                      </ul>
-                    </li>
-                  </ol>
-                  <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-950 rounded border border-yellow-200 dark:border-yellow-800">
-                    <p className="text-yellow-800 dark:text-yellow-200 font-medium">
-                      ⚠️ Importante: O split só funciona em modo produção. Use o Modo de Teste enquanto aguarda aprovação.
-                    </p>
-                  </div>
-                </AlertDescription>
-              </Alert>
-            )}
+            {/* Instruções */}
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription className="text-xs space-y-2">
+                <p className="font-semibold text-sm">📋 Checklist para Ativar Split:</p>
+                <ol className="list-decimal list-inside space-y-2 ml-2">
+                  <li>
+                    <strong>Criar Aplicação no Mercado Pago</strong>
+                    <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                      <li>Acesse: <a href="https://www.mercadopago.com.br/developers/panel" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Painel de Desenvolvedores</a></li>
+                      <li>Crie uma nova aplicação de tipo "Online payments"</li>
+                    </ul>
+                  </li>
+                  <li>
+                    <strong>Configurar Redirect URI</strong>
+                    <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                      <li>Nas configurações da aplicação, adicione:</li>
+                      <li><code className="text-xs bg-muted px-1 py-0.5 rounded block mt-1">https://tnhbijlskoffgoocftfq.supabase.co/functions/v1/mercadopago-oauth-callback</code></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <strong>Ativar Modo Produção</strong>
+                    <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                      <li>Fazer pelo menos 5 pagamentos de teste</li>
+                      <li>Atingir 73+ pontos de qualidade</li>
+                      <li>Solicitar ativação em produção</li>
+                    </ul>
+                  </li>
+                  <li>
+                    <strong>Informar Client ID e Secret</strong>
+                    <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                      <li>Copie o Client ID e Client Secret da sua aplicação</li>
+                      <li>Entre em contato para configurar na plataforma</li>
+                    </ul>
+                  </li>
+                </ol>
+                <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-950 rounded border border-yellow-200 dark:border-yellow-800">
+                  <p className="text-yellow-800 dark:text-yellow-200 font-medium">
+                    ⚠️ Importante: O split só funciona em modo produção.
+                  </p>
+                </div>
+              </AlertDescription>
+            </Alert>
           </>
         )}
       </CardContent>
