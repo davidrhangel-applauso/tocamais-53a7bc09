@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { TrendingUp, Music, DollarSign, Users } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -62,89 +63,90 @@ const AnalyticsDashboard = ({ data }: AnalyticsDashboardProps) => {
         </Card>
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        {/* Pedidos por Dia */}
-        <Card>
-          <CardHeader className="p-4 md:p-6">
-            <CardTitle className="text-base md:text-lg">Pedidos nos Últimos 7 Dias</CardTitle>
-            <CardDescription className="text-xs md:text-sm">Tendência de pedidos recebidos</CardDescription>
-          </CardHeader>
-          <CardContent className="p-2 md:p-6 pt-0">
-            <ResponsiveContainer width="100%" height={chartHeight}>
-              <LineChart data={data.pedidosPorDia}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="data" 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={fontSize}
-                  tickMargin={8}
-                />
-                <YAxis 
-                  stroke="hsl(var(--muted-foreground))" 
-                  fontSize={fontSize}
-                  width={isMobile ? 30 : 40}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--background))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                    fontSize: fontSize
-                  }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="total" 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth={2}
-                  name="Pedidos"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Gorjetas por Dia */}
-        <Card>
-          <CardHeader className="p-4 md:p-6">
-            <CardTitle className="text-base md:text-lg">Gorjetas nos Últimos 7 Dias</CardTitle>
-            <CardDescription className="text-xs md:text-sm">Receita de gorjetas</CardDescription>
-          </CardHeader>
-          <CardContent className="p-2 md:p-6 pt-0">
-            <ResponsiveContainer width="100%" height={chartHeight}>
-              <BarChart data={data.gorjetasPorDia}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="data" 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={fontSize}
-                  tickMargin={8}
-                />
-                <YAxis 
-                  stroke="hsl(var(--muted-foreground))" 
-                  fontSize={fontSize}
-                  width={isMobile ? 30 : 40}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--background))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                    fontSize: fontSize
-                  }}
-                  formatter={(value: number) => [`R$ ${value.toFixed(2)}`, 'Valor']}
-                />
-                <Bar 
-                  dataKey="valor" 
-                  fill="hsl(var(--primary))"
-                  radius={[8, 8, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Charts - Tabs no mobile, Grid no desktop */}
+      {isMobile ? (
+        <Tabs defaultValue="pedidos" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
+            <TabsTrigger value="gorjetas">Gorjetas</TabsTrigger>
+          </TabsList>
+          <TabsContent value="pedidos">
+            <Card>
+              <CardHeader className="p-4">
+                <CardTitle className="text-base">Pedidos nos Últimos 7 Dias</CardTitle>
+                <CardDescription className="text-xs">Tendência de pedidos recebidos</CardDescription>
+              </CardHeader>
+              <CardContent className="p-2 pt-0">
+                <ResponsiveContainer width="100%" height={chartHeight}>
+                  <LineChart data={data.pedidosPorDia}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="data" stroke="hsl(var(--muted-foreground))" fontSize={fontSize} tickMargin={8} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={fontSize} width={30} />
+                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: fontSize }} />
+                    <Line type="monotone" dataKey="total" stroke="hsl(var(--primary))" strokeWidth={2} name="Pedidos" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="gorjetas">
+            <Card>
+              <CardHeader className="p-4">
+                <CardTitle className="text-base">Gorjetas nos Últimos 7 Dias</CardTitle>
+                <CardDescription className="text-xs">Receita de gorjetas</CardDescription>
+              </CardHeader>
+              <CardContent className="p-2 pt-0">
+                <ResponsiveContainer width="100%" height={chartHeight}>
+                  <BarChart data={data.gorjetasPorDia}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="data" stroke="hsl(var(--muted-foreground))" fontSize={fontSize} tickMargin={8} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={fontSize} width={30} />
+                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: fontSize }} formatter={(value: number) => [`R$ ${value.toFixed(2)}`, 'Valor']} />
+                    <Bar dataKey="valor" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <div className="grid grid-cols-2 gap-6">
+          <Card>
+            <CardHeader className="p-6">
+              <CardTitle className="text-lg">Pedidos nos Últimos 7 Dias</CardTitle>
+              <CardDescription className="text-sm">Tendência de pedidos recebidos</CardDescription>
+            </CardHeader>
+            <CardContent className="p-6 pt-0">
+              <ResponsiveContainer width="100%" height={chartHeight}>
+                <LineChart data={data.pedidosPorDia}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="data" stroke="hsl(var(--muted-foreground))" fontSize={fontSize} tickMargin={8} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={fontSize} width={40} />
+                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: fontSize }} />
+                  <Line type="monotone" dataKey="total" stroke="hsl(var(--primary))" strokeWidth={2} name="Pedidos" />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="p-6">
+              <CardTitle className="text-lg">Gorjetas nos Últimos 7 Dias</CardTitle>
+              <CardDescription className="text-sm">Receita de gorjetas</CardDescription>
+            </CardHeader>
+            <CardContent className="p-6 pt-0">
+              <ResponsiveContainer width="100%" height={chartHeight}>
+                <BarChart data={data.gorjetasPorDia}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="data" stroke="hsl(var(--muted-foreground))" fontSize={fontSize} tickMargin={8} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={fontSize} width={40} />
+                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: fontSize }} formatter={(value: number) => [`R$ ${value.toFixed(2)}`, 'Valor']} />
+                  <Bar dataKey="valor" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Top Músicas */}
       <Card>
