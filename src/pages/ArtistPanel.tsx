@@ -11,7 +11,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Music, Heart, Check, X, CheckCheck, Menu } from "lucide-react";
 import { toast } from "sonner";
-import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 import PaymentHistory from "@/components/PaymentHistory";
 import NotificationBell from "@/components/NotificationBell";
 import { MercadoPagoLink } from "@/components/MercadoPagoLink";
@@ -57,14 +56,6 @@ interface Stats {
   gorjetas_hoje: number;
 }
 
-interface AnalyticsData {
-  pedidosPorDia: { data: string; total: number }[];
-  gorjetasPorDia: { data: string; valor: number }[];
-  topMusicas: { musica: string; total: number }[];
-  taxaAceitacao: number;
-  ticketMedio: number;
-  totalClientes: number;
-}
 
 const ArtistPanel = () => {
   const navigate = useNavigate();
@@ -83,14 +74,6 @@ const ArtistPanel = () => {
     pedidos_aceitos: 0,
     gorjetas_total: 0,
     gorjetas_hoje: 0,
-  });
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
-    pedidosPorDia: [],
-    gorjetasPorDia: [],
-    topMusicas: [],
-    taxaAceitacao: 0,
-    ticketMedio: 0,
-    totalClientes: 0,
   });
 
   useEffect(() => {
@@ -115,7 +98,6 @@ const ArtistPanel = () => {
           () => {
             fetchPedidos();
             fetchStats();
-            fetchAnalytics();
           }
         )
         .subscribe();
@@ -133,7 +115,6 @@ const ArtistPanel = () => {
           () => {
             fetchGorjetas();
             fetchStats();
-            fetchAnalytics();
             toast.success("Nova gorjeta recebida! 🎉");
           }
         )
@@ -182,7 +163,6 @@ const ArtistPanel = () => {
     fetchPedidos();
     fetchGorjetas();
     fetchStats();
-    fetchAnalytics();
     setLoading(false);
   };
 
@@ -298,111 +278,6 @@ const ArtistPanel = () => {
     });
   };
 
-  const fetchAnalytics = async () => {
-    if (!artistId) return;
-
-    // Últimos 7 dias
-    const seteDiasAtras = new Date();
-    seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);
-
-    // Pedidos por dia (últimos 7 dias)
-    const { data: pedidosData } = await supabase
-      .from("pedidos")
-      .select("created_at")
-      .eq("artista_id", artistId)
-      .gte("created_at", seteDiasAtras.toISOString());
-
-    const pedidosPorDia = Array.from({ length: 7 }, (_, i) => {
-      const data = new Date();
-      data.setDate(data.getDate() - (6 - i));
-      const dataStr = data.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-      const total = pedidosData?.filter(p => {
-        const pedidoData = new Date(p.created_at);
-        return pedidoData.toDateString() === data.toDateString();
-      }).length || 0;
-      return { data: dataStr, total };
-    });
-
-    // Gorjetas por dia (últimos 7 dias) - usando valor_liquido_artista
-    const { data: gorjetasData } = await supabase
-      .from("gorjetas")
-      .select("valor_liquido_artista, created_at, status_pagamento")
-      .eq("artista_id", artistId)
-      .eq("status_pagamento", "approved") // Apenas gorjetas aprovadas
-      .gte("created_at", seteDiasAtras.toISOString());
-
-    const gorjetasPorDia = Array.from({ length: 7 }, (_, i) => {
-      const data = new Date();
-      data.setDate(data.getDate() - (6 - i));
-      const dataStr = data.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-      const valor = gorjetasData?.filter(g => {
-        const gorjetaData = new Date(g.created_at);
-        return gorjetaData.toDateString() === data.toDateString();
-      }).reduce((sum, g) => sum + (g.valor_liquido_artista || 0), 0) || 0;
-      return { data: dataStr, valor };
-    });
-
-    // Top 5 músicas mais pedidas
-    const { data: todasMusicas } = await supabase
-      .from("pedidos")
-      .select("musica")
-      .eq("artista_id", artistId);
-
-    const musicasCount = todasMusicas?.reduce((acc, p) => {
-      acc[p.musica] = (acc[p.musica] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>) || {};
-
-    const topMusicas = Object.entries(musicasCount)
-      .map(([musica, total]) => ({ musica, total }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 5);
-
-    // Taxa de aceitação
-    const { count: totalPedidos } = await supabase
-      .from("pedidos")
-      .select("*", { count: "exact", head: true })
-      .eq("artista_id", artistId);
-
-    const { count: pedidosAceitos } = await supabase
-      .from("pedidos")
-      .select("*", { count: "exact", head: true })
-      .eq("artista_id", artistId)
-      .eq("status", "aceito");
-
-    const taxaAceitacao = totalPedidos && totalPedidos > 0 
-      ? (pedidosAceitos || 0) / totalPedidos * 100 
-      : 0;
-
-    // Ticket médio de gorjetas - usando valor_liquido_artista
-    const { data: todasGorjetas } = await supabase
-      .from("gorjetas")
-      .select("valor_liquido_artista, status_pagamento")
-      .eq("artista_id", artistId)
-      .eq("status_pagamento", "approved"); // Apenas gorjetas aprovadas
-
-    const ticketMedio = todasGorjetas && todasGorjetas.length > 0
-      ? todasGorjetas.reduce((sum, g) => sum + (g.valor_liquido_artista || 0), 0) / todasGorjetas.length
-      : 0;
-
-    // Total de clientes únicos
-    const { data: clientesUnicos } = await supabase
-      .from("pedidos")
-      .select("cliente_id")
-      .eq("artista_id", artistId);
-
-    const totalClientes = new Set(clientesUnicos?.map(c => c.cliente_id) || []).size;
-
-    setAnalyticsData({
-      pedidosPorDia,
-      gorjetasPorDia,
-      topMusicas,
-      taxaAceitacao,
-      ticketMedio,
-      totalClientes,
-    });
-  };
-
   const handleToggleLiveStatus = async (checked: boolean) => {
     if (!artistId) return;
 
@@ -435,7 +310,6 @@ const ArtistPanel = () => {
     toast.success(newStatus === "aceito" ? "Pedido aceito! ✅" : "Pedido recusado");
     fetchPedidos();
     fetchStats();
-    fetchAnalytics();
   };
 
   const handleBulkAction = async (action: "aceito" | "recusado") => {
@@ -459,7 +333,6 @@ const ArtistPanel = () => {
     setSelectedPedidos([]);
     fetchPedidos();
     fetchStats();
-    fetchAnalytics();
   };
 
   const handleMarkAsComplete = async (pedidoId: string) => {
@@ -477,7 +350,6 @@ const ArtistPanel = () => {
     toast.success("Pedido marcado como concluído! 🎵");
     fetchPedidos();
     fetchStats();
-    fetchAnalytics();
   };
 
   const togglePedidoSelection = (pedidoId: string) => {
@@ -500,7 +372,7 @@ const ArtistPanel = () => {
   const pedidosRecusados = pedidos.filter((p) => p.status === "recusado");
   const pedidosConcluidos = pedidos.filter((p) => p.status === "concluido");
 
-  const currentTab = searchParams.get("tab") || "analytics";
+  const currentTab = searchParams.get("tab") || "pendentes";
 
   if (loading) {
     return (
@@ -602,15 +474,6 @@ const ArtistPanel = () => {
         {/* Tabs for Pedidos and Gorjetas */}
         <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="space-y-6">
           <TabsList className="inline-flex w-full justify-start overflow-x-auto gap-1 pb-1">
-            <TabsTrigger value="analytics" className="whitespace-nowrap">
-              📊 Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="historico" className="whitespace-nowrap">
-              💰 Histórico de Pagamentos
-            </TabsTrigger>
-            <TabsTrigger value="repertorio" className="whitespace-nowrap">
-              🎵 Repertório
-            </TabsTrigger>
             <TabsTrigger value="pendentes" className="whitespace-nowrap">
               ⏳ Pendentes ({pedidosPendentes.length})
             </TabsTrigger>
@@ -626,18 +489,17 @@ const ArtistPanel = () => {
             <TabsTrigger value="gorjetas" className="whitespace-nowrap">
               💝 Gorjetas ({gorjetas.length})
             </TabsTrigger>
+            <TabsTrigger value="historico" className="whitespace-nowrap">
+              💰 Pagamentos
+            </TabsTrigger>
+            <TabsTrigger value="repertorio" className="whitespace-nowrap">
+              🎵 Repertório
+            </TabsTrigger>
           </TabsList>
-
-          {/* Analytics Dashboard */}
-          <TabsContent value="analytics" className="space-y-6">
-            <AnalyticsDashboard data={analyticsData} />
-            
-            {/* Mercado Pago Split Payment */}
-            {artistId && <MercadoPagoLink userId={artistId} />}
-          </TabsContent>
 
           {/* Histórico de Pagamentos */}
           <TabsContent value="historico" className="space-y-6">
+            {artistId && <MercadoPagoLink userId={artistId} />}
             <PaymentHistory gorjetas={gorjetas} />
           </TabsContent>
 
