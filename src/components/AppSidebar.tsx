@@ -32,7 +32,8 @@ interface AppSidebarProps {
 }
 
 const menuItems = [
-  { title: "Dashboard", url: "/painel?tab=analytics", icon: Home },
+  { title: "Painel", url: "/painel", icon: Home },
+  { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
   { title: "Repertório", url: "/painel?tab=repertorio", icon: Music },
   { title: "Gorjetas", url: "/painel?tab=gorjetas", icon: Heart },
 ];

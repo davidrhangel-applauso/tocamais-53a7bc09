@@ -10,6 +10,7 @@ import Home from "./pages/Home";
 import SearchArtists from "./pages/SearchArtists";
 import ArtistProfile from "./pages/ArtistProfile";
 import ArtistPanel from "./pages/ArtistPanel";
+import Analytics from "./pages/Analytics";
 import Messages from "./pages/Messages";
 import Conversations from "./pages/Conversations";
 import Settings from "./pages/Settings";
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/buscar" element={<SearchArtists />} />
           <Route path="/artista/:id" element={<ArtistProfile />} />
           <Route path="/painel" element={<ArtistPanel />} />
+          <Route path="/relatorios" element={<Analytics />} />
           <Route path="/conversas" element={<Conversations />} />
           <Route path="/mensagens" element={<Messages />} />
           <Route path="/configuracoes" element={<Settings />} />
