@@ -292,7 +292,7 @@ const ArtistPanel = () => {
     }
 
     setAtivoAoVivo(checked);
-    toast.success(checked ? "Você está ao vivo! 🔴" : "Status ao vivo desativado");
+    toast.success(checked ? "Você está ao vivo!" : "Status ao vivo desativado");
   };
 
   const handleUpdatePedidoStatus = async (pedidoId: string, newStatus: string) => {
@@ -416,9 +416,9 @@ const ArtistPanel = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full ${ativoAoVivo ? 'bg-red-500 animate-pulse' : 'bg-muted'}`} />
+                  <div className={`w-3 h-3 rounded-full ${ativoAoVivo ? 'bg-green-500 animate-pulse' : 'bg-muted'}`} />
                   <Label htmlFor="live-status" className="text-lg cursor-pointer">
-                    Status: {ativoAoVivo ? "AO VIVO 🔴" : "Offline"}
+                    Status: {ativoAoVivo ? "Ao Vivo" : "Offline"}
                   </Label>
                 </div>
                 <Switch
