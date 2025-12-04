@@ -18,6 +18,84 @@ interface PaymentRequest {
   device_id?: string | null;
 }
 
+// Função auxiliar para obter token válido do artista (com refresh se necessário)
+async function getValidSellerToken(
+  artista: any,
+  supabase: any
+): Promise<string | null> {
+  if (!artista.mercadopago_access_token) {
+    return null;
+  }
+
+  // Verificar se token ainda é válido (com margem de 5 minutos)
+  const expiresAt = new Date(artista.mercadopago_token_expires_at);
+  const now = new Date();
+  const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+
+  if (expiresAt > fiveMinutesFromNow) {
+    console.log('Token do artista ainda válido até:', expiresAt.toISOString());
+    return artista.mercadopago_access_token;
+  }
+
+  // Token expirado ou prestes a expirar - fazer refresh
+  console.log('Token expirado, fazendo refresh...');
+
+  const clientId = Deno.env.get('MERCADO_PAGO_CLIENT_ID');
+  const clientSecret = Deno.env.get('MERCADO_PAGO_CLIENT_SECRET');
+
+  if (!clientId || !clientSecret || !artista.mercadopago_refresh_token) {
+    console.error('Não é possível fazer refresh: credenciais ou refresh_token ausentes');
+    return null;
+  }
+
+  try {
+    const refreshResponse = await fetch('https://api.mercadopago.com/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: artista.mercadopago_refresh_token,
+      }).toString(),
+    });
+
+    const refreshData = await refreshResponse.json();
+
+    if (!refreshResponse.ok || !refreshData.access_token) {
+      console.error('Erro ao fazer refresh do token:', refreshData);
+      return null;
+    }
+
+    // Calcular nova data de expiração
+    const newExpiresAt = new Date(Date.now() + (refreshData.expires_in * 1000)).toISOString();
+
+    // Atualizar tokens no banco
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({
+        mercadopago_access_token: refreshData.access_token,
+        mercadopago_refresh_token: refreshData.refresh_token,
+        mercadopago_token_expires_at: newExpiresAt,
+      })
+      .eq('id', artista.id);
+
+    if (updateError) {
+      console.error('Erro ao atualizar tokens no banco:', updateError);
+    } else {
+      console.log('Tokens atualizados com sucesso! Novo token expira em:', newExpiresAt);
+    }
+
+    return refreshData.access_token;
+  } catch (error) {
+    console.error('Erro no refresh de token:', error);
+    return null;
+  }
+}
+
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -74,10 +152,10 @@ serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
-    // Buscar informações do artista incluindo mercadopago_seller_id
+    // Buscar informações do artista incluindo tokens OAuth
     const { data: artista, error: artistaError } = await supabase
       .from('profiles')
-      .select('nome, id, mercadopago_seller_id, tipo')
+      .select('nome, id, mercadopago_seller_id, mercadopago_access_token, mercadopago_refresh_token, mercadopago_token_expires_at, tipo, plano')
       .eq('id', artista_id)
       .single();
 
@@ -90,18 +168,11 @@ serve(async (req: Request) => {
       throw new Error('Perfil não é um artista');
     }
 
-    // Token do Mercado Pago
-    const mercadoPagoToken = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN');
-    if (!mercadoPagoToken) {
+    // Token da plataforma (fallback)
+    const platformToken = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN');
+    if (!platformToken) {
       throw new Error('Token do Mercado Pago não configurado');
     }
-
-    // Verificar plano do artista para calcular taxa
-    const { data: artistaPlan } = await supabase
-      .from('profiles')
-      .select('plano')
-      .eq('id', artista_id)
-      .single();
 
     // Verificar se artista é Pro (tem assinatura ativa)
     const { data: activeSubscription } = await supabase
@@ -112,17 +183,17 @@ serve(async (req: Request) => {
       .gte('ends_at', new Date().toISOString())
       .single();
 
-    const isPro = artistaPlan?.plano === 'pro' && !!activeSubscription;
+    const isPro = artista.plano === 'pro' && !!activeSubscription;
     const taxaPercentual = isPro ? 0 : 0.20; // Pro: 0%, Free: 20%
 
-    console.log('Artist plan:', { plano: artistaPlan?.plano, isPro, taxaPercentual });
+    console.log('Artist plan:', { plano: artista.plano, isPro, taxaPercentual });
 
     // Calcular valores com taxa da plataforma dinâmica e taxa de processamento (1%)
-    const valorBruto = valor; // Valor que o cliente deseja enviar
-    const taxaPlataforma = Number((valorBruto * taxaPercentual).toFixed(2)); // Taxa conforme plano
-    const valorLiquidoArtista = Number((valorBruto * (1 - taxaPercentual)).toFixed(2)); // Restante para artista
-    const taxaProcessamento = Number((valorBruto * 0.01).toFixed(2)); // 1% taxa Mercado Pago
-    const valorTotal = Number((valorBruto + taxaProcessamento).toFixed(2)); // Total a cobrar do cliente
+    const valorBruto = valor;
+    const taxaPlataforma = Number((valorBruto * taxaPercentual).toFixed(2));
+    const valorLiquidoArtista = Number((valorBruto * (1 - taxaPercentual)).toFixed(2));
+    const taxaProcessamento = Number((valorBruto * 0.01).toFixed(2));
+    const valorTotal = Number((valorBruto + taxaProcessamento).toFixed(2));
 
     // Gerar UUID da gorjeta ANTES de criar o pagamento para usar como external_reference
     const gorjetaId = crypto.randomUUID();
@@ -133,8 +204,15 @@ serve(async (req: Request) => {
     const firstName = nomePartes[0] || 'Cliente';
     const lastName = nomePartes.slice(1).join(' ') || 'Anônimo';
 
+    // Verificar se artista tem token OAuth válido para split payment
+    const sellerToken = await getValidSellerToken(artista, supabase);
+    const useSellerToken = sellerToken && artista.mercadopago_seller_id;
+
+    // Token a ser usado na requisição
+    const tokenToUse = useSellerToken ? sellerToken : platformToken;
+
     const paymentData: any = {
-      transaction_amount: valorTotal, // Cobrar valor total (bruto + taxa processamento)
+      transaction_amount: valorTotal,
       description: `Gorjeta para ${artista.nome}`,
       payment_method_id: 'pix',
       statement_descriptor: 'GORJETA ARTISTA',
@@ -174,26 +252,26 @@ serve(async (req: Request) => {
       console.log('CPF adicionado ao pagamento:', cliente_cpf);
     }
 
-    // Se o artista tem Mercado Pago vinculado, usar split de pagamento direto
-    if (artista.mercadopago_seller_id) {
-      console.log('Configurando split payment para seller:', artista.mercadopago_seller_id);
-
-      paymentData.marketplace = 'NONE';
-      paymentData.marketplace_fee = taxaPlataforma;
-      paymentData.collector_id = parseInt(artista.mercadopago_seller_id);
-
-      console.log('Split payment configurado:', {
-        marketplace_fee: paymentData.marketplace_fee,
-        collector_id: paymentData.collector_id,
+    // Configurar split payment corretamente
+    if (useSellerToken && taxaPlataforma > 0) {
+      // Usando token do artista: application_fee é a comissão da plataforma
+      paymentData.application_fee = taxaPlataforma;
+      console.log('Split payment com token do artista:', {
+        application_fee: taxaPlataforma,
         valor_total: valorTotal,
         valor_artista_recebe: valorLiquidoArtista,
         valor_plataforma_recebe: taxaPlataforma,
       });
+    } else if (useSellerToken) {
+      // Artista Pro com token: 100% vai para o artista
+      console.log('Artista Pro - 100% do pagamento vai para o artista');
     } else {
-      console.log('Artista sem Mercado Pago vinculado - pagamento vai direto para plataforma');
+      // Sem token: pagamento vai para a plataforma
+      console.log('Artista sem token OAuth - pagamento vai para plataforma');
     }
 
     console.log('Chamando API do Mercado Pago via fetch...');
+    console.log('Usando token:', useSellerToken ? 'do artista' : 'da plataforma');
 
     // Gerar chave de idempotência única
     const idempotencyKey = crypto.randomUUID();
@@ -202,7 +280,7 @@ serve(async (req: Request) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${mercadoPagoToken}`,
+        Authorization: `Bearer ${tokenToUse}`,
         'X-Idempotency-Key': idempotencyKey,
       },
       body: JSON.stringify(paymentData),

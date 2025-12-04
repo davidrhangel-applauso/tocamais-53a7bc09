@@ -41,12 +41,12 @@ serve(async (req) => {
     // Verificar se artista já está vinculado (proteção contra refresh)
     const { data: existingProfile } = await supabase
       .from('profiles')
-      .select('mercadopago_seller_id')
+      .select('mercadopago_seller_id, mercadopago_access_token')
       .eq('id', state)
       .single();
 
-    if (existingProfile?.mercadopago_seller_id) {
-      console.log('Artista já possui conta vinculada, redirecionando...');
+    if (existingProfile?.mercadopago_access_token) {
+      console.log('Artista já possui conta vinculada com token, redirecionando...');
       return new Response(null, {
         status: 302,
         headers: { 'Location': `${appUrl}/painel?mp_linked=true` },
@@ -90,7 +90,7 @@ serve(async (req) => {
       return redirectWithError(appUrl, 'token_error', errorMsg);
     }
 
-    console.log('Token obtido com sucesso');
+    console.log('Token obtido com sucesso. expires_in:', tokenData.expires_in);
 
     // Buscar informações do vendedor
     const userResponse = await fetch('https://api.mercadopago.com/users/me', {
@@ -108,10 +108,18 @@ serve(async (req) => {
     const sellerId = userInfo.id.toString();
     console.log('Seller ID obtido:', sellerId);
 
-    // Atualizar perfil do artista
+    // Calcular data de expiração do token
+    const tokenExpiresAt = new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString();
+
+    // Atualizar perfil do artista com TODOS os dados do OAuth
     const { error: updateError } = await supabase
       .from('profiles')
-      .update({ mercadopago_seller_id: sellerId })
+      .update({ 
+        mercadopago_seller_id: sellerId,
+        mercadopago_access_token: tokenData.access_token,
+        mercadopago_refresh_token: tokenData.refresh_token,
+        mercadopago_token_expires_at: tokenExpiresAt,
+      })
       .eq('id', state);
 
     if (updateError) {
@@ -119,7 +127,7 @@ serve(async (req) => {
       return redirectWithError(appUrl, 'db_error', 'Erro ao salvar vinculação');
     }
 
-    console.log('Conta vinculada com sucesso!');
+    console.log('Conta vinculada com sucesso! Token expira em:', tokenExpiresAt);
 
     return new Response(null, {
       status: 302,

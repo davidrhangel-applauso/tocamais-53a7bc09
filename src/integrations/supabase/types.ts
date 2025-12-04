@@ -311,7 +311,10 @@ export type Database = {
           id: string
           instagram: string | null
           link_pix: string | null
+          mercadopago_access_token: string | null
+          mercadopago_refresh_token: string | null
           mercadopago_seller_id: string | null
+          mercadopago_token_expires_at: string | null
           nome: string
           plano: Database["public"]["Enums"]["subscription_plan"]
           spotify: string | null
@@ -330,7 +333,10 @@ export type Database = {
           id: string
           instagram?: string | null
           link_pix?: string | null
+          mercadopago_access_token?: string | null
+          mercadopago_refresh_token?: string | null
           mercadopago_seller_id?: string | null
+          mercadopago_token_expires_at?: string | null
           nome: string
           plano?: Database["public"]["Enums"]["subscription_plan"]
           spotify?: string | null
@@ -349,7 +355,10 @@ export type Database = {
           id?: string
           instagram?: string | null
           link_pix?: string | null
+          mercadopago_access_token?: string | null
+          mercadopago_refresh_token?: string | null
           mercadopago_seller_id?: string | null
+          mercadopago_token_expires_at?: string | null
           nome?: string
           plano?: Database["public"]["Enums"]["subscription_plan"]
           spotify?: string | null
