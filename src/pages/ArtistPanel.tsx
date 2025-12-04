@@ -465,7 +465,7 @@ const ArtistPanel = () => {
                 R$ {stats.gorjetas_total.toFixed(2)}
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-2">
-                Valor líquido após dedução de 10% da taxa da plataforma
+                Valor líquido após dedução de 20% da taxa da plataforma (artistas Pro: 0%)
               </p>
             </CardHeader>
           </Card>

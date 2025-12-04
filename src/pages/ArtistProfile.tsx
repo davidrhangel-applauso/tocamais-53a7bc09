@@ -644,24 +644,20 @@ const ArtistProfile = () => {
                       <span className="font-medium">R$ {parseFloat(valorGorjeta).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-green-600 dark:text-green-400">
-                      <span>Artista recebe (90%)</span>
-                      <span className="font-semibold">R$ {(parseFloat(valorGorjeta) * 0.90).toFixed(2)}</span>
+                      <span>Artista recebe (80%)</span>
+                      <span className="font-semibold">R$ {(parseFloat(valorGorjeta) * 0.80).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-muted-foreground">
-                      <span>Taxa da plataforma (10%)</span>
-                      <span>R$ {(parseFloat(valorGorjeta) * 0.10).toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Taxa de processamento (1%)</span>
-                      <span>R$ {(parseFloat(valorGorjeta) * 0.01).toFixed(2)}</span>
+                      <span>Taxa da plataforma (20%)</span>
+                      <span>R$ {(parseFloat(valorGorjeta) * 0.20).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between pt-2 border-t border-border/50">
                       <span className="font-semibold text-foreground">Total a pagar</span>
-                      <span className="font-bold text-foreground">R$ {(parseFloat(valorGorjeta) * 1.01).toFixed(2)}</span>
+                      <span className="font-bold text-foreground">R$ {parseFloat(valorGorjeta).toFixed(2)}</span>
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    O artista receberá 90% do valor da gorjeta após a dedução de 10% da taxa da plataforma.
+                    O artista receberá 80% do valor da gorjeta após a dedução de 20% da taxa da plataforma.
                   </p>
                 </div>
               )}
