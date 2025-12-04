@@ -181,11 +181,11 @@ serve(async (req: Request) => {
     console.log('Artist plan:', { plano: artista.plano, isPro, taxaPercentual });
 
     // Calcular valores
+    // Taxa de processamento do MP é descontada do recebedor (artista/plataforma), não do cliente
     const valorBruto = valor;
     const taxaPlataforma = Number((valorBruto * taxaPercentual).toFixed(2));
     const valorLiquidoArtista = Number((valorBruto * (1 - taxaPercentual)).toFixed(2));
-    const taxaProcessamento = Number((valorBruto * 0.01).toFixed(2));
-    const valorTotal = Number((valorBruto + taxaProcessamento).toFixed(2));
+    const valorTotal = valorBruto; // Cliente paga apenas o valor da gorjeta
 
     // Garantir que installments seja numérico
     const installmentsNumber =
