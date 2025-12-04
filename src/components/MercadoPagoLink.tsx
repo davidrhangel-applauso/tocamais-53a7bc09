@@ -5,16 +5,18 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, ExternalLink, AlertCircle, Info } from "lucide-react";
+import { CheckCircle2, ExternalLink, AlertCircle, Info, RefreshCw } from "lucide-react";
 import { MERCADO_PAGO_CONFIG } from "@/config/mercadopago";
 
 interface MercadoPagoLinkProps {
   userId: string;
   isPro?: boolean;
+  hasAccessToken?: boolean;
 }
 
-export function MercadoPagoLink({ userId, isPro = false }: MercadoPagoLinkProps) {
+export function MercadoPagoLink({ userId, isPro = false, hasAccessToken = false }: MercadoPagoLinkProps) {
   const [isLinked, setIsLinked] = useState(false);
+  const [needsRelink, setNeedsRelink] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -38,13 +40,19 @@ export function MercadoPagoLink({ userId, isPro = false }: MercadoPagoLinkProps)
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('mercadopago_seller_id')
+        .select('mercadopago_seller_id, mercadopago_access_token')
         .eq('id', userId)
         .single();
 
       if (error) throw error;
       
-      setIsLinked(!!data?.mercadopago_seller_id);
+      const hasSellerId = !!data?.mercadopago_seller_id;
+      const hasToken = !!data?.mercadopago_access_token;
+      
+      // Tem seller_id mas não tem access_token = precisa revincular
+      setNeedsRelink(hasSellerId && !hasToken);
+      // Totalmente vinculado = tem ambos
+      setIsLinked(hasSellerId && hasToken);
     } catch (error) {
       console.error('Erro ao verificar status:', error);
     } finally {
@@ -102,6 +110,54 @@ export function MercadoPagoLink({ userId, isPro = false }: MercadoPagoLinkProps)
               {!isPro && " Assine o Plano Pro para receber 100%!"}
             </AlertDescription>
           </Alert>
+        ) : needsRelink ? (
+          <>
+            {/* Alerta de Revinculação Necessária */}
+            <Alert className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950 dark:border-yellow-800">
+              <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+              <AlertDescription className="text-yellow-800 dark:text-yellow-200 space-y-2">
+                <p className="font-semibold">⚠️ Ação Necessária: Revincule sua conta</p>
+                <p className="text-sm">
+                  Sua conta do Mercado Pago foi vinculada antes de uma atualização importante. 
+                  Para ativar pagamentos automáticos, você precisa revincular sua conta.
+                </p>
+                <p className="text-sm font-medium">
+                  Atualmente, os pagamentos estão sendo processados pela plataforma e precisam ser transferidos manualmente.
+                </p>
+              </AlertDescription>
+            </Alert>
+
+            {/* Split Info */}
+            <div className="space-y-3 rounded-lg border bg-muted/50 p-4">
+              <div className="flex items-center gap-2">
+                <Info className="h-4 w-4 text-muted-foreground" />
+                <h4 className="font-semibold text-sm">Após revincular ({isPro ? "Pro" : "Free"})</h4>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Você receberá:</span>
+                  <span className="font-bold text-primary">{isPro ? "100%" : "80%"}</span>
+                </div>
+                <Progress value={isPro ? 100 : 80} className="h-2" />
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Taxa da plataforma:</span>
+                  <span className="font-medium">{isPro ? "0%" : "20%"}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Botão de Revincular */}
+            <div className="pt-2">
+              <Button 
+                onClick={handleLink}
+                className="w-full"
+                variant="default"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Revincular Conta do Mercado Pago
+              </Button>
+            </div>
+          </>
         ) : (
           <>
             {/* Status Alert */}
