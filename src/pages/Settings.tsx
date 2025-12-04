@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { Constants, type Database } from "@/integrations/supabase/types";
 import { AvatarUpload } from "@/components/AvatarUpload";
 import { MercadoPagoLink } from "@/components/MercadoPagoLink";
+import { SubscriptionCard } from "@/components/SubscriptionCard";
+import { useSubscription } from "@/hooks/useSubscription";
 
 type MusicStyle = Database["public"]["Enums"]["music_style"];
 
@@ -37,6 +39,7 @@ const Settings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const { isPro } = useSubscription(profile?.id || null);
 
   useEffect(() => {
     loadProfile();
@@ -254,10 +257,20 @@ const Settings = () => {
               </div>
             )}
 
+            {/* Subscription Plan - Only for artists */}
+            {profile.tipo === "artista" && (
+              <div className="space-y-4">
+                <SubscriptionCard 
+                  artistaId={profile.id} 
+                  hasMercadoPagoLinked={!!profile.mercadopago_seller_id}
+                />
+              </div>
+            )}
+
             {/* Payment Settings - Only for artists */}
             {profile.tipo === "artista" && (
               <div className="space-y-4">
-                <MercadoPagoLink userId={profile.id} />
+                <MercadoPagoLink userId={profile.id} isPro={isPro} />
               </div>
             )}
 

@@ -88,10 +88,31 @@ serve(async (req: Request) => {
       throw new Error('Token do Mercado Pago não configurado');
     }
 
+    // Verificar plano do artista para calcular taxa
+    const { data: artistaPlan } = await supabase
+      .from('profiles')
+      .select('plano')
+      .eq('id', artista_id)
+      .single();
+
+    // Verificar se artista é Pro (tem assinatura ativa)
+    const { data: activeSubscription } = await supabase
+      .from('artist_subscriptions')
+      .select('id')
+      .eq('artista_id', artista_id)
+      .eq('status', 'active')
+      .gte('ends_at', new Date().toISOString())
+      .single();
+
+    const isPro = artistaPlan?.plano === 'pro' && !!activeSubscription;
+    const taxaPercentual = isPro ? 0 : 0.20; // Pro: 0%, Free: 20%
+
+    console.log('Artist plan:', { plano: artistaPlan?.plano, isPro, taxaPercentual });
+
     // Calcular valores
     const valorBruto = valor;
-    const taxaPlataforma = Number((valorBruto * 0.10).toFixed(2));
-    const valorLiquidoArtista = Number((valorBruto * 0.90).toFixed(2));
+    const taxaPlataforma = Number((valorBruto * taxaPercentual).toFixed(2));
+    const valorLiquidoArtista = Number((valorBruto * (1 - taxaPercentual)).toFixed(2));
     const taxaProcessamento = Number((valorBruto * 0.01).toFixed(2));
     const valorTotal = Number((valorBruto + taxaProcessamento).toFixed(2));
 

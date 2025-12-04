@@ -10,9 +10,10 @@ import { MERCADO_PAGO_CONFIG } from "@/config/mercadopago";
 
 interface MercadoPagoLinkProps {
   userId: string;
+  isPro?: boolean;
 }
 
-export function MercadoPagoLink({ userId }: MercadoPagoLinkProps) {
+export function MercadoPagoLink({ userId, isPro = false }: MercadoPagoLinkProps) {
   const [isLinked, setIsLinked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -83,9 +84,12 @@ export function MercadoPagoLink({ userId }: MercadoPagoLinkProps) {
     <Card>
       <CardHeader>
         <div className="space-y-1">
-          <CardTitle>Receber Split de Pagamentos</CardTitle>
+          <CardTitle>Receber Pagamentos via Mercado Pago</CardTitle>
           <CardDescription>
-            Vincule sua conta do Mercado Pago para receber 90% das gorjetas automaticamente
+            {isPro 
+              ? "Vincule sua conta para receber 100% das gorjetas automaticamente (Plano Pro)"
+              : "Vincule sua conta para receber 80% das gorjetas automaticamente (Plano Free - 20% taxa)"
+            }
           </CardDescription>
         </div>
       </CardHeader>
@@ -94,7 +98,8 @@ export function MercadoPagoLink({ userId }: MercadoPagoLinkProps) {
           <Alert className="border-green-500 bg-green-50 dark:bg-green-950 dark:border-green-900">
             <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
             <AlertDescription className="text-green-800 dark:text-green-200">
-              ✅ Conta do Mercado Pago vinculada! Você receberá 90% do valor das gorjetas automaticamente.
+              ✅ Conta do Mercado Pago vinculada! Você receberá {isPro ? "100%" : "80%"} do valor das gorjetas automaticamente.
+              {!isPro && " Assine o Plano Pro para receber 100%!"}
             </AlertDescription>
           </Alert>
         ) : (
@@ -112,29 +117,30 @@ export function MercadoPagoLink({ userId }: MercadoPagoLinkProps) {
             <div className="space-y-3 rounded-lg border bg-muted/50 p-4">
               <div className="flex items-center gap-2">
                 <Info className="h-4 w-4 text-muted-foreground" />
-                <h4 className="font-semibold text-sm">Divisão de Valores</h4>
+                <h4 className="font-semibold text-sm">Divisão de Valores {isPro ? "(Pro)" : "(Free)"}</h4>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Você recebe:</span>
-                  <span className="font-bold text-primary">90%</span>
+                  <span className="font-bold text-primary">{isPro ? "100%" : "80%"}</span>
                 </div>
-                <Progress value={90} className="h-2" />
+                <Progress value={isPro ? 100 : 80} className="h-2" />
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Taxa da plataforma:</span>
-                  <span className="font-medium">10%</span>
+                  <span className="font-medium">{isPro ? "0%" : "20%"}</span>
                 </div>
               </div>
             </div>
 
             {/* Benefícios */}
             <div className="space-y-2">
-              <h4 className="font-semibold text-sm">Benefícios do Split:</h4>
+              <h4 className="font-semibold text-sm">Benefícios:</h4>
               <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                <li>Receba 90% direto na sua conta</li>
+                <li>Receba {isPro ? "100%" : "80%"} direto na sua conta</li>
                 <li>Dinheiro disponível imediatamente após aprovação</li>
                 <li>Sem necessidade de solicitar saques</li>
                 <li>Acompanhe todos os pagamentos em tempo real</li>
+                {!isPro && <li className="text-primary font-medium">Assine o Pro para receber 100%!</li>}
               </ul>
             </div>
 
