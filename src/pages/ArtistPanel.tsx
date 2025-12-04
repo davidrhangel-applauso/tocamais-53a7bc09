@@ -408,7 +408,7 @@ const ArtistPanel = () => {
             </div>
           </header>
 
-          <main className="flex-1 overflow-auto p-6">
+          <main className="flex-1 overflow-auto p-3 sm:p-6">
         {/* Welcome and Live Status */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold mb-4">Olá, {artistName}! 👋</h2>
@@ -473,26 +473,26 @@ const ArtistPanel = () => {
 
         {/* Tabs for Pedidos and Gorjetas */}
         <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="space-y-6">
-          <TabsList className="inline-flex w-full justify-start overflow-x-auto gap-1 pb-1">
-            <TabsTrigger value="pendentes" className="whitespace-nowrap">
+          <TabsList className="grid grid-cols-3 sm:grid-cols-4 md:inline-flex md:w-auto h-auto gap-1 p-1">
+            <TabsTrigger value="pendentes" className="text-xs sm:text-sm px-2 sm:px-3">
               ⏳ Pendentes ({pedidosPendentes.length})
             </TabsTrigger>
-            <TabsTrigger value="aceitos" className="whitespace-nowrap">
+            <TabsTrigger value="aceitos" className="text-xs sm:text-sm px-2 sm:px-3">
               ✅ Aceitos ({pedidosAceitos.length})
             </TabsTrigger>
-            <TabsTrigger value="concluidos" className="whitespace-nowrap">
+            <TabsTrigger value="concluidos" className="text-xs sm:text-sm px-2 sm:px-3">
               ✔ Concluídos ({pedidosConcluidos.length})
             </TabsTrigger>
-            <TabsTrigger value="recusados" className="whitespace-nowrap">
+            <TabsTrigger value="recusados" className="text-xs sm:text-sm px-2 sm:px-3">
               ❌ Recusados ({pedidosRecusados.length})
             </TabsTrigger>
-            <TabsTrigger value="gorjetas" className="whitespace-nowrap">
+            <TabsTrigger value="gorjetas" className="text-xs sm:text-sm px-2 sm:px-3">
               💝 Gorjetas ({gorjetas.length})
             </TabsTrigger>
-            <TabsTrigger value="historico" className="whitespace-nowrap">
+            <TabsTrigger value="historico" className="text-xs sm:text-sm px-2 sm:px-3">
               💰 Pagamentos
             </TabsTrigger>
-            <TabsTrigger value="repertorio" className="whitespace-nowrap">
+            <TabsTrigger value="repertorio" className="text-xs sm:text-sm px-2 sm:px-3 col-span-3 sm:col-span-1">
               🎵 Repertório
             </TabsTrigger>
           </TabsList>
@@ -520,9 +520,9 @@ const ArtistPanel = () => {
               <>
                 {/* Ações em massa */}
                 <Card className="border-primary/20">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+                      <div className="flex items-center gap-3">
                         <Checkbox
                           checked={selectedPedidos.length === pedidosPendentes.length && pedidosPendentes.length > 0}
                           onCheckedChange={() => toggleAllPedidos(pedidosPendentes)}
@@ -532,14 +532,14 @@ const ArtistPanel = () => {
                         </span>
                       </div>
                       {selectedPedidos.length > 0 && (
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={() => handleBulkAction("aceito")}>
+                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                          <Button size="sm" onClick={() => handleBulkAction("aceito")} className="w-full sm:w-auto">
                             <Check className="w-4 h-4 mr-1" />
-                            Aceitar Selecionados
+                            Aceitar
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => handleBulkAction("recusado")}>
+                          <Button size="sm" variant="outline" onClick={() => handleBulkAction("recusado")} className="w-full sm:w-auto">
                             <X className="w-4 h-4 mr-1" />
-                            Recusar Selecionados
+                            Recusar
                           </Button>
                         </div>
                       )}
@@ -549,52 +549,55 @@ const ArtistPanel = () => {
 
                 {pedidosPendentes.map((pedido) => (
                   <Card key={pedido.id} className="border-accent/20">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                          <Checkbox
-                            checked={selectedPedidos.includes(pedido.id)}
-                            onCheckedChange={() => togglePedidoSelection(pedido.id)}
-                          />
-                        </div>
-                        <div className="flex items-start gap-4 flex-1">
-                        <Avatar>
-                          <AvatarImage src={pedido.profiles?.foto_url} />
-                          <AvatarFallback>{(pedido.profiles?.nome || pedido.cliente_nome || "Anônimo")[0]}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <p className="font-semibold">{pedido.profiles?.nome || pedido.cliente_nome || "Anônimo"}</p>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {new Date(pedido.created_at).toLocaleString("pt-BR")}
-                          </p>
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          checked={selectedPedidos.includes(pedido.id)}
+                          onCheckedChange={() => togglePedidoSelection(pedido.id)}
+                          className="mt-1"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start gap-3 mb-3">
+                            <Avatar className="w-10 h-10 shrink-0">
+                              <AvatarImage src={pedido.profiles?.foto_url} />
+                              <AvatarFallback>{(pedido.profiles?.nome || pedido.cliente_nome || "Anônimo")[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold truncate">{pedido.profiles?.nome || pedido.cliente_nome || "Anônimo"}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(pedido.created_at).toLocaleString("pt-BR")}
+                              </p>
+                            </div>
+                          </div>
                           <div className="flex items-center gap-2 mb-2">
-                            <Music className="w-4 h-4 text-primary" />
-                            <p className="font-medium text-lg">{pedido.musica}</p>
+                            <Music className="w-4 h-4 text-primary shrink-0" />
+                            <p className="font-medium truncate">{pedido.musica}</p>
                           </div>
                           {pedido.mensagem && (
-                            <p className="text-sm text-muted-foreground italic">
+                            <p className="text-sm text-muted-foreground italic mb-3 line-clamp-2">
                               "{pedido.mensagem}"
                             </p>
                           )}
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleUpdatePedidoStatus(pedido.id, "aceito")}
+                              className="flex-1 sm:flex-none"
+                            >
+                              <Check className="w-4 h-4 mr-1" />
+                              Aceitar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleUpdatePedidoStatus(pedido.id, "recusado")}
+                              className="flex-1 sm:flex-none"
+                            >
+                              <X className="w-4 h-4 mr-1" />
+                              Recusar
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => handleUpdatePedidoStatus(pedido.id, "aceito")}
-                        >
-                          <Check className="w-4 h-4 mr-1" />
-                          Aceitar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleUpdatePedidoStatus(pedido.id, "recusado")}
-                        >
-                          <X className="w-4 h-4 mr-1" />
-                          Recusar
-                        </Button>
-                      </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -615,38 +618,37 @@ const ArtistPanel = () => {
             ) : (
               pedidosAceitos.map((pedido) => (
                 <Card key={pedido.id}>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-4 flex-1">
-                        <Avatar>
-                          <AvatarImage src={pedido.profiles?.foto_url} />
-                          <AvatarFallback>{(pedido.profiles?.nome || pedido.cliente_nome || "Anônimo")[0]}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <p className="font-semibold">{pedido.profiles?.nome || pedido.cliente_nome || "Anônimo"}</p>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {new Date(pedido.created_at).toLocaleString("pt-BR")}
-                          </p>
-                          <div className="flex items-center gap-2 mb-2">
-                            <Music className="w-4 h-4 text-primary" />
-                            <p className="font-medium text-lg">{pedido.musica}</p>
-                            <Badge variant="default" className="ml-2">Aceito</Badge>
-                          </div>
-                          {pedido.mensagem && (
-                            <p className="text-sm text-muted-foreground italic">
-                              "{pedido.mensagem}"
-                            </p>
-                          )}
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-start gap-3">
+                      <Avatar className="w-10 h-10 shrink-0">
+                        <AvatarImage src={pedido.profiles?.foto_url} />
+                        <AvatarFallback>{(pedido.profiles?.nome || pedido.cliente_nome || "Anônimo")[0]}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold truncate">{pedido.profiles?.nome || pedido.cliente_nome || "Anônimo"}</p>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          {new Date(pedido.created_at).toLocaleString("pt-BR")}
+                        </p>
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <Music className="w-4 h-4 text-primary shrink-0" />
+                          <p className="font-medium truncate">{pedido.musica}</p>
+                          <Badge variant="default">Aceito</Badge>
                         </div>
+                        {pedido.mensagem && (
+                          <p className="text-sm text-muted-foreground italic mb-3 line-clamp-2">
+                            "{pedido.mensagem}"
+                          </p>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleMarkAsComplete(pedido.id)}
+                          className="w-full sm:w-auto"
+                        >
+                          <CheckCheck className="w-4 h-4 mr-1" />
+                          Concluído
+                        </Button>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleMarkAsComplete(pedido.id)}
-                      >
-                        <CheckCheck className="w-4 h-4 mr-1" />
-                        Marcar como Concluído
-                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -740,16 +742,16 @@ const ArtistPanel = () => {
             ) : (
               gorjetas.map((gorjeta) => (
                 <Card key={gorjeta.id} className="border-green-500/20">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4">
-                        <Avatar>
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:justify-between">
+                      <div className="flex items-start gap-3">
+                        <Avatar className="w-10 h-10 shrink-0">
                           <AvatarImage src={gorjeta.profiles?.foto_url} />
                           <AvatarFallback>{(gorjeta.profiles?.nome || gorjeta.cliente_nome || "Anônimo")[0]}</AvatarFallback>
                         </Avatar>
-                        <div>
-                          <p className="font-semibold">{gorjeta.profiles?.nome || gorjeta.cliente_nome || "Anônimo"}</p>
-                          <p className="text-sm text-muted-foreground">
+                        <div className="min-w-0">
+                          <p className="font-semibold truncate">{gorjeta.profiles?.nome || gorjeta.cliente_nome || "Anônimo"}</p>
+                          <p className="text-xs text-muted-foreground">
                             {new Date(gorjeta.created_at).toLocaleString("pt-BR")}
                           </p>
                           {gorjeta.status_pagamento && (
@@ -768,14 +770,14 @@ const ArtistPanel = () => {
                           )}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-2 justify-end">
+                      <div className="flex items-center justify-between sm:block sm:text-right mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-0 border-border/50">
+                        <div className="flex items-center gap-2 sm:justify-end">
                           <Heart className="w-5 h-5 text-red-500 fill-red-500" />
-                          <p className="text-2xl font-bold text-green-600">
+                          <p className="text-xl sm:text-2xl font-bold text-green-600">
                             R$ {(gorjeta.valor_liquido_artista || 0).toFixed(2)}
                           </p>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-xs text-muted-foreground sm:mt-1">
                           (90% de R$ {gorjeta.valor.toFixed(2)})
                         </p>
                       </div>
