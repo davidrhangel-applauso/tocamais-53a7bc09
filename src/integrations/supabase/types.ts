@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      artist_subscriptions: {
+        Row: {
+          artista_id: string
+          created_at: string
+          ends_at: string | null
+          id: string
+          payment_id: string | null
+          starts_at: string | null
+          status: string
+          subscription_id: string | null
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          artista_id: string
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          payment_id?: string | null
+          starts_at?: string | null
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          artista_id?: string
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          payment_id?: string | null
+          starts_at?: string | null
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_subscriptions_artista_id_fkey"
+            columns: ["artista_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gorjetas: {
         Row: {
           artista_id: string
@@ -266,6 +313,7 @@ export type Database = {
           link_pix: string | null
           mercadopago_seller_id: string | null
           nome: string
+          plano: Database["public"]["Enums"]["subscription_plan"]
           spotify: string | null
           status_destaque: boolean | null
           tipo: Database["public"]["Enums"]["user_type"]
@@ -284,6 +332,7 @@ export type Database = {
           link_pix?: string | null
           mercadopago_seller_id?: string | null
           nome: string
+          plano?: Database["public"]["Enums"]["subscription_plan"]
           spotify?: string | null
           status_destaque?: boolean | null
           tipo: Database["public"]["Enums"]["user_type"]
@@ -302,6 +351,7 @@ export type Database = {
           link_pix?: string | null
           mercadopago_seller_id?: string | null
           nome?: string
+          plano?: Database["public"]["Enums"]["subscription_plan"]
           spotify?: string | null
           status_destaque?: boolean | null
           tipo?: Database["public"]["Enums"]["user_type"]
@@ -331,6 +381,8 @@ export type Database = {
         }
         Returns: string
       }
+      get_artist_platform_fee: { Args: { artist_id: string }; Returns: number }
+      is_artist_pro: { Args: { artist_id: string }; Returns: boolean }
       is_client: { Args: { user_id: string }; Returns: boolean }
     }
     Enums: {
@@ -346,6 +398,7 @@ export type Database = {
         | "rap"
         | "funk"
         | "outros"
+      subscription_plan: "free" | "pro"
       user_type: "artista" | "cliente"
     }
     CompositeTypes: {
@@ -487,6 +540,7 @@ export const Constants = {
         "funk",
         "outros",
       ],
+      subscription_plan: ["free", "pro"],
       user_type: ["artista", "cliente"],
     },
   },
