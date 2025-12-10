@@ -340,6 +340,7 @@ export type Database = {
           cidade: string | null
           created_at: string | null
           estilo_musical: Database["public"]["Enums"]["music_style"] | null
+          foto_capa_url: string | null
           foto_url: string | null
           id: string
           instagram: string | null
@@ -358,6 +359,7 @@ export type Database = {
           cidade?: string | null
           created_at?: string | null
           estilo_musical?: Database["public"]["Enums"]["music_style"] | null
+          foto_capa_url?: string | null
           foto_url?: string | null
           id: string
           instagram?: string | null
@@ -376,6 +378,7 @@ export type Database = {
           cidade?: string | null
           created_at?: string | null
           estilo_musical?: Database["public"]["Enums"]["music_style"] | null
+          foto_capa_url?: string | null
           foto_url?: string | null
           id?: string
           instagram?: string | null
