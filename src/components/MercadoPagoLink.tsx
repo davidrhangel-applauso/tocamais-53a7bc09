@@ -38,16 +38,17 @@ export function MercadoPagoLink({ userId, isPro = false, hasAccessToken = false 
 
   const checkLinkStatus = async () => {
     try {
+      // Buscar credenciais da nova tabela segura
       const { data, error } = await supabase
-        .from('profiles')
-        .select('mercadopago_seller_id, mercadopago_access_token')
-        .eq('id', userId)
-        .single();
+        .from('artist_mercadopago_credentials')
+        .select('seller_id, access_token')
+        .eq('artist_id', userId)
+        .maybeSingle();
 
       if (error) throw error;
       
-      const hasSellerId = !!data?.mercadopago_seller_id;
-      const hasToken = !!data?.mercadopago_access_token;
+      const hasSellerId = !!data?.seller_id;
+      const hasToken = !!data?.access_token;
       
       // Tem seller_id mas não tem access_token = precisa revincular
       setNeedsRelink(hasSellerId && !hasToken);
