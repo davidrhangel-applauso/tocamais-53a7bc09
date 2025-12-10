@@ -15,6 +15,7 @@ import { AvatarUpload } from "@/components/AvatarUpload";
 import { MercadoPagoLink } from "@/components/MercadoPagoLink";
 import { SubscriptionCard } from "@/components/SubscriptionCard";
 import { useSubscription } from "@/hooks/useSubscription";
+import { PaymentFAQ } from "@/components/PaymentFAQ";
 
 type MusicStyle = Database["public"]["Enums"]["music_style"];
 
@@ -271,6 +272,13 @@ const Settings = () => {
             {profile.tipo === "artista" && (
               <div className="space-y-4">
                 <MercadoPagoLink userId={profile.id} isPro={isPro} />
+              </div>
+            )}
+
+            {/* Payment FAQ - Only for artists */}
+            {profile.tipo === "artista" && (
+              <div className="space-y-4">
+                <PaymentFAQ />
               </div>
             )}
 
