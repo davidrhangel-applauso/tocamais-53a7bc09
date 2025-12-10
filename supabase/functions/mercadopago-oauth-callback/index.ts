@@ -39,13 +39,13 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Verificar se artista já está vinculado (proteção contra refresh)
-    const { data: existingProfile } = await supabase
-      .from('profiles')
-      .select('mercadopago_seller_id, mercadopago_access_token')
-      .eq('id', state)
-      .single();
+    const { data: existingCredentials } = await supabase
+      .from('artist_mercadopago_credentials')
+      .select('seller_id, access_token')
+      .eq('artist_id', state)
+      .maybeSingle();
 
-    if (existingProfile?.mercadopago_access_token) {
+    if (existingCredentials?.access_token) {
       console.log('Artista já possui conta vinculada com token, redirecionando...');
       return new Response(null, {
         status: 302,
@@ -111,19 +111,22 @@ serve(async (req) => {
     // Calcular data de expiração do token
     const tokenExpiresAt = new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString();
 
-    // Atualizar perfil do artista com TODOS os dados do OAuth
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ 
-        mercadopago_seller_id: sellerId,
-        mercadopago_access_token: tokenData.access_token,
-        mercadopago_refresh_token: tokenData.refresh_token,
-        mercadopago_token_expires_at: tokenExpiresAt,
-      })
-      .eq('id', state);
+    // Salvar credenciais na tabela segura (upsert para atualizar se já existir)
+    const { error: upsertError } = await supabase
+      .from('artist_mercadopago_credentials')
+      .upsert({ 
+        artist_id: state,
+        seller_id: sellerId,
+        access_token: tokenData.access_token,
+        refresh_token: tokenData.refresh_token,
+        token_expires_at: tokenExpiresAt,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'artist_id'
+      });
 
-    if (updateError) {
-      console.error('Erro ao atualizar perfil:', updateError);
+    if (upsertError) {
+      console.error('Erro ao salvar credenciais:', upsertError);
       return redirectWithError(appUrl, 'db_error', 'Erro ao salvar vinculação');
     }
 

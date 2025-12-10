@@ -32,7 +32,6 @@ interface Profile {
   spotify: string | null;
   link_pix: string | null;
   ativo_ao_vivo: boolean;
-  mercadopago_seller_id: string | null;
 }
 
 const Settings = () => {
@@ -40,6 +39,7 @@ const Settings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [hasMercadoPagoLinked, setHasMercadoPagoLinked] = useState(false);
   const { isPro } = useSubscription(profile?.id || null);
 
   useEffect(() => {
@@ -56,12 +56,22 @@ const Settings = () => {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("*")
+        .select("id, nome, bio, foto_url, cidade, estilo_musical, tipo, instagram, youtube, spotify, link_pix, ativo_ao_vivo")
         .eq("id", user.id)
         .single();
 
       if (error) throw error;
       setProfile(data);
+
+      // Check if artist has MP credentials linked
+      if (data.tipo === "artista") {
+        const { data: credentials } = await supabase
+          .from("artist_mercadopago_credentials")
+          .select("seller_id")
+          .eq("artist_id", user.id)
+          .maybeSingle();
+        setHasMercadoPagoLinked(!!credentials?.seller_id);
+      }
     } catch (error: any) {
       toast.error("Erro ao carregar perfil");
     } finally {
@@ -87,7 +97,6 @@ const Settings = () => {
           spotify: profile.spotify,
           link_pix: profile.link_pix,
           ativo_ao_vivo: profile.ativo_ao_vivo,
-          mercadopago_seller_id: profile.mercadopago_seller_id,
         })
         .eq("id", profile.id);
 
@@ -263,7 +272,7 @@ const Settings = () => {
               <div className="space-y-4">
                 <SubscriptionCard 
                   artistaId={profile.id} 
-                  hasMercadoPagoLinked={!!profile.mercadopago_seller_id}
+                  hasMercadoPagoLinked={hasMercadoPagoLinked}
                 />
               </div>
             )}

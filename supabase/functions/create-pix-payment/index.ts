@@ -20,21 +20,22 @@ interface PaymentRequest {
 
 // Função auxiliar para obter token válido do artista (com refresh se necessário)
 async function getValidSellerToken(
-  artista: any,
+  credentials: any,
+  artistId: string,
   supabase: any
 ): Promise<string | null> {
-  if (!artista.mercadopago_access_token) {
+  if (!credentials?.access_token) {
     return null;
   }
 
   // Verificar se token ainda é válido (com margem de 5 minutos)
-  const expiresAt = new Date(artista.mercadopago_token_expires_at);
+  const expiresAt = new Date(credentials.token_expires_at);
   const now = new Date();
   const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
 
   if (expiresAt > fiveMinutesFromNow) {
     console.log('Token do artista ainda válido até:', expiresAt.toISOString());
-    return artista.mercadopago_access_token;
+    return credentials.access_token;
   }
 
   // Token expirado ou prestes a expirar - fazer refresh
@@ -43,7 +44,7 @@ async function getValidSellerToken(
   const clientId = Deno.env.get('MERCADO_PAGO_CLIENT_ID');
   const clientSecret = Deno.env.get('MERCADO_PAGO_CLIENT_SECRET');
 
-  if (!clientId || !clientSecret || !artista.mercadopago_refresh_token) {
+  if (!clientId || !clientSecret || !credentials.refresh_token) {
     console.error('Não é possível fazer refresh: credenciais ou refresh_token ausentes');
     return null;
   }
@@ -59,7 +60,7 @@ async function getValidSellerToken(
         grant_type: 'refresh_token',
         client_id: clientId,
         client_secret: clientSecret,
-        refresh_token: artista.mercadopago_refresh_token,
+        refresh_token: credentials.refresh_token,
       }).toString(),
     });
 
@@ -73,15 +74,16 @@ async function getValidSellerToken(
     // Calcular nova data de expiração
     const newExpiresAt = new Date(Date.now() + (refreshData.expires_in * 1000)).toISOString();
 
-    // Atualizar tokens no banco
+    // Atualizar tokens no banco (tabela de credenciais)
     const { error: updateError } = await supabase
-      .from('profiles')
+      .from('artist_mercadopago_credentials')
       .update({
-        mercadopago_access_token: refreshData.access_token,
-        mercadopago_refresh_token: refreshData.refresh_token,
-        mercadopago_token_expires_at: newExpiresAt,
+        access_token: refreshData.access_token,
+        refresh_token: refreshData.refresh_token,
+        token_expires_at: newExpiresAt,
+        updated_at: new Date().toISOString(),
       })
-      .eq('id', artista.id);
+      .eq('artist_id', artistId);
 
     if (updateError) {
       console.error('Erro ao atualizar tokens no banco:', updateError);
@@ -152,10 +154,10 @@ serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
-    // Buscar informações do artista incluindo tokens OAuth
+    // Buscar informações do artista (sem tokens sensíveis)
     const { data: artista, error: artistaError } = await supabase
       .from('profiles')
-      .select('nome, id, mercadopago_seller_id, mercadopago_access_token, mercadopago_refresh_token, mercadopago_token_expires_at, tipo, plano')
+      .select('nome, id, tipo, plano')
       .eq('id', artista_id)
       .single();
 
@@ -167,6 +169,13 @@ serve(async (req: Request) => {
     if (artista.tipo !== 'artista') {
       throw new Error('Perfil não é um artista');
     }
+
+    // Buscar credenciais do Mercado Pago da tabela segura
+    const { data: credentials } = await supabase
+      .from('artist_mercadopago_credentials')
+      .select('seller_id, access_token, refresh_token, token_expires_at')
+      .eq('artist_id', artista_id)
+      .maybeSingle();
 
     // Token da plataforma (fallback)
     const platformToken = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN');
@@ -205,8 +214,8 @@ serve(async (req: Request) => {
     const lastName = nomePartes.slice(1).join(' ') || 'Anônimo';
 
     // Verificar se artista tem token OAuth válido para split payment
-    const sellerToken = await getValidSellerToken(artista, supabase);
-    const useSellerToken = sellerToken && artista.mercadopago_seller_id;
+    const sellerToken = await getValidSellerToken(credentials, artista_id, supabase);
+    const useSellerToken = sellerToken && credentials?.seller_id;
 
     // Token a ser usado na requisição
     const tokenToUse = useSellerToken ? sellerToken : platformToken;

@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      artist_mercadopago_credentials: {
+        Row: {
+          access_token: string | null
+          artist_id: string
+          created_at: string | null
+          id: string
+          refresh_token: string | null
+          seller_id: string | null
+          token_expires_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          artist_id: string
+          created_at?: string | null
+          id?: string
+          refresh_token?: string | null
+          seller_id?: string | null
+          token_expires_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          artist_id?: string
+          created_at?: string | null
+          id?: string
+          refresh_token?: string | null
+          seller_id?: string | null
+          token_expires_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       artist_subscriptions: {
         Row: {
           artista_id: string
@@ -311,10 +344,6 @@ export type Database = {
           id: string
           instagram: string | null
           link_pix: string | null
-          mercadopago_access_token: string | null
-          mercadopago_refresh_token: string | null
-          mercadopago_seller_id: string | null
-          mercadopago_token_expires_at: string | null
           nome: string
           plano: Database["public"]["Enums"]["subscription_plan"]
           spotify: string | null
@@ -333,10 +362,6 @@ export type Database = {
           id: string
           instagram?: string | null
           link_pix?: string | null
-          mercadopago_access_token?: string | null
-          mercadopago_refresh_token?: string | null
-          mercadopago_seller_id?: string | null
-          mercadopago_token_expires_at?: string | null
           nome: string
           plano?: Database["public"]["Enums"]["subscription_plan"]
           spotify?: string | null
@@ -355,10 +380,6 @@ export type Database = {
           id?: string
           instagram?: string | null
           link_pix?: string | null
-          mercadopago_access_token?: string | null
-          mercadopago_refresh_token?: string | null
-          mercadopago_seller_id?: string | null
-          mercadopago_token_expires_at?: string | null
           nome?: string
           plano?: Database["public"]["Enums"]["subscription_plan"]
           spotify?: string | null
@@ -390,7 +411,12 @@ export type Database = {
         }
         Returns: string
       }
+      get_artist_mercadopago_seller_id: {
+        Args: { p_artist_id: string }
+        Returns: string
+      }
       get_artist_platform_fee: { Args: { artist_id: string }; Returns: number }
+      has_mercadopago_linked: { Args: { artist_id: string }; Returns: boolean }
       is_artist_pro: { Args: { artist_id: string }; Returns: boolean }
       is_client: { Args: { user_id: string }; Returns: boolean }
     }
