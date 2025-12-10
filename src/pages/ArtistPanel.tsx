@@ -500,6 +500,38 @@ const ArtistPanel = () => {
           {/* Histórico de Pagamentos */}
           <TabsContent value="historico" className="space-y-6">
             {artistId && <MercadoPagoLink userId={artistId} />}
+            
+            {/* Aviso sobre liberação de pagamentos */}
+            <Card className="border-amber-500/30 bg-amber-500/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <span>⏱️</span>
+                  Receba seus pagamentos mais rápido
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm text-muted-foreground">
+                <p>
+                  Por padrão, o Mercado Pago retém os pagamentos por até 14 dias antes de liberar para sua conta. 
+                  Para receber mais rápido, você pode:
+                </p>
+                <ol className="list-decimal list-inside space-y-2 ml-2">
+                  <li>
+                    <strong>Verificar sua conta:</strong> Complete a verificação de identidade no app do Mercado Pago
+                  </li>
+                  <li>
+                    <strong>Ativar liberação imediata:</strong> No app Mercado Pago, vá em{" "}
+                    <span className="font-medium text-foreground">Seu negócio → Configurações → Liberação de dinheiro</span>
+                  </li>
+                  <li>
+                    <strong>Manter histórico positivo:</strong> Quanto mais vendas sem problemas, mais rápido o dinheiro é liberado
+                  </li>
+                </ol>
+                <p className="text-xs pt-2 border-t border-border/50">
+                  💡 Contas verificadas com bom histórico podem receber pagamentos em até 24 horas.
+                </p>
+              </CardContent>
+            </Card>
+            
             <PaymentHistory gorjetas={gorjetas} />
           </TabsContent>
 
