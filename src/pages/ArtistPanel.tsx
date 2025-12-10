@@ -529,6 +529,12 @@ const ArtistPanel = () => {
                 <p className="text-xs pt-2 border-t border-border/50">
                   💡 Contas verificadas com bom histórico podem receber pagamentos em até 24 horas.
                 </p>
+                <a 
+                  href="/configuracoes" 
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-2"
+                >
+                  📖 Ver FAQ completo sobre pagamentos
+                </a>
               </CardContent>
             </Card>
             
