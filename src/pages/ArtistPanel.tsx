@@ -17,6 +17,7 @@ import { MercadoPagoLink } from "@/components/MercadoPagoLink";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import MusicRepertoire from "@/components/MusicRepertoire";
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface Pedido {
   id: string;
@@ -75,6 +76,9 @@ const ArtistPanel = () => {
     gorjetas_total: 0,
     gorjetas_hoje: 0,
   });
+
+  // Check subscription status
+  const { isPro } = useSubscription(artistId);
 
   useEffect(() => {
     checkAuth();
@@ -411,7 +415,18 @@ const ArtistPanel = () => {
           <main className="flex-1 overflow-auto p-3 sm:p-6">
         {/* Welcome and Live Status */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-4">Olá, {artistName}! 👋</h2>
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <h2 className="text-3xl font-bold">Olá, {artistName}! 👋</h2>
+            {isPro ? (
+              <Badge className="text-sm px-3 py-1 bg-gradient-to-r from-amber-500 to-yellow-400 text-black border-0">
+                ⭐ Pro • 0% taxa
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-sm px-3 py-1">
+                Free • 20% taxa
+              </Badge>
+            )}
+          </div>
           <Card className="border-primary/20">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
