@@ -12,6 +12,7 @@ import { ArrowLeft, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Constants, type Database } from "@/integrations/supabase/types";
 import { AvatarUpload } from "@/components/AvatarUpload";
+import { CoverPhotoUpload } from "@/components/CoverPhotoUpload";
 import { MercadoPagoLink } from "@/components/MercadoPagoLink";
 import { SubscriptionCard } from "@/components/SubscriptionCard";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -24,6 +25,7 @@ interface Profile {
   nome: string;
   bio: string | null;
   foto_url: string | null;
+  foto_capa_url: string | null;
   cidade: string | null;
   estilo_musical: MusicStyle | null;
   tipo: "artista" | "cliente";
@@ -56,7 +58,7 @@ const Settings = () => {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, nome, bio, foto_url, cidade, estilo_musical, tipo, instagram, youtube, spotify, link_pix, ativo_ao_vivo")
+        .select("id, nome, bio, foto_url, foto_capa_url, cidade, estilo_musical, tipo, instagram, youtube, spotify, link_pix, ativo_ao_vivo")
         .eq("id", user.id)
         .single();
 
@@ -90,6 +92,7 @@ const Settings = () => {
           nome: profile.nome,
           bio: profile.bio,
           foto_url: profile.foto_url,
+          foto_capa_url: profile.foto_capa_url,
           cidade: profile.cidade,
           estilo_musical: profile.estilo_musical,
           instagram: profile.instagram,
@@ -153,6 +156,14 @@ const Settings = () => {
               onUpload={(url) => setProfile({ ...profile, foto_url: url })}
               userName={profile.nome}
             />
+
+            {/* Cover Photo Upload - Only for artists */}
+            {profile.tipo === "artista" && (
+              <CoverPhotoUpload
+                currentUrl={profile.foto_capa_url}
+                onUpload={(url) => setProfile({ ...profile, foto_capa_url: url })}
+              />
+            )}
 
             {/* Basic Info */}
             <div className="space-y-4">
