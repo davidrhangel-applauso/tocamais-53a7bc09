@@ -93,6 +93,7 @@ interface Artist {
   estilo_musical: string;
   bio: string;
   foto_url: string;
+  foto_capa_url: string | null;
   instagram: string;
   youtube: string;
   spotify: string;
@@ -271,10 +272,21 @@ const ArtistProfile = () => {
 
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Artist Header */}
-        <Card className="mb-8 border-primary/20">
-          <CardContent className="p-8">
+        <Card className="mb-8 border-primary/20 overflow-hidden">
+          {/* Cover Photo */}
+          {artist.foto_capa_url && (
+            <div className="w-full h-48 md:h-64 relative">
+              <img 
+                src={artist.foto_capa_url} 
+                alt={`Capa de ${artist.nome}`}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+            </div>
+          )}
+          <CardContent className={artist.foto_capa_url ? "p-8 -mt-16 relative" : "p-8"}>
             <div className="flex flex-col md:flex-row gap-6 items-start">
-              <Avatar className="w-32 h-32">
+              <Avatar className={`w-32 h-32 ${artist.foto_capa_url ? "ring-4 ring-background" : ""}`}>
                 <AvatarImage src={artist.foto_url} />
                 <AvatarFallback className="text-3xl">{artist.nome[0]}</AvatarFallback>
               </Avatar>
