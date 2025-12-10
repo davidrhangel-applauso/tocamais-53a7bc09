@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Music, Heart, Instagram, Youtube, Music2, ExternalLink, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useProfilePermissions } from "@/hooks/useProfilePermissions";
+import { useSubscription } from "@/hooks/useSubscription";
 import { useSessionId } from "@/hooks/useSessionId";
 import { z } from "zod";
 import { TipPaymentDialog } from "@/components/TipPaymentDialog";
@@ -135,6 +136,9 @@ const ArtistProfile = () => {
   
   // Check permissions for sensitive data
   const { canViewSensitiveData, loading: permissionsLoading } = useProfilePermissions(id);
+  
+  // Check if artist is Pro
+  const { isPro, isLoading: subscriptionLoading } = useSubscription(id || null);
 
   useEffect(() => {
     checkAuth();
@@ -286,6 +290,15 @@ const ArtistProfile = () => {
                       <Badge variant="secondary" className="text-base px-3 py-1">
                         {artist.estilo_musical}
                       </Badge>
+                      {isPro ? (
+                        <Badge className="text-base px-3 py-1 bg-gradient-to-r from-amber-500 to-yellow-400 text-black border-0">
+                          ⭐ Pro • 0% taxa
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-base px-3 py-1">
+                          Free • 20% taxa
+                        </Badge>
+                      )}
                       {artist.status_destaque && (
                         <Badge variant="default" className="text-base px-3 py-1">
                           ⭐ Destaque
