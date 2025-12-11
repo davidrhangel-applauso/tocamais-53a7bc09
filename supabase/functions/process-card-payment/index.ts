@@ -28,6 +28,73 @@ interface CardPaymentRequest {
   };
 }
 
+// Encryption utilities using AES-GCM
+async function getEncryptionKey(): Promise<CryptoKey> {
+  const keyString = Deno.env.get('ENCRYPTION_KEY');
+  if (!keyString || keyString.length < 32) {
+    throw new Error('ENCRYPTION_KEY must be at least 32 characters');
+  }
+  
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(keyString.slice(0, 32));
+  
+  return await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function decryptData(encryptedBase64: string): Promise<string> {
+  const key = await getEncryptionKey();
+  
+  const combined = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
+  
+  const iv = combined.slice(0, 12);
+  const encryptedData = combined.slice(12);
+  
+  const decryptedBuffer = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    encryptedData
+  );
+  
+  const decoder = new TextDecoder();
+  return decoder.decode(decryptedBuffer);
+}
+
+async function encryptData(plaintext: string): Promise<string> {
+  const key = await getEncryptionKey();
+  const encoder = new TextEncoder();
+  const data = encoder.encode(plaintext);
+  
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  
+  const encryptedBuffer = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    data
+  );
+  
+  const combined = new Uint8Array(iv.length + encryptedBuffer.byteLength);
+  combined.set(iv, 0);
+  combined.set(new Uint8Array(encryptedBuffer), iv.length);
+  
+  return btoa(String.fromCharCode(...combined));
+}
+
+// Função auxiliar para verificar se string está criptografada
+function isEncrypted(value: string): boolean {
+  try {
+    const decoded = atob(value);
+    return decoded.length > 50 && value.length > 100;
+  } catch {
+    return false;
+  }
+}
+
 // Função auxiliar para obter token válido do artista (com refresh se necessário)
 async function getValidSellerToken(
   credentials: any,
@@ -38,6 +105,23 @@ async function getValidSellerToken(
     return null;
   }
 
+  // Descriptografar token se estiver criptografado
+  let accessToken = credentials.access_token;
+  let refreshToken = credentials.refresh_token;
+  
+  try {
+    if (isEncrypted(accessToken)) {
+      console.log('Descriptografando access_token...');
+      accessToken = await decryptData(accessToken);
+    }
+    if (refreshToken && isEncrypted(refreshToken)) {
+      refreshToken = await decryptData(refreshToken);
+    }
+  } catch (decryptError) {
+    console.error('Erro ao descriptografar tokens:', decryptError);
+    return null;
+  }
+
   // Verificar se token ainda é válido (com margem de 5 minutos)
   const expiresAt = new Date(credentials.token_expires_at);
   const now = new Date();
@@ -45,7 +129,7 @@ async function getValidSellerToken(
 
   if (expiresAt > fiveMinutesFromNow) {
     console.log('Token do artista ainda válido até:', expiresAt.toISOString());
-    return credentials.access_token;
+    return accessToken;
   }
 
   // Token expirado ou prestes a expirar - fazer refresh
@@ -54,7 +138,7 @@ async function getValidSellerToken(
   const clientId = Deno.env.get('MERCADO_PAGO_CLIENT_ID');
   const clientSecret = Deno.env.get('MERCADO_PAGO_CLIENT_SECRET');
 
-  if (!clientId || !clientSecret || !credentials.refresh_token) {
+  if (!clientId || !clientSecret || !refreshToken) {
     console.error('Não é possível fazer refresh: credenciais ou refresh_token ausentes');
     return null;
   }
@@ -70,7 +154,7 @@ async function getValidSellerToken(
         grant_type: 'refresh_token',
         client_id: clientId,
         client_secret: clientSecret,
-        refresh_token: credentials.refresh_token,
+        refresh_token: refreshToken,
       }).toString(),
     });
 
@@ -84,12 +168,16 @@ async function getValidSellerToken(
     // Calcular nova data de expiração
     const newExpiresAt = new Date(Date.now() + (refreshData.expires_in * 1000)).toISOString();
 
+    // Criptografar novos tokens antes de salvar
+    const encryptedAccessToken = await encryptData(refreshData.access_token);
+    const encryptedRefreshToken = await encryptData(refreshData.refresh_token);
+
     // Atualizar tokens no banco (tabela de credenciais)
     const { error: updateError } = await supabase
       .from('artist_mercadopago_credentials')
       .update({
-        access_token: refreshData.access_token,
-        refresh_token: refreshData.refresh_token,
+        access_token: encryptedAccessToken,
+        refresh_token: encryptedRefreshToken,
         token_expires_at: newExpiresAt,
         updated_at: new Date().toISOString(),
       })
@@ -130,7 +218,13 @@ serve(async (req: Request) => {
       payer,
     }: CardPaymentRequest = await req.json();
 
-    console.log('Processing card payment:', { payment_method_id, valor, artista_id });
+    console.log('Processing card payment:', { 
+      payment_method_id, 
+      valor, 
+      artista_id,
+      cliente_id: cliente_id ? '***' : null,
+      session_id: session_id ? '***' : null,
+    });
 
     // Validações
     if (!token || !payment_method_id || !valor || !artista_id) {
@@ -143,6 +237,12 @@ serve(async (req: Request) => {
 
     if (!cliente_id && !session_id) {
       throw new Error('É necessário fornecer cliente_id ou session_id');
+    }
+
+    // Validar formato do session_id se fornecido (deve ser UUID)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (session_id && !uuidRegex.test(session_id)) {
+      throw new Error('Session ID deve ser um UUID válido');
     }
 
     // Inicializar Supabase
@@ -185,16 +285,15 @@ serve(async (req: Request) => {
       .single();
 
     const isPro = artista.plano === 'pro' && !!activeSubscription;
-    const taxaPercentual = isPro ? 0 : 0.20; // Pro: 0%, Free: 20%
+    const taxaPercentual = isPro ? 0 : 0.20;
 
     console.log('Artist plan:', { plano: artista.plano, isPro, taxaPercentual });
 
     // Calcular valores
-    // Taxa de processamento do MP é descontada do recebedor (artista/plataforma), não do cliente
     const valorBruto = valor;
     const taxaPlataforma = Number((valorBruto * taxaPercentual).toFixed(2));
     const valorLiquidoArtista = Number((valorBruto * (1 - taxaPercentual)).toFixed(2));
-    const valorTotal = valorBruto; // Cliente paga apenas o valor da gorjeta
+    const valorTotal = valorBruto;
 
     // Garantir que installments seja numérico
     const installmentsNumber =
@@ -255,7 +354,6 @@ serve(async (req: Request) => {
 
     // Configurar split payment corretamente
     if (useSellerToken && taxaPlataforma > 0) {
-      // Usando token do artista: application_fee é a comissão da plataforma
       paymentData.application_fee = taxaPlataforma;
       console.log('Split payment com token do artista:', {
         application_fee: taxaPlataforma,
@@ -264,10 +362,8 @@ serve(async (req: Request) => {
         valor_plataforma_recebe: taxaPlataforma,
       });
     } else if (useSellerToken) {
-      // Artista Pro com token: 100% vai para o artista
       console.log('Artista Pro - 100% do pagamento vai para o artista');
     } else {
-      // Sem token: pagamento vai para a plataforma
       console.log('Artista sem token OAuth - pagamento vai para plataforma');
     }
 
