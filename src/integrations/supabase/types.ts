@@ -456,6 +456,19 @@ export type Database = {
         }[]
       }
       get_artist_platform_fee: { Args: { artist_id: string }; Returns: number }
+      get_gorjeta_by_session: {
+        Args: { p_session_id: string }
+        Returns: {
+          artista_id: string
+          cliente_nome: string
+          created_at: string
+          id: string
+          pedido_mensagem: string
+          pedido_musica: string
+          status_pagamento: string
+          valor: number
+        }[]
+      }
       has_mercadopago_linked: { Args: { artist_id: string }; Returns: boolean }
       is_artist_pro: { Args: { artist_id: string }; Returns: boolean }
       is_client: { Args: { user_id: string }; Returns: boolean }

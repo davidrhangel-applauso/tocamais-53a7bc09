@@ -101,8 +101,6 @@ interface Artist {
   link_pix: string;
   status_destaque: boolean;
   ativo_ao_vivo: boolean;
-  pix_chave: string | null;
-  pix_tipo_chave: string | null;
   pix_qr_code_url: string | null;
 }
 
@@ -117,6 +115,7 @@ const ArtistProfile = () => {
   const navigate = useNavigate();
   const sessionId = useSessionId();
   const [artist, setArtist] = useState<Artist | null>(null);
+  const [pixInfo, setPixInfo] = useState<{ pix_chave: string | null; pix_tipo_chave: string | null }>({ pix_chave: null, pix_tipo_chave: null });
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [musicas, setMusicas] = useState<Musica[]>([]);
@@ -184,6 +183,14 @@ const ArtistProfile = () => {
 
       if (error) throw error;
       setArtist(data);
+
+      // Buscar informações de PIX do artista (tabela separada)
+      const { data: pixData } = await supabase
+        .rpc('get_artist_pix_info', { p_artist_id: id });
+      
+      if (pixData && pixData.length > 0) {
+        setPixInfo(pixData[0]);
+      }
 
       // Buscar músicas do repertório
       const { data: musicasData } = await supabase
@@ -524,12 +531,12 @@ const ArtistProfile = () => {
               </CardTitle>
               <CardDescription>
                 Apoie {artist.nome} com uma gorjeta
-                {isPro && artist.pix_chave && artist.pix_qr_code_url ? " via PIX direto" : " via Pix"}
+                {isPro && pixInfo.pix_chave && artist.pix_qr_code_url ? " via PIX direto" : " via Pix"}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Show different flow based on PRO + PIX próprio */}
-              {isPro && artist.pix_chave && artist.pix_qr_code_url ? (
+              {isPro && pixInfo.pix_chave && artist.pix_qr_code_url ? (
                 <>
                   {/* PRO with own PIX - simplified flow */}
                   <div className="p-4 bg-gradient-to-br from-amber-500/10 to-yellow-400/10 border border-amber-500/20 rounded-lg">
@@ -786,14 +793,14 @@ const ArtistProfile = () => {
       />
 
       {/* Direct PIX Payment Dialog (PRO only) */}
-      {artist.pix_chave && artist.pix_qr_code_url && (
+      {pixInfo.pix_chave && artist.pix_qr_code_url && (
         <DirectPixPaymentDialog
           open={directPixDialogOpen}
           onOpenChange={setDirectPixDialogOpen}
           artistaId={artist.id}
           artistaNome={artist.nome}
-          pixChave={artist.pix_chave}
-          pixTipoChave={artist.pix_tipo_chave || "aleatoria"}
+          pixChave={pixInfo.pix_chave}
+          pixTipoChave={pixInfo.pix_tipo_chave || "aleatoria"}
           pixQrCodeUrl={artist.pix_qr_code_url}
           clienteId={currentUserId}
           sessionId={sessionId}
