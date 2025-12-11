@@ -340,9 +340,10 @@ const ArtistProfile = () => {
                         </Badge>
                       )}
                       {artist.ativo_ao_vivo && (
-                        <Badge variant="destructive" className="text-base px-3 py-1 animate-pulse">
-                          🔴 AO VIVO
-                        </Badge>
+                        <div className="flex items-center gap-2 px-3 py-1 bg-secondary/50 rounded-full">
+                          <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                          <span className="text-base font-medium text-foreground">AO VIVO</span>
+                        </div>
                       )}
                     </div>
                   </div>
