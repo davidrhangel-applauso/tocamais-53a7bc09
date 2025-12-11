@@ -47,6 +47,33 @@ export type Database = {
         }
         Relationships: []
       }
+      artist_pix_info: {
+        Row: {
+          artist_id: string
+          created_at: string | null
+          id: string
+          pix_chave: string | null
+          pix_tipo_chave: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          artist_id: string
+          created_at?: string | null
+          id?: string
+          pix_chave?: string | null
+          pix_tipo_chave?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          artist_id?: string
+          created_at?: string | null
+          id?: string
+          pix_chave?: string | null
+          pix_tipo_chave?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       artist_subscriptions: {
         Row: {
           artista_id: string
@@ -426,6 +453,13 @@ export type Database = {
       get_artist_mercadopago_seller_id: {
         Args: { p_artist_id: string }
         Returns: string
+      }
+      get_artist_pix_info: {
+        Args: { p_artist_id: string }
+        Returns: {
+          pix_chave: string
+          pix_tipo_chave: string
+        }[]
       }
       get_artist_platform_fee: { Args: { artist_id: string }; Returns: number }
       has_mercadopago_linked: { Args: { artist_id: string }; Returns: boolean }

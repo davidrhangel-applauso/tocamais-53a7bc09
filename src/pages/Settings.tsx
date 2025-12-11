@@ -35,9 +35,12 @@ interface Profile {
   spotify: string | null;
   link_pix: string | null;
   ativo_ao_vivo: boolean;
+  pix_qr_code_url: string | null;
+}
+
+interface PixInfo {
   pix_chave: string | null;
   pix_tipo_chave: string | null;
-  pix_qr_code_url: string | null;
 }
 
 const Settings = () => {
@@ -45,6 +48,7 @@ const Settings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [pixInfo, setPixInfo] = useState<PixInfo>({ pix_chave: null, pix_tipo_chave: null });
   const [hasMercadoPagoLinked, setHasMercadoPagoLinked] = useState(false);
   const { isPro } = useSubscription(profile?.id || null);
 
@@ -62,15 +66,26 @@ const Settings = () => {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, nome, bio, foto_url, foto_capa_url, cidade, estilo_musical, tipo, instagram, youtube, spotify, link_pix, ativo_ao_vivo, pix_chave, pix_tipo_chave, pix_qr_code_url")
+        .select("id, nome, bio, foto_url, foto_capa_url, cidade, estilo_musical, tipo, instagram, youtube, spotify, link_pix, ativo_ao_vivo, pix_qr_code_url")
         .eq("id", user.id)
         .single();
 
       if (error) throw error;
       setProfile(data as Profile);
 
-      // Check if artist has MP credentials linked
+      // Load PIX info from separate secure table
       if (data.tipo === "artista") {
+        const { data: pixData } = await supabase
+          .from("artist_pix_info")
+          .select("pix_chave, pix_tipo_chave")
+          .eq("artist_id", user.id)
+          .maybeSingle();
+        
+        if (pixData) {
+          setPixInfo(pixData);
+        }
+
+        // Check if artist has MP credentials linked
         const { data: credentials } = await supabase
           .from("artist_mercadopago_credentials")
           .select("seller_id")
@@ -90,6 +105,7 @@ const Settings = () => {
 
     setSaving(true);
     try {
+      // Update profile
       const { error } = await supabase
         .from("profiles")
         .update({
@@ -104,13 +120,24 @@ const Settings = () => {
           spotify: profile.spotify,
           link_pix: profile.link_pix,
           ativo_ao_vivo: profile.ativo_ao_vivo,
-          pix_chave: profile.pix_chave,
-          pix_tipo_chave: profile.pix_tipo_chave,
           pix_qr_code_url: profile.pix_qr_code_url,
         })
         .eq("id", profile.id);
 
       if (error) throw error;
+
+      // Update PIX info in separate secure table (artists only)
+      if (profile.tipo === "artista" && (pixInfo.pix_chave || pixInfo.pix_tipo_chave)) {
+        const { error: pixError } = await supabase
+          .from("artist_pix_info")
+          .upsert({
+            artist_id: profile.id,
+            pix_chave: pixInfo.pix_chave,
+            pix_tipo_chave: pixInfo.pix_tipo_chave,
+          }, { onConflict: "artist_id" });
+
+        if (pixError) throw pixError;
+      }
 
       toast.success("Perfil atualizado com sucesso!");
       navigate(profile.tipo === "artista" ? "/painel" : "/home");
@@ -292,8 +319,8 @@ const Settings = () => {
                 <div className="space-y-2">
                   <Label htmlFor="pix_tipo_chave">Tipo de Chave PIX</Label>
                   <Select
-                    value={profile.pix_tipo_chave || ""}
-                    onValueChange={(value) => setProfile({ ...profile, pix_tipo_chave: value })}
+                    value={pixInfo.pix_tipo_chave || ""}
+                    onValueChange={(value) => setPixInfo({ ...pixInfo, pix_tipo_chave: value })}
                   >
                     <SelectTrigger id="pix_tipo_chave">
                       <SelectValue placeholder="Selecione o tipo de chave" />
@@ -312,13 +339,13 @@ const Settings = () => {
                   <Input
                     id="pix_chave"
                     placeholder={
-                      profile.pix_tipo_chave === "cpf" ? "000.000.000-00" :
-                      profile.pix_tipo_chave === "email" ? "seu@email.com" :
-                      profile.pix_tipo_chave === "celular" ? "+55 11 99999-9999" :
+                      pixInfo.pix_tipo_chave === "cpf" ? "000.000.000-00" :
+                      pixInfo.pix_tipo_chave === "email" ? "seu@email.com" :
+                      pixInfo.pix_tipo_chave === "celular" ? "+55 11 99999-9999" :
                       "Cole sua chave aleatória aqui"
                     }
-                    value={profile.pix_chave || ""}
-                    onChange={(e) => setProfile({ ...profile, pix_chave: e.target.value })}
+                    value={pixInfo.pix_chave || ""}
+                    onChange={(e) => setPixInfo({ ...pixInfo, pix_chave: e.target.value })}
                   />
                 </div>
 
@@ -336,7 +363,7 @@ const Settings = () => {
                   </p>
                 </div>
 
-                {profile.pix_chave && profile.pix_qr_code_url && (
+                {pixInfo.pix_chave && profile.pix_qr_code_url && (
                   <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
                     <p className="text-sm text-green-700 dark:text-green-400 font-medium">
                       ✅ PIX Próprio configurado! Clientes verão apenas esta opção de pagamento.
@@ -344,7 +371,7 @@ const Settings = () => {
                   </div>
                 )}
 
-                {(!profile.pix_chave || !profile.pix_qr_code_url) && (
+                {(!pixInfo.pix_chave || !profile.pix_qr_code_url) && (
                   <div className="p-3 bg-muted/50 border border-border/50 rounded-lg">
                     <p className="text-sm text-muted-foreground">
                       💡 Preencha a chave PIX e o QR code para ativar o pagamento direto.
