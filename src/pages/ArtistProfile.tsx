@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -118,6 +118,23 @@ const ArtistProfile = () => {
   const [musicas, setMusicas] = useState<Musica[]>([]);
   const [musicaCustomizada, setMusicaCustomizada] = useState(false);
   const [musicaGorjetaCustomizada, setMusicaGorjetaCustomizada] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+  const coverRef = useRef<HTMLDivElement>(null);
+
+  // Parallax scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      if (coverRef.current) {
+        const rect = coverRef.current.getBoundingClientRect();
+        if (rect.bottom > 0) {
+          setScrollY(window.scrollY);
+        }
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   
   // Request form state
   const [musica, setMusica] = useState("");
@@ -275,11 +292,12 @@ const ArtistProfile = () => {
         <Card className="mb-8 border-primary/20 overflow-hidden">
           {/* Cover Photo */}
           {artist.foto_capa_url && (
-            <div className="w-full h-48 md:h-64 relative">
+            <div ref={coverRef} className="w-full h-48 md:h-64 relative overflow-hidden">
               <img 
                 src={artist.foto_capa_url} 
                 alt={`Capa de ${artist.nome}`}
-                className="w-full h-full object-cover"
+                className="w-full h-[120%] object-cover transition-transform duration-75 ease-out"
+                style={{ transform: `translateY(${scrollY * 0.3}px)` }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
             </div>
