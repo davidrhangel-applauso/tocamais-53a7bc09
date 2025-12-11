@@ -27,6 +27,7 @@ interface Pedido {
   created_at: string;
   cliente_id: string | null;
   cliente_nome: string | null;
+  valor: number | null;
   profiles: {
     nome: string;
     foto_url: string;
@@ -375,6 +376,7 @@ const ArtistPanel = () => {
   const pedidosAceitos = pedidos.filter((p) => p.status === "aceito");
   const pedidosRecusados = pedidos.filter((p) => p.status === "recusado");
   const pedidosConcluidos = pedidos.filter((p) => p.status === "concluido");
+  const pedidosAguardandoPixConfirmacao = pedidos.filter((p) => p.status === "aguardando_confirmacao_pix");
 
   const currentTab = searchParams.get("tab") || "pendentes";
 
@@ -489,6 +491,11 @@ const ArtistPanel = () => {
         {/* Tabs for Pedidos and Gorjetas */}
         <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="space-y-6">
           <TabsList className="grid grid-cols-3 sm:grid-cols-4 md:inline-flex md:w-auto h-auto gap-1 p-1">
+            {pedidosAguardandoPixConfirmacao.length > 0 && (
+              <TabsTrigger value="aguardando_pix" className="text-xs sm:text-sm px-2 sm:px-3 bg-amber-500/10 border-amber-500/30">
+                💰 PIX ({pedidosAguardandoPixConfirmacao.length})
+              </TabsTrigger>
+            )}
             <TabsTrigger value="pendentes" className="text-xs sm:text-sm px-2 sm:px-3">
               ⏳ Pendentes ({pedidosPendentes.length})
             </TabsTrigger>
@@ -511,6 +518,84 @@ const ArtistPanel = () => {
               🎵 Repertório
             </TabsTrigger>
           </TabsList>
+
+          {/* Aguardando Confirmação PIX - Only for PRO artists with own PIX */}
+          <TabsContent value="aguardando_pix" className="space-y-4">
+            {pedidosAguardandoPixConfirmacao.length === 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center text-muted-foreground">
+                  Nenhum pagamento PIX aguardando confirmação
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <Card className="border-amber-500/30 bg-amber-500/5">
+                  <CardContent className="p-4">
+                    <p className="text-sm text-muted-foreground">
+                      <strong className="text-amber-600 dark:text-amber-400">💡 PIX Próprio:</strong> Esses clientes afirmam ter feito um PIX direto para você. 
+                      Verifique seu extrato bancário e confirme os recebimentos.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {pedidosAguardandoPixConfirmacao.map((pedido) => (
+                  <Card key={pedido.id} className="border-amber-500/20">
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start gap-3 mb-3">
+                            <Avatar className="w-10 h-10 shrink-0">
+                              <AvatarImage src={pedido.profiles?.foto_url} />
+                              <AvatarFallback>{(pedido.profiles?.nome || pedido.cliente_nome || "Anônimo")[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold truncate">{pedido.profiles?.nome || pedido.cliente_nome || "Anônimo"}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(pedido.created_at).toLocaleString("pt-BR")}
+                              </p>
+                            </div>
+                            {pedido.valor && (
+                              <Badge className="bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30">
+                                R$ {pedido.valor.toFixed(2)}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Music className="w-4 h-4 text-primary shrink-0" />
+                            <p className="font-medium truncate">{pedido.musica}</p>
+                          </div>
+                          {pedido.mensagem && (
+                            <p className="text-sm text-muted-foreground italic mb-3 line-clamp-2">
+                              "{pedido.mensagem}"
+                            </p>
+                          )}
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleUpdatePedidoStatus(pedido.id, "pendente")}
+                              className="flex-1 sm:flex-none"
+                            >
+                              <Check className="w-4 h-4 mr-1" />
+                              Confirmar Recebimento
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleUpdatePedidoStatus(pedido.id, "recusado")}
+                              className="flex-1 sm:flex-none"
+                            >
+                              <X className="w-4 h-4 mr-1" />
+                              Não Recebi
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </>
+            )}
+          </TabsContent>
 
           {/* Histórico de Pagamentos */}
           <TabsContent value="historico" className="space-y-6">

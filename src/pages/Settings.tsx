@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Save } from "lucide-react";
@@ -34,6 +35,9 @@ interface Profile {
   spotify: string | null;
   link_pix: string | null;
   ativo_ao_vivo: boolean;
+  pix_chave: string | null;
+  pix_tipo_chave: string | null;
+  pix_qr_code_url: string | null;
 }
 
 const Settings = () => {
@@ -58,12 +62,12 @@ const Settings = () => {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, nome, bio, foto_url, foto_capa_url, cidade, estilo_musical, tipo, instagram, youtube, spotify, link_pix, ativo_ao_vivo")
+        .select("id, nome, bio, foto_url, foto_capa_url, cidade, estilo_musical, tipo, instagram, youtube, spotify, link_pix, ativo_ao_vivo, pix_chave, pix_tipo_chave, pix_qr_code_url")
         .eq("id", user.id)
         .single();
 
       if (error) throw error;
-      setProfile(data);
+      setProfile(data as Profile);
 
       // Check if artist has MP credentials linked
       if (data.tipo === "artista") {
@@ -100,6 +104,9 @@ const Settings = () => {
           spotify: profile.spotify,
           link_pix: profile.link_pix,
           ativo_ao_vivo: profile.ativo_ao_vivo,
+          pix_chave: profile.pix_chave,
+          pix_tipo_chave: profile.pix_tipo_chave,
+          pix_qr_code_url: profile.pix_qr_code_url,
         })
         .eq("id", profile.id);
 
@@ -261,20 +268,89 @@ const Settings = () => {
                     onChange={(e) => setProfile({ ...profile, spotify: e.target.value })}
                   />
                 </div>
+              </div>
+            )}
+
+            {/* PIX Próprio Section - Only for PRO artists */}
+            {profile.tipo === "artista" && isPro && (
+              <div className="space-y-4 p-4 border border-amber-500/20 rounded-lg bg-amber-500/5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    PIX Próprio
+                    <Badge className="bg-gradient-to-r from-amber-500 to-yellow-400 text-black border-0 text-xs">
+                      Exclusivo PRO ⭐
+                    </Badge>
+                  </h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Configure seu PIX para receber gorjetas diretamente, sem intermediários e instantaneamente.
+                  <strong className="block mt-1 text-amber-600 dark:text-amber-400">
+                    Quando configurado, clientes só poderão pagar via seu PIX.
+                  </strong>
+                </p>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="pix_tipo_chave">Tipo de Chave PIX</Label>
+                  <Select
+                    value={profile.pix_tipo_chave || ""}
+                    onValueChange={(value) => setProfile({ ...profile, pix_tipo_chave: value })}
+                  >
+                    <SelectTrigger id="pix_tipo_chave">
+                      <SelectValue placeholder="Selecione o tipo de chave" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cpf">CPF</SelectItem>
+                      <SelectItem value="email">E-mail</SelectItem>
+                      <SelectItem value="celular">Celular</SelectItem>
+                      <SelectItem value="aleatoria">Chave Aleatória</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="link_pix">Link Pix (para gorjetas)</Label>
+                  <Label htmlFor="pix_chave">Chave PIX</Label>
                   <Input
-                    id="link_pix"
-                    type="url"
-                    placeholder="https://..."
-                    value={profile.link_pix || ""}
-                    onChange={(e) => setProfile({ ...profile, link_pix: e.target.value })}
+                    id="pix_chave"
+                    placeholder={
+                      profile.pix_tipo_chave === "cpf" ? "000.000.000-00" :
+                      profile.pix_tipo_chave === "email" ? "seu@email.com" :
+                      profile.pix_tipo_chave === "celular" ? "+55 11 99999-9999" :
+                      "Cole sua chave aleatória aqui"
+                    }
+                    value={profile.pix_chave || ""}
+                    onChange={(e) => setProfile({ ...profile, pix_chave: e.target.value })}
                   />
-                  <p className="text-sm text-muted-foreground">
-                    Configure seu link de pagamento Pix para receber gorjetas
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="pix_qr_code_url">URL do QR Code PIX</Label>
+                  <Input
+                    id="pix_qr_code_url"
+                    type="url"
+                    placeholder="https://... (link da imagem do QR code)"
+                    value={profile.pix_qr_code_url || ""}
+                    onChange={(e) => setProfile({ ...profile, pix_qr_code_url: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Gere um QR code estático no seu banco e faça upload da imagem. Cole o link aqui.
                   </p>
                 </div>
+
+                {profile.pix_chave && profile.pix_qr_code_url && (
+                  <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                    <p className="text-sm text-green-700 dark:text-green-400 font-medium">
+                      ✅ PIX Próprio configurado! Clientes verão apenas esta opção de pagamento.
+                    </p>
+                  </div>
+                )}
+
+                {(!profile.pix_chave || !profile.pix_qr_code_url) && (
+                  <div className="p-3 bg-muted/50 border border-border/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      💡 Preencha a chave PIX e o QR code para ativar o pagamento direto.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
