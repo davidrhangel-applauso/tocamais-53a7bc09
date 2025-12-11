@@ -2,107 +2,116 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* Se7 Produtora Design System
+   Cores baseadas na identidade visual: vermelho -> laranja -> amarelo dourado
+   Fundo escuro premium
 */
 
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 0 0% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 0 0% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 0 0% 10%;
 
-    --primary: 262 83% 58%;
+    /* Primary: Laranja vibrante (cor central do gradiente) */
+    --primary: 25 95% 53%;
     --primary-foreground: 0 0% 100%;
     
-    --primary-glow: 280 90% 70%;
+    /* Glow: Vermelho coral */
+    --primary-glow: 10 85% 58%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 30 15% 95%;
+    --secondary-foreground: 0 0% 15%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 30 10% 94%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 340 82% 62%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent: Amarelo dourado */
+    --accent: 42 92% 56%;
+    --accent-foreground: 0 0% 10%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 262 83% 58%;
+    --border: 30 15% 88%;
+    --input: 30 15% 88%;
+    --ring: 25 95% 53%;
 
     --radius: 0.75rem;
     
-    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(280 90% 70%));
-    --gradient-accent: linear-gradient(135deg, hsl(340 82% 62%), hsl(280 90% 70%));
-    --gradient-hero: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.8) 100%);
+    /* Gradientes Se7 */
+    --gradient-primary: linear-gradient(135deg, hsl(10 85% 58%), hsl(25 95% 53%), hsl(42 92% 56%));
+    --gradient-accent: linear-gradient(135deg, hsl(10 85% 58%), hsl(42 92% 56%));
+    --gradient-hero: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.9) 100%);
 
-    --sidebar-background: 0 0% 98%;
+    --sidebar-background: 30 10% 97%;
+    --sidebar-foreground: 0 0% 20%;
+    --sidebar-primary: 25 95% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 30 15% 94%;
+    --sidebar-accent-foreground: 0 0% 15%;
+    --sidebar-border: 30 10% 90%;
+    --sidebar-ring: 25 95% 53%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Verde para Ao Vivo - mantido */
+    --live-indicator: 142 76% 46%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 4%;
+    --foreground: 0 0% 96%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 96%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 96%;
 
-    --primary: 262 83% 58%;
+    /* Primary: Laranja vibrante */
+    --primary: 25 95% 53%;
     --primary-foreground: 0 0% 100%;
     
-    --primary-glow: 280 90% 70%;
+    /* Glow: Vermelho coral */
+    --primary-glow: 10 85% 58%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 96%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 60%;
 
-    --accent: 340 82% 62%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent: Amarelo dourado */
+    --accent: 42 92% 56%;
+    --accent-foreground: 0 0% 10%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 96%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 262 83% 58%;
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 25 95% 53%;
     
-    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(280 90% 70%));
-    --gradient-accent: linear-gradient(135deg, hsl(340 82% 62%), hsl(280 90% 70%));
-    --gradient-hero: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.9) 100%);
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    /* Gradientes Se7 */
+    --gradient-primary: linear-gradient(135deg, hsl(10 85% 58%), hsl(25 95% 53%), hsl(42 92% 56%));
+    --gradient-accent: linear-gradient(135deg, hsl(10 85% 58%), hsl(42 92% 56%));
+    --gradient-hero: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.95) 100%);
+    
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 0 0% 94%;
+    --sidebar-primary: 25 95% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 94%;
+    --sidebar-border: 0 0% 14%;
+    --sidebar-ring: 25 95% 53%;
+
+    /* Verde para Ao Vivo - mantido */
+    --live-indicator: 142 76% 46%;
   }
 }
 
