@@ -291,20 +291,25 @@ const ArtistProfile = () => {
         {/* Artist Header */}
         <Card className="mb-8 border-primary/20 overflow-hidden">
           {/* Cover Photo */}
-          {artist.foto_capa_url && (
-            <div ref={coverRef} className="w-full h-48 md:h-64 relative overflow-hidden">
+          <div ref={coverRef} className="w-full h-48 md:h-64 relative overflow-hidden">
+            {artist.foto_capa_url ? (
               <img 
                 src={artist.foto_capa_url} 
                 alt={`Capa de ${artist.nome}`}
                 className="w-full h-[120%] object-cover transition-transform duration-75 ease-out"
                 style={{ transform: `translateY(${scrollY * 0.3}px)` }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-            </div>
-          )}
-          <CardContent className={artist.foto_capa_url ? "p-8 -mt-16 relative" : "p-8"}>
+            ) : (
+              <div 
+                className="w-full h-[120%] bg-gradient-to-br from-primary/30 via-primary/10 to-secondary/20 transition-transform duration-75 ease-out"
+                style={{ transform: `translateY(${scrollY * 0.3}px)` }}
+              />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+          </div>
+          <CardContent className="p-8 -mt-16 relative">
             <div className="flex flex-col md:flex-row gap-6 items-start">
-              <Avatar className={`w-32 h-32 ${artist.foto_capa_url ? "ring-4 ring-background" : ""}`}>
+              <Avatar className="w-32 h-32 ring-4 ring-background">
                 <AvatarImage src={artist.foto_url} />
                 <AvatarFallback className="text-3xl">{artist.nome[0]}</AvatarFallback>
               </Avatar>
