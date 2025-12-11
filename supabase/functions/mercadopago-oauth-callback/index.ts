@@ -6,6 +6,47 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Encryption utilities using AES-GCM
+async function getEncryptionKey(): Promise<CryptoKey> {
+  const keyString = Deno.env.get('ENCRYPTION_KEY');
+  if (!keyString || keyString.length < 32) {
+    throw new Error('ENCRYPTION_KEY must be at least 32 characters');
+  }
+  
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(keyString.slice(0, 32));
+  
+  return await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function encryptData(plaintext: string): Promise<string> {
+  const key = await getEncryptionKey();
+  const encoder = new TextEncoder();
+  const data = encoder.encode(plaintext);
+  
+  // Generate random IV
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  
+  const encryptedBuffer = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    data
+  );
+  
+  // Combine IV + encrypted data and encode as base64
+  const combined = new Uint8Array(iv.length + encryptedBuffer.byteLength);
+  combined.set(iv, 0);
+  combined.set(new Uint8Array(encryptedBuffer), iv.length);
+  
+  return btoa(String.fromCharCode(...combined));
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -111,14 +152,19 @@ serve(async (req) => {
     // Calcular data de expiração do token
     const tokenExpiresAt = new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString();
 
+    // Criptografar tokens sensíveis antes de salvar
+    console.log('Criptografando tokens sensíveis...');
+    const encryptedAccessToken = await encryptData(tokenData.access_token);
+    const encryptedRefreshToken = await encryptData(tokenData.refresh_token);
+
     // Salvar credenciais na tabela segura (upsert para atualizar se já existir)
     const { error: upsertError } = await supabase
       .from('artist_mercadopago_credentials')
       .upsert({ 
         artist_id: state,
         seller_id: sellerId,
-        access_token: tokenData.access_token,
-        refresh_token: tokenData.refresh_token,
+        access_token: encryptedAccessToken,
+        refresh_token: encryptedRefreshToken,
         token_expires_at: tokenExpiresAt,
         updated_at: new Date().toISOString(),
       }, {
@@ -130,7 +176,7 @@ serve(async (req) => {
       return redirectWithError(appUrl, 'db_error', 'Erro ao salvar vinculação');
     }
 
-    console.log('Conta vinculada com sucesso! Token expira em:', tokenExpiresAt);
+    console.log('Conta vinculada com sucesso! Token criptografado e expira em:', tokenExpiresAt);
 
     return new Response(null, {
       status: 302,
