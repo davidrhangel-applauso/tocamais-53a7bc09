@@ -251,7 +251,7 @@ const Home = () => {
                           <p className="text-sm text-muted-foreground mb-2">{artist.cidade}</p>
                           <Badge variant="secondary">{artist.estilo_musical}</Badge>
                           {artist.ativo_ao_vivo && (
-                            <Badge className="ml-2 bg-green-500 text-white hover:bg-green-600">
+                            <Badge className="ml-2 bg-green-500 text-white hover:bg-green-600 animate-pulse">
                               AO VIVO
                             </Badge>
                           )}
