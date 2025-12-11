@@ -18,6 +18,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useSessionId } from "@/hooks/useSessionId";
 import { z } from "zod";
 import { TipPaymentDialog } from "@/components/TipPaymentDialog";
+import { DirectPixPaymentDialog } from "@/components/DirectPixPaymentDialog";
 import { validarCPF, formatarCPF, limparCPF } from "@/lib/cpf-utils";
 
 // Validation schema for song requests
@@ -100,6 +101,9 @@ interface Artist {
   link_pix: string;
   status_destaque: boolean;
   ativo_ao_vivo: boolean;
+  pix_chave: string | null;
+  pix_tipo_chave: string | null;
+  pix_qr_code_url: string | null;
 }
 
 interface Musica {
@@ -151,6 +155,7 @@ const ArtistProfile = () => {
   
   // Tip payment dialog state
   const [tipDialogOpen, setTipDialogOpen] = useState(false);
+  const [directPixDialogOpen, setDirectPixDialogOpen] = useState(false);
   
   // Check permissions for sensitive data
   const { canViewSensitiveData, loading: permissionsLoading } = useProfilePermissions(id);
@@ -518,224 +523,255 @@ const ArtistProfile = () => {
                 Enviar Gorjeta
               </CardTitle>
               <CardDescription>
-                Apoie {artist.nome} com uma gorjeta via Pix
+                Apoie {artist.nome} com uma gorjeta
+                {isPro && artist.pix_chave && artist.pix_qr_code_url ? " via PIX direto" : " via Pix"}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="clienteNomeGorjeta">Seu nome *</Label>
-                <Input
-                  id="clienteNomeGorjeta"
-                  placeholder="Ex: Maria"
-                  value={clienteNomeGorjeta}
-                  onChange={(e) => setClienteNomeGorjeta(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="clienteCpfGorjeta">CPF *</Label>
-                <Input
-                  id="clienteCpfGorjeta"
-                  placeholder="000.000.000-00"
-                  value={clienteCpfGorjeta}
-                  onChange={(e) => setClienteCpfGorjeta(formatarCPF(e.target.value))}
-                  maxLength={14}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Necessário para melhor pontuação no Mercado Pago
-                </p>
-              </div>
-              <div>
-                <Label htmlFor="valor">Valor (R$) *</Label>
-                <Input
-                  id="valor"
-                  type="number"
-                  min="1"
-                  step="0.01"
-                  placeholder="10.00"
-                  value={valorGorjeta}
-                  onChange={(e) => setValorGorjeta(e.target.value)}
-                />
-              </div>
-              
-              <Separator className="my-4" />
-              
-              {/* Campos opcionais de pedido */}
-              <div className="space-y-3">
-                <p className="text-sm font-medium text-muted-foreground">
-                  Adicionar pedido musical (opcional)
-                </p>
-                
-                {musicas.length > 0 ? (
-                  !musicaGorjetaCustomizada ? (
-                    <div>
-                      <Label htmlFor="pedidoMusica-select">Escolha uma música do repertório</Label>
-                      <Select value={pedidoMusica} onValueChange={setPedidoMusica}>
-                        <SelectTrigger id="pedidoMusica-select">
-                          <SelectValue placeholder="Selecione uma música" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {musicas.map((m) => (
-                            <SelectItem key={m.id} value={m.titulo}>
-                              <div className="flex flex-col">
-                                <span>{m.titulo}</span>
-                                {m.artista_original && (
-                                  <span className="text-xs text-muted-foreground">
-                                    {m.artista_original}
-                                  </span>
-                                )}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        variant="link"
-                        size="sm"
-                        className="mt-1 px-0"
-                        onClick={() => {
-                          setMusicaGorjetaCustomizada(true);
-                          setPedidoMusica("");
-                        }}
-                      >
-                        Ou digite outra música
-                      </Button>
+              {/* Show different flow based on PRO + PIX próprio */}
+              {isPro && artist.pix_chave && artist.pix_qr_code_url ? (
+                <>
+                  {/* PRO with own PIX - simplified flow */}
+                  <div className="p-4 bg-gradient-to-br from-amber-500/10 to-yellow-400/10 border border-amber-500/20 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge className="bg-gradient-to-r from-amber-500 to-yellow-400 text-black border-0">
+                        ⭐ PRO
+                      </Badge>
+                      <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                        100% vai para o artista
+                      </span>
                     </div>
-                  ) : (
-                    <div>
-                      <Label htmlFor="pedidoMusica">
-                        Música
-                        <Button
-                          type="button"
-                          variant="link"
-                          size="sm"
-                          className="ml-2 h-auto p-0"
-                          onClick={() => {
-                            setMusicaGorjetaCustomizada(false);
-                            setPedidoMusica("");
-                          }}
-                        >
-                          Ver repertório
-                        </Button>
-                      </Label>
-                      <Input
-                        id="pedidoMusica"
-                        placeholder="Nome da música ou artista"
-                        value={pedidoMusica}
-                        onChange={(e) => setPedidoMusica(e.target.value)}
-                      />
-                    </div>
-                  )
-                ) : (
-                  <div>
-                    <Label htmlFor="pedidoMusica">Música</Label>
-                    <Input
-                      id="pedidoMusica"
-                      placeholder="Nome da música ou artista"
-                      value={pedidoMusica}
-                      onChange={(e) => setPedidoMusica(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      💡 O artista ainda não cadastrou seu repertório
+                    <p className="text-sm text-muted-foreground">
+                      Este artista recebe pagamentos diretamente via PIX, sem taxas e instantaneamente.
                     </p>
                   </div>
-                )}
-                
-                <div>
-                  <Label htmlFor="pedidoMensagem">Dedicatória</Label>
-                  <Textarea
-                    id="pedidoMensagem"
-                    placeholder="Adicione uma dedicatória especial..."
-                    value={pedidoMensagem}
-                    onChange={(e) => setPedidoMensagem(e.target.value)}
-                    rows={2}
-                  />
-                </div>
-              </div>
-              
-              <Separator className="my-4" />
-              
-              {/* Quick amounts */}
-              <div className="space-y-2">
-                <Label>Valores sugeridos</Label>
-                <div className="grid grid-cols-3 gap-2">
+                  
                   <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setValorGorjeta("5")}
+                    className="w-full"
+                    onClick={() => setDirectPixDialogOpen(true)}
                   >
-                    R$ 5
+                    Enviar Gorjeta via PIX
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setValorGorjeta("10")}
-                  >
-                    R$ 10
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setValorGorjeta("20")}
-                  >
-                    R$ 20
-                  </Button>
-                </div>
-              </div>
-
-              {/* Payment breakdown */}
-              {valorGorjeta && parseFloat(valorGorjeta) > 0 && (
-                <div className="p-4 bg-muted/30 rounded-lg border border-border/50 space-y-2">
-                  <p className="text-sm font-medium text-foreground">Detalhamento do pagamento:</p>
-                  <div className="space-y-1.5 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Gorjeta</span>
-                      <span className="font-medium">R$ {parseFloat(valorGorjeta).toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-green-600 dark:text-green-400">
-                      <span>Artista recebe (80%)</span>
-                      <span className="font-semibold">R$ {(parseFloat(valorGorjeta) * 0.80).toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Taxa da plataforma (20%)</span>
-                      <span>R$ {(parseFloat(valorGorjeta) * 0.20).toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between pt-2 border-t border-border/50">
-                      <span className="font-semibold text-foreground">Total a pagar</span>
-                      <span className="font-bold text-foreground">R$ {parseFloat(valorGorjeta).toFixed(2)}</span>
+                </>
+              ) : (
+                <>
+                  {/* Regular flow with Mercado Pago */}
+                  <div>
+                    <Label htmlFor="clienteNomeGorjeta">Seu nome *</Label>
+                    <Input
+                      id="clienteNomeGorjeta"
+                      placeholder="Ex: Maria"
+                      value={clienteNomeGorjeta}
+                      onChange={(e) => setClienteNomeGorjeta(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="clienteCpfGorjeta">CPF *</Label>
+                    <Input
+                      id="clienteCpfGorjeta"
+                      placeholder="000.000.000-00"
+                      value={clienteCpfGorjeta}
+                      onChange={(e) => setClienteCpfGorjeta(formatarCPF(e.target.value))}
+                      maxLength={14}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Necessário para melhor pontuação no Mercado Pago
+                    </p>
+                  </div>
+                  <div>
+                    <Label htmlFor="valor">Valor (R$) *</Label>
+                    <Input
+                      id="valor"
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      placeholder="10.00"
+                      value={valorGorjeta}
+                      onChange={(e) => setValorGorjeta(e.target.value)}
+                    />
+                  </div>
+                  
+                  <Separator className="my-4" />
+                  
+                  {/* Campos opcionais de pedido */}
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Adicionar pedido musical (opcional)
+                    </p>
+                    
+                    {musicas.length > 0 ? (
+                      !musicaGorjetaCustomizada ? (
+                        <div>
+                          <Label htmlFor="pedidoMusica-select">Escolha uma música do repertório</Label>
+                          <Select value={pedidoMusica} onValueChange={setPedidoMusica}>
+                            <SelectTrigger id="pedidoMusica-select">
+                              <SelectValue placeholder="Selecione uma música" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {musicas.map((m) => (
+                                <SelectItem key={m.id} value={m.titulo}>
+                                  <div className="flex flex-col">
+                                    <span>{m.titulo}</span>
+                                    {m.artista_original && (
+                                      <span className="text-xs text-muted-foreground">
+                                        {m.artista_original}
+                                      </span>
+                                    )}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            type="button"
+                            variant="link"
+                            size="sm"
+                            className="mt-1 px-0"
+                            onClick={() => {
+                              setMusicaGorjetaCustomizada(true);
+                              setPedidoMusica("");
+                            }}
+                          >
+                            Ou digite outra música
+                          </Button>
+                        </div>
+                      ) : (
+                        <div>
+                          <Label htmlFor="pedidoMusica">
+                            Música
+                            <Button
+                              type="button"
+                              variant="link"
+                              size="sm"
+                              className="ml-2 h-auto p-0"
+                              onClick={() => {
+                                setMusicaGorjetaCustomizada(false);
+                                setPedidoMusica("");
+                              }}
+                            >
+                              Ver repertório
+                            </Button>
+                          </Label>
+                          <Input
+                            id="pedidoMusica"
+                            placeholder="Nome da música ou artista"
+                            value={pedidoMusica}
+                            onChange={(e) => setPedidoMusica(e.target.value)}
+                          />
+                        </div>
+                      )
+                    ) : (
+                      <div>
+                        <Label htmlFor="pedidoMusica">Música</Label>
+                        <Input
+                          id="pedidoMusica"
+                          placeholder="Nome da música ou artista"
+                          value={pedidoMusica}
+                          onChange={(e) => setPedidoMusica(e.target.value)}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          💡 O artista ainda não cadastrou seu repertório
+                        </p>
+                      </div>
+                    )}
+                    
+                    <div>
+                      <Label htmlFor="pedidoMensagem">Dedicatória</Label>
+                      <Textarea
+                        id="pedidoMensagem"
+                        placeholder="Adicione uma dedicatória especial..."
+                        value={pedidoMensagem}
+                        onChange={(e) => setPedidoMensagem(e.target.value)}
+                        rows={2}
+                      />
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    O artista receberá 80% do valor da gorjeta após a dedução de 20% da taxa da plataforma.
-                  </p>
-                </div>
-              )}
+                  
+                  <Separator className="my-4" />
+                  
+                  {/* Quick amounts */}
+                  <div className="space-y-2">
+                    <Label>Valores sugeridos</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setValorGorjeta("5")}
+                      >
+                        R$ 5
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setValorGorjeta("10")}
+                      >
+                        R$ 10
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setValorGorjeta("20")}
+                      >
+                        R$ 20
+                      </Button>
+                    </div>
+                  </div>
 
-              <Button
-                className="w-full"
-                onClick={handleOpenTipDialog}
-                disabled={!valorGorjeta || parseFloat(valorGorjeta) <= 0 || !clienteNomeGorjeta.trim() || !clienteCpfGorjeta.trim()}
-              >
-                Continuar para Pagamento
-              </Button>
-              
-              {!canViewSensitiveData && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded justify-center">
-                  <Lock className="w-3 h-3" />
-                  <p>Link PIX visível após enviar gorjeta</p>
-                </div>
-              )}
-              {canViewSensitiveData && !artist.link_pix && (
-                <p className="text-xs text-muted-foreground text-center">
-                  Este artista ainda não configurou o Pix
-                </p>
+                  {/* Payment breakdown */}
+                  {valorGorjeta && parseFloat(valorGorjeta) > 0 && (
+                    <div className="p-4 bg-muted/30 rounded-lg border border-border/50 space-y-2">
+                      <p className="text-sm font-medium text-foreground">Detalhamento do pagamento:</p>
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Gorjeta</span>
+                          <span className="font-medium">R$ {parseFloat(valorGorjeta).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-green-600 dark:text-green-400">
+                          <span>Artista recebe (80%)</span>
+                          <span className="font-semibold">R$ {(parseFloat(valorGorjeta) * 0.80).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>Taxa da plataforma (20%)</span>
+                          <span>R$ {(parseFloat(valorGorjeta) * 0.20).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between pt-2 border-t border-border/50">
+                          <span className="font-semibold text-foreground">Total a pagar</span>
+                          <span className="font-bold text-foreground">R$ {parseFloat(valorGorjeta).toFixed(2)}</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        O artista receberá 80% do valor da gorjeta após a dedução de 20% da taxa da plataforma.
+                      </p>
+                    </div>
+                  )}
+
+                  <Button
+                    className="w-full"
+                    onClick={handleOpenTipDialog}
+                    disabled={!valorGorjeta || parseFloat(valorGorjeta) <= 0 || !clienteNomeGorjeta.trim() || !clienteCpfGorjeta.trim()}
+                  >
+                    Continuar para Pagamento
+                  </Button>
+                  
+                  {!canViewSensitiveData && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded justify-center">
+                      <Lock className="w-3 h-3" />
+                      <p>Link PIX visível após enviar gorjeta</p>
+                    </div>
+                  )}
+                  {canViewSensitiveData && !artist.link_pix && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Este artista ainda não configurou o Pix
+                    </p>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
         </div>
       </main>
 
-      {/* Tip Payment Dialog */}
+      {/* Tip Payment Dialog (Mercado Pago) */}
       <TipPaymentDialog
         open={tipDialogOpen}
         onOpenChange={setTipDialogOpen}
@@ -748,6 +784,21 @@ const ArtistProfile = () => {
         pedidoMusica={pedidoMusica || null}
         pedidoMensagem={pedidoMensagem || null}
       />
+
+      {/* Direct PIX Payment Dialog (PRO only) */}
+      {artist.pix_chave && artist.pix_qr_code_url && (
+        <DirectPixPaymentDialog
+          open={directPixDialogOpen}
+          onOpenChange={setDirectPixDialogOpen}
+          artistaId={artist.id}
+          artistaNome={artist.nome}
+          pixChave={artist.pix_chave}
+          pixTipoChave={artist.pix_tipo_chave || "aleatoria"}
+          pixQrCodeUrl={artist.pix_qr_code_url}
+          clienteId={currentUserId}
+          sessionId={sessionId}
+        />
+      )}
     </div>
   );
 };

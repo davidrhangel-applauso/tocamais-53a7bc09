@@ -346,6 +346,9 @@ export type Database = {
           instagram: string | null
           link_pix: string | null
           nome: string
+          pix_chave: string | null
+          pix_qr_code_url: string | null
+          pix_tipo_chave: string | null
           plano: Database["public"]["Enums"]["subscription_plan"]
           spotify: string | null
           status_destaque: boolean | null
@@ -365,6 +368,9 @@ export type Database = {
           instagram?: string | null
           link_pix?: string | null
           nome: string
+          pix_chave?: string | null
+          pix_qr_code_url?: string | null
+          pix_tipo_chave?: string | null
           plano?: Database["public"]["Enums"]["subscription_plan"]
           spotify?: string | null
           status_destaque?: boolean | null
@@ -384,6 +390,9 @@ export type Database = {
           instagram?: string | null
           link_pix?: string | null
           nome?: string
+          pix_chave?: string | null
+          pix_qr_code_url?: string | null
+          pix_tipo_chave?: string | null
           plano?: Database["public"]["Enums"]["subscription_plan"]
           spotify?: string | null
           status_destaque?: boolean | null
