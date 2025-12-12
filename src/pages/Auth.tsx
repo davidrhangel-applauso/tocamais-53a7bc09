@@ -7,13 +7,29 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Music } from "lucide-react";
+import { Music, Check, X } from "lucide-react";
 import { waitForProfile } from "@/lib/auth-utils";
+import { z } from "zod";
+
+const passwordSchema = z.string()
+  .min(8, 'A senha deve ter no mínimo 8 caracteres')
+  .regex(/[A-Z]/, 'A senha deve conter pelo menos uma letra maiúscula')
+  .regex(/[0-9]/, 'A senha deve conter pelo menos um número')
+  .regex(/[!@#$%^&*(),.?":{}|<>]/, 'A senha deve conter pelo menos um caractere especial');
 
 const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  const passwordChecks = {
+    minLength: password.length >= 8,
+    hasUppercase: /[A-Z]/.test(password),
+    hasNumber: /[0-9]/.test(password),
+    hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+  };
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -21,9 +37,16 @@ const Auth = () => {
 
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
     const name = formData.get("name") as string;
     const city = formData.get("city") as string;
+
+    // Validate password before submission
+    const passwordValidation = passwordSchema.safeParse(password);
+    if (!passwordValidation.success) {
+      setPasswordError(passwordValidation.error.errors[0].message);
+      setLoading(false);
+      return;
+    }
 
     try {
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -248,8 +271,37 @@ const Auth = () => {
                     type="password"
                     placeholder="••••••••"
                     required
-                    minLength={6}
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setPasswordError(null);
+                    }}
                   />
+                  {/* Password requirements checklist */}
+                  <div className="text-xs space-y-1 mt-2 p-2 bg-muted/50 rounded-lg">
+                    <p className="font-medium text-muted-foreground mb-1">A senha deve conter:</p>
+                    <div className="grid grid-cols-2 gap-1">
+                      <div className={`flex items-center gap-1 ${passwordChecks.minLength ? 'text-green-500' : 'text-muted-foreground'}`}>
+                        {passwordChecks.minLength ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                        <span>8+ caracteres</span>
+                      </div>
+                      <div className={`flex items-center gap-1 ${passwordChecks.hasUppercase ? 'text-green-500' : 'text-muted-foreground'}`}>
+                        {passwordChecks.hasUppercase ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                        <span>Letra maiúscula</span>
+                      </div>
+                      <div className={`flex items-center gap-1 ${passwordChecks.hasNumber ? 'text-green-500' : 'text-muted-foreground'}`}>
+                        {passwordChecks.hasNumber ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                        <span>Número</span>
+                      </div>
+                      <div className={`flex items-center gap-1 ${passwordChecks.hasSpecial ? 'text-green-500' : 'text-muted-foreground'}`}>
+                        {passwordChecks.hasSpecial ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                        <span>Caractere especial</span>
+                      </div>
+                    </div>
+                  </div>
+                  {passwordError && (
+                    <p className="text-xs text-destructive">{passwordError}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-city">Cidade</Label>
