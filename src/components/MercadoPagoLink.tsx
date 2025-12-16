@@ -90,13 +90,16 @@ export function MercadoPagoLink({ userId, isPro = false, hasAccessToken = false 
   }
 
   return (
-    <Card>
+    <Card className="border-muted">
       <CardHeader>
         <div className="space-y-1">
-          <CardTitle>Receber Pagamentos via Mercado Pago</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Mercado Pago
+            <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
+          </CardTitle>
           <CardDescription>
             {isPro 
-              ? "Vincule sua conta para receber 100% das gorjetas automaticamente (Plano Pro)"
+              ? "Alternativa ao PIX próprio: vincule para receber via Mercado Pago"
               : "Vincule sua conta para receber 80% das gorjetas automaticamente (Plano Free - 20% taxa)"
             }
           </CardDescription>
