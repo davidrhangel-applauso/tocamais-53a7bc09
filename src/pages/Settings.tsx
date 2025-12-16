@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Constants, type Database } from "@/integrations/supabase/types";
 import { AvatarUpload } from "@/components/AvatarUpload";
 import { CoverPhotoUpload } from "@/components/CoverPhotoUpload";
+import { PixQRCodeUpload } from "@/components/PixQRCodeUpload";
 import { MercadoPagoLink } from "@/components/MercadoPagoLink";
 import { SubscriptionCard } from "@/components/SubscriptionCard";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -337,19 +338,10 @@ const Settings = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="pix_qr_code_url">URL do QR Code PIX</Label>
-                  <Input
-                    id="pix_qr_code_url"
-                    type="url"
-                    placeholder="https://... (link da imagem do QR code)"
-                    value={profile.pix_qr_code_url || ""}
-                    onChange={(e) => setProfile({ ...profile, pix_qr_code_url: e.target.value })}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Gere um QR code estático no seu banco e faça upload da imagem. Cole o link aqui.
-                  </p>
-                </div>
+                <PixQRCodeUpload
+                  currentUrl={profile.pix_qr_code_url}
+                  onUpload={(url) => setProfile({ ...profile, pix_qr_code_url: url })}
+                />
 
                 {pixInfo.pix_chave && profile.pix_qr_code_url && (
                   <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
