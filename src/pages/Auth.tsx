@@ -22,6 +22,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
   const passwordChecks = {
@@ -30,6 +31,8 @@ const Auth = () => {
     hasNumber: /[0-9]/.test(password),
     hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(password),
   };
+
+  const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -44,6 +47,13 @@ const Auth = () => {
     const passwordValidation = passwordSchema.safeParse(password);
     if (!passwordValidation.success) {
       setPasswordError(passwordValidation.error.errors[0].message);
+      setLoading(false);
+      return;
+    }
+
+    // Validate passwords match
+    if (password !== confirmPassword) {
+      setPasswordError("As senhas não coincidem");
       setLoading(false);
       return;
     }
@@ -299,6 +309,27 @@ const Auth = () => {
                       </div>
                     </div>
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-confirm-password">Confirmar Senha</Label>
+                  <Input
+                    id="signup-confirm-password"
+                    name="confirmPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      setPasswordError(null);
+                    }}
+                  />
+                  {confirmPassword.length > 0 && (
+                    <div className={`flex items-center gap-1 text-xs ${passwordsMatch ? 'text-green-500' : 'text-destructive'}`}>
+                      {passwordsMatch ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                      <span>{passwordsMatch ? 'As senhas coincidem' : 'As senhas não coincidem'}</span>
+                    </div>
+                  )}
                   {passwordError && (
                     <p className="text-xs text-destructive">{passwordError}</p>
                   )}
