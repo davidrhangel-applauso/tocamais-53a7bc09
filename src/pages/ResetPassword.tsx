@@ -6,13 +6,30 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Music, Lock } from "lucide-react";
+import { Lock, Check, X } from "lucide-react";
+import { z } from "zod";
+
+const passwordSchema = z.string()
+  .min(8, 'A senha deve ter no mínimo 8 caracteres')
+  .regex(/[A-Z]/, 'A senha deve conter pelo menos uma letra maiúscula')
+  .regex(/[0-9]/, 'A senha deve conter pelo menos um número')
+  .regex(/[!@#$%^&*(),.?":{}|<>]/, 'A senha deve conter pelo menos um caractere especial');
 
 const ResetPassword = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  const passwordChecks = {
+    minLength: password.length >= 8,
+    hasUppercase: /[A-Z]/.test(password),
+    hasNumber: /[0-9]/.test(password),
+    hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+  };
+
+  const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
 
   useEffect(() => {
     // Check if user has a valid session from the reset link
@@ -26,18 +43,22 @@ const ResetPassword = () => {
 
   const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    if (password !== confirmPassword) {
-      toast.error("As senhas não coincidem");
-      return;
-    }
-
-    if (password.length < 6) {
-      toast.error("A senha deve ter pelo menos 6 caracteres");
-      return;
-    }
-
     setLoading(true);
+
+    // Validate password strength
+    const passwordValidation = passwordSchema.safeParse(password);
+    if (!passwordValidation.success) {
+      setPasswordError(passwordValidation.error.errors[0].message);
+      setLoading(false);
+      return;
+    }
+    
+    // Validate passwords match
+    if (password !== confirmPassword) {
+      setPasswordError("As senhas não coincidem");
+      setLoading(false);
+      return;
+    }
 
     try {
       const { error } = await supabase.auth.updateUser({
@@ -77,10 +98,34 @@ const ResetPassword = () => {
                 type="password"
                 placeholder="••••••••"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setPasswordError(null);
+                }}
                 required
-                minLength={6}
               />
+              {/* Password requirements checklist */}
+              <div className="text-xs space-y-1 mt-2 p-2 bg-muted/50 rounded-lg">
+                <p className="font-medium text-muted-foreground mb-1">A senha deve conter:</p>
+                <div className="grid grid-cols-2 gap-1">
+                  <div className={`flex items-center gap-1 ${passwordChecks.minLength ? 'text-green-500' : 'text-muted-foreground'}`}>
+                    {passwordChecks.minLength ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                    <span>8+ caracteres</span>
+                  </div>
+                  <div className={`flex items-center gap-1 ${passwordChecks.hasUppercase ? 'text-green-500' : 'text-muted-foreground'}`}>
+                    {passwordChecks.hasUppercase ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                    <span>Letra maiúscula</span>
+                  </div>
+                  <div className={`flex items-center gap-1 ${passwordChecks.hasNumber ? 'text-green-500' : 'text-muted-foreground'}`}>
+                    {passwordChecks.hasNumber ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                    <span>Número</span>
+                  </div>
+                  <div className={`flex items-center gap-1 ${passwordChecks.hasSpecial ? 'text-green-500' : 'text-muted-foreground'}`}>
+                    {passwordChecks.hasSpecial ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                    <span>Caractere especial</span>
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirm-password">Confirmar Nova Senha</Label>
@@ -89,10 +134,21 @@ const ResetPassword = () => {
                 type="password"
                 placeholder="••••••••"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  setPasswordError(null);
+                }}
                 required
-                minLength={6}
               />
+              {confirmPassword.length > 0 && (
+                <div className={`flex items-center gap-1 text-xs ${passwordsMatch ? 'text-green-500' : 'text-destructive'}`}>
+                  {passwordsMatch ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                  <span>{passwordsMatch ? 'As senhas coincidem' : 'As senhas não coincidem'}</span>
+                </div>
+              )}
+              {passwordError && (
+                <p className="text-xs text-destructive">{passwordError}</p>
+              )}
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Redefinindo..." : "Redefinir Senha"}
