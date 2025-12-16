@@ -12,6 +12,10 @@ import { waitForProfile } from "@/lib/auth-utils";
 import { z } from "zod";
 import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicator";
 
+const emailSchema = z.string()
+  .min(1, 'O email é obrigatório')
+  .email('Digite um email válido');
+
 const passwordSchema = z.string()
   .min(8, 'A senha deve ter no mínimo 8 caracteres')
   .regex(/[A-Z]/, 'A senha deve conter pelo menos uma letra maiúscula')
@@ -22,6 +26,8 @@ const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
@@ -33,9 +39,16 @@ const Auth = () => {
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
     const name = formData.get("name") as string;
     const city = formData.get("city") as string;
+
+    // Validate email
+    const emailValidation = emailSchema.safeParse(email);
+    if (!emailValidation.success) {
+      setEmailError(emailValidation.error.errors[0].message);
+      setLoading(false);
+      return;
+    }
 
     // Validate password before submission
     const passwordValidation = passwordSchema.safeParse(password);
@@ -96,8 +109,13 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
+    // Validate email
+    const emailValidation = emailSchema.safeParse(email);
+    if (!emailValidation.success) {
+      setEmailError(emailValidation.error.errors[0].message);
+      setLoading(false);
+      return;
+    }
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -121,13 +139,20 @@ const Auth = () => {
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+    const loginPassword = formData.get("password") as string;
+
+    // Validate email
+    const emailValidation = emailSchema.safeParse(email);
+    if (!emailValidation.success) {
+      setEmailError(emailValidation.error.errors[0].message);
+      setLoading(false);
+      return;
+    }
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password,
+        password: loginPassword,
       });
 
       if (error) throw error;
@@ -194,7 +219,15 @@ const Auth = () => {
                       type="email"
                       placeholder="seu@email.com"
                       required
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setEmailError(null);
+                      }}
                     />
+                    {emailError && (
+                      <p className="text-xs text-destructive">{emailError}</p>
+                    )}
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Enviando..." : "Enviar Link de Recuperação"}
@@ -218,7 +251,15 @@ const Auth = () => {
                       type="email"
                       placeholder="seu@email.com"
                       required
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setEmailError(null);
+                      }}
                     />
+                    {emailError && (
+                      <p className="text-xs text-destructive">{emailError}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signin-password">Senha</Label>
@@ -259,14 +300,22 @@ const Auth = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">E-mail</Label>
-                  <Input
-                    id="signup-email"
-                    name="email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    required
-                  />
-                </div>
+                    <Input
+                      id="signup-email"
+                      name="email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      required
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setEmailError(null);
+                      }}
+                    />
+                    {emailError && (
+                      <p className="text-xs text-destructive">{emailError}</p>
+                    )}
+                  </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Senha</Label>
                   <Input
