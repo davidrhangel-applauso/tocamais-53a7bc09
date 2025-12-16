@@ -49,7 +49,6 @@ const Settings = () => {
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [pixInfo, setPixInfo] = useState<PixInfo>({ pix_chave: null, pix_tipo_chave: null });
-  const [hasMercadoPagoLinked, setHasMercadoPagoLinked] = useState(false);
   const { isPro } = useSubscription(profile?.id || null);
 
   useEffect(() => {
@@ -84,14 +83,6 @@ const Settings = () => {
         if (pixData) {
           setPixInfo(pixData);
         }
-
-        // Check if artist has MP credentials linked
-        const { data: credentials } = await supabase
-          .from("artist_mercadopago_credentials")
-          .select("seller_id")
-          .eq("artist_id", user.id)
-          .maybeSingle();
-        setHasMercadoPagoLinked(!!credentials?.seller_id);
       }
     } catch (error: any) {
       toast.error("Erro ao carregar perfil");
@@ -300,20 +291,17 @@ const Settings = () => {
 
             {/* PIX Próprio Section - Only for PRO artists */}
             {profile.tipo === "artista" && isPro && (
-              <div className="space-y-4 p-4 border border-amber-500/20 rounded-lg bg-amber-500/5">
+              <div className="space-y-4 p-4 border border-primary/30 rounded-lg bg-primary/5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold flex items-center gap-2">
-                    PIX Próprio
+                    💰 PIX Próprio
                     <Badge className="bg-gradient-to-r from-amber-500 to-yellow-400 text-black border-0 text-xs">
-                      Exclusivo PRO ⭐
+                      PRO ⭐
                     </Badge>
                   </h3>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Configure seu PIX para receber gorjetas diretamente, sem intermediários e instantaneamente.
-                  <strong className="block mt-1 text-amber-600 dark:text-amber-400">
-                    Quando configurado, clientes só poderão pagar via seu PIX.
-                  </strong>
+                  Configure seu PIX para receber gorjetas diretamente na sua conta, sem intermediários e instantaneamente.
                 </p>
                 
                 <div className="space-y-2">
@@ -374,7 +362,7 @@ const Settings = () => {
                 {(!pixInfo.pix_chave || !profile.pix_qr_code_url) && (
                   <div className="p-3 bg-muted/50 border border-border/50 rounded-lg">
                     <p className="text-sm text-muted-foreground">
-                      💡 Preencha a chave PIX e o QR code para ativar o pagamento direto.
+                      💡 Preencha a chave PIX e o QR code para ativar o pagamento direto. Caso contrário, você pode usar o Mercado Pago abaixo.
                     </p>
                   </div>
                 )}
@@ -384,10 +372,7 @@ const Settings = () => {
             {/* Subscription Plan - Only for artists */}
             {profile.tipo === "artista" && (
               <div className="space-y-4">
-                <SubscriptionCard 
-                  artistaId={profile.id} 
-                  hasMercadoPagoLinked={hasMercadoPagoLinked}
-                />
+                <SubscriptionCard artistaId={profile.id} />
               </div>
             )}
 

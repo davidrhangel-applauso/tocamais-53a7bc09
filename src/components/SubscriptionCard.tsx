@@ -12,10 +12,9 @@ import { Crown, Check, Zap, Clock, AlertCircle, QrCode, Copy } from "lucide-reac
 
 interface SubscriptionCardProps {
   artistaId: string;
-  hasMercadoPagoLinked: boolean;
 }
 
-export function SubscriptionCard({ artistaId, hasMercadoPagoLinked }: SubscriptionCardProps) {
+export function SubscriptionCard({ artistaId }: SubscriptionCardProps) {
   const { isLoading, isPro, subscription, daysRemaining, refetch } = useSubscription(artistaId);
   const [isCreating, setIsCreating] = useState(false);
   const [showPixDialog, setShowPixDialog] = useState(false);
@@ -25,10 +24,6 @@ export function SubscriptionCard({ artistaId, hasMercadoPagoLinked }: Subscripti
   } | null>(null);
 
   const handleSubscribe = async () => {
-    if (!hasMercadoPagoLinked) {
-      toast.error("Você precisa vincular sua conta do Mercado Pago primeiro para assinar o Plano Pro.");
-      return;
-    }
 
     setIsCreating(true);
     try {
@@ -139,7 +134,7 @@ export function SubscriptionCard({ artistaId, hasMercadoPagoLinked }: Subscripti
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-primary" />
-                  <span>Via MP vinculado</span>
+                  <span>PIX próprio direto</span>
                 </div>
               </div>
             </div>
@@ -163,21 +158,11 @@ export function SubscriptionCard({ artistaId, hasMercadoPagoLinked }: Subscripti
             </Alert>
           )}
 
-          {/* Requisito: Vincular MP */}
-          {!isPro && !hasMercadoPagoLinked && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Para assinar o Plano Pro, você precisa primeiro vincular sua conta do Mercado Pago na seção abaixo.
-              </AlertDescription>
-            </Alert>
-          )}
-
           {/* Botão de Ação */}
           {!isPro && (
             <Button 
               onClick={handleSubscribe} 
-              disabled={isCreating || !hasMercadoPagoLinked}
+              disabled={isCreating}
               className="w-full"
               size="lg"
             >
