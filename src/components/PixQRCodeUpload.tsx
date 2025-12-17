@@ -1,8 +1,9 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Upload, X, QrCode } from "lucide-react";
+import { Upload, X, QrCode, Loader2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
+import jsQR from "jsqr";
 import {
   Dialog,
   DialogContent,
@@ -18,11 +19,38 @@ interface PixQRCodeUploadProps {
 
 export const PixQRCodeUpload = ({ currentUrl, onUpload }: PixQRCodeUploadProps) => {
   const [uploading, setUploading] = useState(false);
+  const [validating, setValidating] = useState(false);
   const [preview, setPreview] = useState<string>('');
+  const [qrData, setQrData] = useState<string>('');
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const fileRef = useRef<File | null>(null);
 
-  const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const validateQRCode = (imageDataUrl: string): Promise<string | null> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(null);
+          return;
+        }
+        
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        
+        resolve(code?.data || null);
+      };
+      img.onerror = () => resolve(null);
+      img.src = imageDataUrl;
+    });
+  };
+
+  const onSelectFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -36,10 +64,32 @@ export const PixQRCodeUpload = ({ currentUrl, onUpload }: PixQRCodeUploadProps) 
       return;
     }
 
-    fileRef.current = file;
+    setValidating(true);
+    
     const reader = new FileReader();
-    reader.addEventListener('load', () => {
-      setPreview(reader.result?.toString() || '');
+    reader.addEventListener('load', async () => {
+      const dataUrl = reader.result?.toString() || '';
+      
+      const qrContent = await validateQRCode(dataUrl);
+      setValidating(false);
+      
+      if (!qrContent) {
+        toast.error('Imagem inválida: não foi possível detectar um QR Code válido');
+        return;
+      }
+      
+      // Check if it looks like a PIX QR code (contains BR.GOV.BCB.PIX or pix.bcb.gov.br)
+      const isPixQR = qrContent.includes('BR.GOV.BCB.PIX') || 
+                      qrContent.toLowerCase().includes('pix') ||
+                      qrContent.startsWith('00020126');
+      
+      if (!isPixQR) {
+        toast.warning('QR Code detectado, mas pode não ser um QR Code PIX válido. Verifique antes de confirmar.');
+      }
+      
+      fileRef.current = file;
+      setPreview(dataUrl);
+      setQrData(qrContent);
       setShowPreviewDialog(true);
     });
     reader.readAsDataURL(file);
@@ -74,6 +124,7 @@ export const PixQRCodeUpload = ({ currentUrl, onUpload }: PixQRCodeUploadProps) 
       toast.success('QR Code PIX atualizado com sucesso!');
       setShowPreviewDialog(false);
       setPreview('');
+      setQrData('');
       fileRef.current = null;
     } catch (error: any) {
       toast.error('Erro ao fazer upload: ' + error.message);
@@ -123,24 +174,33 @@ export const PixQRCodeUpload = ({ currentUrl, onUpload }: PixQRCodeUploadProps) 
       ) : (
         <div
           className="flex flex-col items-center justify-center gap-3 p-6 border-2 border-dashed border-border rounded-lg bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
-          onClick={() => document.getElementById('pix-qr-upload')?.click()}
+          onClick={() => !validating && document.getElementById('pix-qr-upload')?.click()}
         >
-          <QrCode className="w-12 h-12 text-muted-foreground" />
-          <div className="text-center">
-            <p className="text-sm font-medium">Clique para fazer upload</p>
-            <p className="text-xs text-muted-foreground">
-              Faça upload da imagem do QR Code gerado pelo seu banco
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={uploading}
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            Selecionar imagem
-          </Button>
+          {validating ? (
+            <>
+              <Loader2 className="w-12 h-12 text-muted-foreground animate-spin" />
+              <p className="text-sm font-medium">Validando QR Code...</p>
+            </>
+          ) : (
+            <>
+              <QrCode className="w-12 h-12 text-muted-foreground" />
+              <div className="text-center">
+                <p className="text-sm font-medium">Clique para fazer upload</p>
+                <p className="text-xs text-muted-foreground">
+                  Faça upload da imagem do QR Code gerado pelo seu banco
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={uploading || validating}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Selecionar imagem
+              </Button>
+            </>
+          )}
         </div>
       )}
 
@@ -150,7 +210,7 @@ export const PixQRCodeUpload = ({ currentUrl, onUpload }: PixQRCodeUploadProps) 
         accept="image/*"
         className="hidden"
         onChange={onSelectFile}
-        disabled={uploading}
+        disabled={uploading || validating}
       />
 
       <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
@@ -162,19 +222,26 @@ export const PixQRCodeUpload = ({ currentUrl, onUpload }: PixQRCodeUploadProps) 
             </DialogTitle>
           </DialogHeader>
           
-          <div className="flex justify-center py-4">
+          <div className="flex flex-col items-center gap-4 py-4">
             {preview && (
               <img
                 src={preview}
                 alt="Preview QR Code"
-                className="max-h-[300px] w-auto rounded-lg bg-white p-2"
+                className="max-h-[250px] w-auto rounded-lg bg-white p-2"
               />
             )}
+            
+            <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+              <CheckCircle className="w-4 h-4" />
+              <span>QR Code válido detectado</span>
+            </div>
+            
+            {qrData && (
+              <p className="text-xs text-muted-foreground text-center max-w-full overflow-hidden text-ellipsis">
+                Conteúdo: {qrData.substring(0, 50)}{qrData.length > 50 ? '...' : ''}
+              </p>
+            )}
           </div>
-
-          <p className="text-sm text-muted-foreground text-center">
-            Verifique se o QR Code está legível antes de confirmar.
-          </p>
 
           <DialogFooter>
             <Button
@@ -182,6 +249,7 @@ export const PixQRCodeUpload = ({ currentUrl, onUpload }: PixQRCodeUploadProps) 
               onClick={() => {
                 setShowPreviewDialog(false);
                 setPreview('');
+                setQrData('');
                 fileRef.current = null;
               }}
               disabled={uploading}
