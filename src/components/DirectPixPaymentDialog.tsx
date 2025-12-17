@@ -48,20 +48,24 @@ export function DirectPixPaymentDialog({
   const [pedidoMensagem, setPedidoMensagem] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Generate PIX "Copia e Cola" code from the key
+  const [valorCopiaCola, setValorCopiaCola] = useState("");
+
+  // Generate PIX "Copia e Cola" code from the key (with optional amount)
   const pixCopiaCola = useMemo(() => {
     if (!pixChave || !pixTipoChave) return null;
     try {
+      const valor = valorCopiaCola ? parseFloat(valorCopiaCola) : undefined;
       return generatePixPayload({
         pixKey: pixChave,
         keyType: pixTipoChave,
         merchantName: artistaNome,
-        merchantCity: 'BRASIL'
+        merchantCity: 'BRASIL',
+        amount: valor && valor > 0 ? valor : undefined
       });
     } catch {
       return null;
     }
-  }, [pixChave, pixTipoChave, artistaNome]);
+  }, [pixChave, pixTipoChave, artistaNome, valorCopiaCola]);
 
   const handleCopyPixKey = async () => {
     try {
@@ -183,12 +187,31 @@ export function DirectPixPaymentDialog({
           </div>
 
           {/* PIX Copia e Cola */}
-          {pixCopiaCola && (
-            <div className="space-y-2">
+          {pixChave && pixTipoChave && (
+            <div className="space-y-3">
               <Label>PIX Copia e Cola</Label>
+              
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="valorCopiaCola" className="text-xs text-muted-foreground whitespace-nowrap">
+                    Valor (opcional):
+                  </Label>
+                  <Input
+                    id="valorCopiaCola"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={valorCopiaCola}
+                    onChange={(e) => setValorCopiaCola(e.target.value)}
+                    className="w-28 h-8 text-sm"
+                  />
+                </div>
+              </div>
+
               <div className="flex gap-2">
                 <Input
-                  value={pixCopiaCola}
+                  value={pixCopiaCola || ""}
                   readOnly
                   className="font-mono text-xs truncate"
                 />
@@ -197,12 +220,15 @@ export function DirectPixPaymentDialog({
                   size="icon"
                   onClick={handleCopyPixCode}
                   title="Copiar código completo"
+                  disabled={!pixCopiaCola}
                 >
                   {copiedCode ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Cole este código no app do seu banco para pagar
+                {valorCopiaCola && parseFloat(valorCopiaCola) > 0 
+                  ? `Código com valor R$ ${parseFloat(valorCopiaCola).toFixed(2)} incluso`
+                  : "Cole este código no app do seu banco (valor livre)"}
               </p>
             </div>
           )}
