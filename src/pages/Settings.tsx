@@ -341,6 +341,10 @@ const Settings = () => {
                 <PixQRCodeUpload
                   currentUrl={profile.pix_qr_code_url}
                   onUpload={(url) => setProfile({ ...profile, pix_qr_code_url: url })}
+                  pixKey={pixInfo.pix_chave}
+                  pixKeyType={pixInfo.pix_tipo_chave}
+                  merchantName={profile.nome}
+                  merchantCity={profile.cidade || 'BRASIL'}
                 />
 
                 {pixInfo.pix_chave && profile.pix_qr_code_url && (
