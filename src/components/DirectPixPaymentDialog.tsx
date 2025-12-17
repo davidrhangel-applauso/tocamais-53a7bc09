@@ -94,8 +94,9 @@ export function DirectPixPaymentDialog({
       return;
     }
 
-    if (!valorGorjeta || parseFloat(valorGorjeta) <= 0) {
-      toast.error("Por favor, digite o valor da gorjeta");
+    const valor = parseFloat(valorGorjeta);
+    if (!valorGorjeta || isNaN(valor) || valor < 1) {
+      toast.error("O valor mínimo do PIX é R$ 1,00");
       return;
     }
 
@@ -197,11 +198,16 @@ export function DirectPixPaymentDialog({
                   <Input
                     id="valorGorjetaCopiaCola"
                     type="number"
-                    min="0.01"
+                    min="1"
                     step="0.01"
-                    placeholder="0.00"
+                    placeholder="1.00"
                     value={valorGorjeta}
-                    onChange={(e) => setValorGorjeta(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '' || parseFloat(val) >= 0) {
+                        setValorGorjeta(val);
+                      }
+                    }}
                     className="w-28 h-8 text-sm"
                   />
                 </div>
