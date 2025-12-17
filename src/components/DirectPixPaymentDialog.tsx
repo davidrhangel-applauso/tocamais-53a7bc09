@@ -48,11 +48,34 @@ export function DirectPixPaymentDialog({
   const [pedidoMensagem, setPedidoMensagem] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Format value as Brazilian currency display
+  const formatCurrency = (value: string): string => {
+    const numericValue = value.replace(/\D/g, '');
+    if (!numericValue) return '';
+    const number = parseInt(numericValue, 10) / 100;
+    return number.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  // Parse currency string to number
+  const parseCurrencyToNumber = (value: string): number => {
+    const numericValue = value.replace(/\D/g, '');
+    if (!numericValue) return 0;
+    return parseInt(numericValue, 10) / 100;
+  };
+
+  // Handle currency input change
+  const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value.replace(/\D/g, '');
+    if (rawValue.length <= 10) { // Limit to prevent overflow
+      setValorGorjeta(formatCurrency(rawValue));
+    }
+  };
+
   // Generate PIX "Copia e Cola" code from the key (with optional amount)
   const pixCopiaCola = useMemo(() => {
     if (!pixChave || !pixTipoChave) return null;
     try {
-      const valor = valorGorjeta ? parseFloat(valorGorjeta) : undefined;
+      const valor = parseCurrencyToNumber(valorGorjeta);
       return generatePixPayload({
         pixKey: pixChave,
         keyType: pixTipoChave,
@@ -94,8 +117,8 @@ export function DirectPixPaymentDialog({
       return;
     }
 
-    const valor = parseFloat(valorGorjeta);
-    if (!valorGorjeta || isNaN(valor) || valor < 1) {
+    const valor = parseCurrencyToNumber(valorGorjeta);
+    if (!valorGorjeta || valor < 1) {
       toast.error("O valor mínimo do PIX é R$ 1,00");
       return;
     }
@@ -193,23 +216,20 @@ export function DirectPixPaymentDialog({
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Label htmlFor="valorGorjetaCopiaCola" className="text-xs text-muted-foreground whitespace-nowrap">
-                    Valor (R$):
+                    Valor:
                   </Label>
-                  <Input
-                    id="valorGorjetaCopiaCola"
-                    type="number"
-                    min="1"
-                    step="0.01"
-                    placeholder="1.00"
-                    value={valorGorjeta}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === '' || parseFloat(val) >= 0) {
-                        setValorGorjeta(val);
-                      }
-                    }}
-                    className="w-28 h-8 text-sm"
-                  />
+                  <div className="relative">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
+                    <Input
+                      id="valorGorjetaCopiaCola"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="0,00"
+                      value={valorGorjeta}
+                      onChange={handleValorChange}
+                      className="w-28 h-8 text-sm pl-8"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -230,8 +250,8 @@ export function DirectPixPaymentDialog({
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                {valorGorjeta && parseFloat(valorGorjeta) > 0 
-                  ? `Código com valor R$ ${parseFloat(valorGorjeta).toFixed(2)} incluso`
+                {valorGorjeta && parseCurrencyToNumber(valorGorjeta) > 0 
+                  ? `Código com valor R$ ${valorGorjeta} incluso`
                   : "Cole este código no app do seu banco (valor livre)"}
               </p>
             </div>
