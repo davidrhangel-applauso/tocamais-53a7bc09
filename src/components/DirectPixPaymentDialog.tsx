@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, QrCode, AlertCircle, Clock } from "lucide-react";
+import { Copy, Check, QrCode, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { generatePixPayload } from "@/lib/pix-qr-generator";
 
 interface DirectPixPaymentDialogProps {
   open: boolean;
@@ -40,11 +41,27 @@ export function DirectPixPaymentDialog({
   sessionId,
 }: DirectPixPaymentDialogProps) {
   const [copied, setCopied] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
   const [clienteNome, setClienteNome] = useState("");
   const [valorGorjeta, setValorGorjeta] = useState("");
   const [pedidoMusica, setPedidoMusica] = useState("");
   const [pedidoMensagem, setPedidoMensagem] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Generate PIX "Copia e Cola" code from the key
+  const pixCopiaCola = useMemo(() => {
+    if (!pixChave || !pixTipoChave) return null;
+    try {
+      return generatePixPayload({
+        pixKey: pixChave,
+        keyType: pixTipoChave,
+        merchantName: artistaNome,
+        merchantCity: 'BRASIL'
+      });
+    } catch {
+      return null;
+    }
+  }, [pixChave, pixTipoChave, artistaNome]);
 
   const handleCopyPixKey = async () => {
     try {
@@ -54,6 +71,18 @@ export function DirectPixPaymentDialog({
       setTimeout(() => setCopied(false), 3000);
     } catch {
       toast.error("Erro ao copiar chave PIX");
+    }
+  };
+
+  const handleCopyPixCode = async () => {
+    if (!pixCopiaCola) return;
+    try {
+      await navigator.clipboard.writeText(pixCopiaCola);
+      setCopiedCode(true);
+      toast.success("Código PIX copiado!");
+      setTimeout(() => setCopiedCode(false), 3000);
+    } catch {
+      toast.error("Erro ao copiar código PIX");
     }
   };
 
@@ -152,6 +181,31 @@ export function DirectPixPaymentDialog({
               </Button>
             </div>
           </div>
+
+          {/* PIX Copia e Cola */}
+          {pixCopiaCola && (
+            <div className="space-y-2">
+              <Label>PIX Copia e Cola</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={pixCopiaCola}
+                  readOnly
+                  className="font-mono text-xs truncate"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleCopyPixCode}
+                  title="Copiar código completo"
+                >
+                  {copiedCode ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Cole este código no app do seu banco para pagar
+              </p>
+            </div>
+          )}
 
           {/* Warning */}
           <div className="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
