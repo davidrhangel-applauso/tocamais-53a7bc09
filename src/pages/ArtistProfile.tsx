@@ -766,11 +766,6 @@ const ArtistProfile = () => {
                       <p>Link PIX visível após enviar gorjeta</p>
                     </div>
                   )}
-                  {canViewSensitiveData && !artist.link_pix && (
-                    <p className="text-xs text-muted-foreground text-center">
-                      Este artista ainda não configurou o Pix
-                    </p>
-                  )}
                 </>
               )}
             </CardContent>
