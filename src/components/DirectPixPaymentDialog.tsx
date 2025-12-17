@@ -48,13 +48,11 @@ export function DirectPixPaymentDialog({
   const [pedidoMensagem, setPedidoMensagem] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [valorCopiaCola, setValorCopiaCola] = useState("");
-
   // Generate PIX "Copia e Cola" code from the key (with optional amount)
   const pixCopiaCola = useMemo(() => {
     if (!pixChave || !pixTipoChave) return null;
     try {
-      const valor = valorCopiaCola ? parseFloat(valorCopiaCola) : undefined;
+      const valor = valorGorjeta ? parseFloat(valorGorjeta) : undefined;
       return generatePixPayload({
         pixKey: pixChave,
         keyType: pixTipoChave,
@@ -65,7 +63,7 @@ export function DirectPixPaymentDialog({
     } catch {
       return null;
     }
-  }, [pixChave, pixTipoChave, artistaNome, valorCopiaCola]);
+  }, [pixChave, pixTipoChave, artistaNome, valorGorjeta]);
 
   const handleCopyPixKey = async () => {
     try {
@@ -193,17 +191,17 @@ export function DirectPixPaymentDialog({
               
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Label htmlFor="valorCopiaCola" className="text-xs text-muted-foreground whitespace-nowrap">
-                    Valor (opcional):
+                  <Label htmlFor="valorGorjetaCopiaCola" className="text-xs text-muted-foreground whitespace-nowrap">
+                    Valor (R$):
                   </Label>
                   <Input
-                    id="valorCopiaCola"
+                    id="valorGorjetaCopiaCola"
                     type="number"
                     min="0.01"
                     step="0.01"
                     placeholder="0.00"
-                    value={valorCopiaCola}
-                    onChange={(e) => setValorCopiaCola(e.target.value)}
+                    value={valorGorjeta}
+                    onChange={(e) => setValorGorjeta(e.target.value)}
                     className="w-28 h-8 text-sm"
                   />
                 </div>
@@ -226,8 +224,8 @@ export function DirectPixPaymentDialog({
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                {valorCopiaCola && parseFloat(valorCopiaCola) > 0 
-                  ? `Código com valor R$ ${parseFloat(valorCopiaCola).toFixed(2)} incluso`
+                {valorGorjeta && parseFloat(valorGorjeta) > 0 
+                  ? `Código com valor R$ ${parseFloat(valorGorjeta).toFixed(2)} incluso`
                   : "Cole este código no app do seu banco (valor livre)"}
               </p>
             </div>
@@ -258,18 +256,7 @@ export function DirectPixPaymentDialog({
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="valorGorjeta">Valor do PIX (R$) *</Label>
-              <Input
-                id="valorGorjeta"
-                type="number"
-                min="1"
-                step="0.01"
-                placeholder="10.00"
-                value={valorGorjeta}
-                onChange={(e) => setValorGorjeta(e.target.value)}
-              />
-            </div>
+            {/* Valor field removed - synced with PIX Copia e Cola above */}
 
             <div className="space-y-2">
               <Label htmlFor="pedidoMusica">Pedir música (opcional)</Label>
