@@ -1,4 +1,4 @@
-import { Home, Music, Heart, BarChart3, Settings, MessageCircle, LogOut, Clock, CheckCircle, XCircle, CircleCheck, ChevronDown } from "lucide-react";
+import { Home, Music, Heart, BarChart3, Settings, MessageCircle, LogOut, Clock, CheckCircle, XCircle, CircleCheck, ChevronDown, Shield } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useEffect, useState } from "react";
+import { useAdmin } from "@/hooks/useAdmin";
 
 interface AppSidebarProps {
   artistName: string;
@@ -57,6 +58,7 @@ export function AppSidebar({ artistName, artistPhoto, ativoAoVivo }: AppSidebarP
   const navigate = useNavigate();
   const collapsed = state === "collapsed";
   const [userId, setUserId] = useState<string | undefined>();
+  const { isAdmin } = useAdmin();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -166,6 +168,22 @@ export function AppSidebar({ artistName, artistPhoto, ativoAoVivo }: AppSidebarP
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              
+              {/* Admin link - only visible for admins */}
+              {isAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to="/admin"
+                      className="hover:bg-muted/50"
+                      activeClassName="bg-muted text-primary font-medium"
+                    >
+                      <Shield className="w-4 h-4" />
+                      {!collapsed && <span>Admin</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
