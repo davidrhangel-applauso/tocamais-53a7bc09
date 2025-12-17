@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/hero-concert.jpg";
 import { waitForProfile } from "@/lib/auth-utils";
+import { NearbyArtists } from "@/components/NearbyArtists";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -87,6 +88,9 @@ const Landing = () => {
           </div>
         </div>
       </section>
+
+      {/* Nearby Artists Section */}
+      <NearbyArtists />
 
       {/* Features Section */}
       <section className="py-16 sm:py-24 md:py-32 px-4 bg-gradient-to-b from-background via-secondary/30 to-background">

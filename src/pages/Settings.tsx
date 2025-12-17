@@ -20,6 +20,7 @@ import { SubscriptionCard } from "@/components/SubscriptionCard";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PaymentFAQ } from "@/components/PaymentFAQ";
 import ProfileQRCode from "@/components/ProfileQRCode";
+import { LocationSettings } from "@/components/LocationSettings";
 
 type MusicStyle = Database["public"]["Enums"]["music_style"];
 
@@ -38,6 +39,8 @@ interface Profile {
   link_pix: string | null;
   ativo_ao_vivo: boolean;
   pix_qr_code_url: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 interface PixInfo {
@@ -67,7 +70,7 @@ const Settings = () => {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, nome, bio, foto_url, foto_capa_url, cidade, estilo_musical, tipo, instagram, youtube, spotify, link_pix, ativo_ao_vivo, pix_qr_code_url")
+        .select("id, nome, bio, foto_url, foto_capa_url, cidade, estilo_musical, tipo, instagram, youtube, spotify, link_pix, ativo_ao_vivo, pix_qr_code_url, latitude, longitude")
         .eq("id", user.id)
         .single();
 
@@ -114,6 +117,8 @@ const Settings = () => {
           link_pix: profile.link_pix,
           ativo_ao_vivo: profile.ativo_ao_vivo,
           pix_qr_code_url: profile.pix_qr_code_url,
+          latitude: profile.latitude,
+          longitude: profile.longitude,
         })
         .eq("id", profile.id);
 
@@ -410,6 +415,15 @@ const Settings = () => {
                   />
                 </div>
               </div>
+            )}
+
+            {/* Location Settings - Only for artists */}
+            {profile.tipo === "artista" && (
+              <LocationSettings
+                latitude={profile.latitude}
+                longitude={profile.longitude}
+                onLocationChange={(lat, lng) => setProfile({ ...profile, latitude: lat, longitude: lng })}
+              />
             )}
 
             {/* Save Button */}
