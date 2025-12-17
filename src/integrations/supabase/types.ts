@@ -371,7 +371,9 @@ export type Database = {
           foto_url: string | null
           id: string
           instagram: string | null
+          latitude: number | null
           link_pix: string | null
+          longitude: number | null
           nome: string
           pix_qr_code_url: string | null
           plano: Database["public"]["Enums"]["subscription_plan"]
@@ -391,7 +393,9 @@ export type Database = {
           foto_url?: string | null
           id: string
           instagram?: string | null
+          latitude?: number | null
           link_pix?: string | null
+          longitude?: number | null
           nome: string
           pix_qr_code_url?: string | null
           plano?: Database["public"]["Enums"]["subscription_plan"]
@@ -411,7 +415,9 @@ export type Database = {
           foto_url?: string | null
           id?: string
           instagram?: string | null
+          latitude?: number | null
           link_pix?: string | null
+          longitude?: number | null
           nome?: string
           pix_qr_code_url?: string | null
           plano?: Database["public"]["Enums"]["subscription_plan"]
@@ -428,6 +434,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_distance: {
+        Args: { lat1: number; lat2: number; lon1: number; lon2: number }
+        Returns: number
+      }
       can_view_full_profile: { Args: { profile_id: string }; Returns: boolean }
       can_view_sensitive_profile_data: {
         Args: { profile_id: string }
@@ -467,6 +477,18 @@ export type Database = {
           pedido_musica: string
           status_pagamento: string
           valor: number
+        }[]
+      }
+      get_nearby_live_artists: {
+        Args: { max_distance_km?: number; user_lat: number; user_lon: number }
+        Returns: {
+          bio: string
+          cidade: string
+          distance_km: number
+          estilo_musical: Database["public"]["Enums"]["music_style"]
+          foto_url: string
+          id: string
+          nome: string
         }[]
       }
       has_mercadopago_linked: { Args: { artist_id: string }; Returns: boolean }
