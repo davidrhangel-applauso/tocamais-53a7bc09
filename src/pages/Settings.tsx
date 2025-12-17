@@ -19,6 +19,7 @@ import { MercadoPagoLink } from "@/components/MercadoPagoLink";
 import { SubscriptionCard } from "@/components/SubscriptionCard";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PaymentFAQ } from "@/components/PaymentFAQ";
+import ProfileQRCode from "@/components/ProfileQRCode";
 
 type MusicStyle = Database["public"]["Enums"]["music_style"];
 
@@ -189,6 +190,11 @@ const Settings = () => {
                 currentUrl={profile.foto_capa_url}
                 onUpload={(url) => setProfile({ ...profile, foto_capa_url: url })}
               />
+            )}
+
+            {/* Profile QR Code - Only for artists */}
+            {profile.tipo === "artista" && (
+              <ProfileQRCode artistId={profile.id} artistName={profile.nome} />
             )}
 
             {/* Basic Info */}
