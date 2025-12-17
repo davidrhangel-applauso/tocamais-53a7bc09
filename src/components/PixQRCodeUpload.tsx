@@ -1,9 +1,10 @@
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Upload, X, QrCode, Loader2, CheckCircle } from "lucide-react";
+import { Upload, X, QrCode, Loader2, CheckCircle, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import jsQR from "jsqr";
+import { generatePixQRCodeDataUrl, generatePixQRCodeBlob } from "@/lib/pix-qr-generator";
 import {
   Dialog,
   DialogContent,
@@ -15,15 +16,31 @@ import {
 interface PixQRCodeUploadProps {
   currentUrl: string | null;
   onUpload: (url: string) => void;
+  pixKey?: string | null;
+  pixKeyType?: string | null;
+  merchantName?: string;
+  merchantCity?: string;
 }
 
-export const PixQRCodeUpload = ({ currentUrl, onUpload }: PixQRCodeUploadProps) => {
+export const PixQRCodeUpload = ({ 
+  currentUrl, 
+  onUpload,
+  pixKey,
+  pixKeyType,
+  merchantName = 'ARTISTA',
+  merchantCity = 'BRASIL'
+}: PixQRCodeUploadProps) => {
   const [uploading, setUploading] = useState(false);
   const [validating, setValidating] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [preview, setPreview] = useState<string>('');
   const [qrData, setQrData] = useState<string>('');
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [isGenerated, setIsGenerated] = useState(false);
   const fileRef = useRef<File | null>(null);
+  const generatedBlobRef = useRef<Blob | null>(null);
+
+  const canGenerate = pixKey && pixKeyType;
 
   const validateQRCode = (imageDataUrl: string): Promise<string | null> => {
     return new Promise((resolve) => {
@@ -48,6 +65,42 @@ export const PixQRCodeUpload = ({ currentUrl, onUpload }: PixQRCodeUploadProps) 
       img.onerror = () => resolve(null);
       img.src = imageDataUrl;
     });
+  };
+
+  const handleGenerateQRCode = async () => {
+    if (!pixKey || !pixKeyType) {
+      toast.error('Preencha a chave PIX primeiro');
+      return;
+    }
+
+    setGenerating(true);
+    try {
+      const dataUrl = await generatePixQRCodeDataUrl({
+        pixKey,
+        keyType: pixKeyType,
+        merchantName,
+        merchantCity
+      });
+
+      const blob = await generatePixQRCodeBlob({
+        pixKey,
+        keyType: pixKeyType,
+        merchantName,
+        merchantCity
+      });
+
+      generatedBlobRef.current = blob;
+      fileRef.current = null;
+      setPreview(dataUrl);
+      setQrData(`PIX: ${pixKey}`);
+      setIsGenerated(true);
+      setShowPreviewDialog(true);
+    } catch (error: any) {
+      console.error('Error generating QR code:', error);
+      toast.error('Erro ao gerar QR Code: ' + error.message);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const onSelectFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,7 +131,6 @@ export const PixQRCodeUpload = ({ currentUrl, onUpload }: PixQRCodeUploadProps) 
         return;
       }
       
-      // Check if it looks like a PIX QR code (contains BR.GOV.BCB.PIX or pix.bcb.gov.br)
       const isPixQR = qrContent.includes('BR.GOV.BCB.PIX') || 
                       qrContent.toLowerCase().includes('pix') ||
                       qrContent.startsWith('00020126');
@@ -88,15 +140,19 @@ export const PixQRCodeUpload = ({ currentUrl, onUpload }: PixQRCodeUploadProps) 
       }
       
       fileRef.current = file;
+      generatedBlobRef.current = null;
       setPreview(dataUrl);
       setQrData(qrContent);
+      setIsGenerated(false);
       setShowPreviewDialog(true);
     });
     reader.readAsDataURL(file);
   };
 
   const handleConfirm = async () => {
-    if (!fileRef.current) return;
+    const fileToUpload = fileRef.current || (generatedBlobRef.current ? new File([generatedBlobRef.current], 'pix-qr-generated.png', { type: 'image/png' }) : null);
+    
+    if (!fileToUpload) return;
 
     try {
       setUploading(true);
@@ -104,14 +160,14 @@ export const PixQRCodeUpload = ({ currentUrl, onUpload }: PixQRCodeUploadProps) 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
-      const fileExt = fileRef.current.name.split('.').pop();
+      const fileExt = fileToUpload.name.split('.').pop() || 'png';
       const fileName = `${user.id}/pix-qr-${Math.random()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(fileName, fileRef.current, {
+        .upload(fileName, fileToUpload, {
           upsert: true,
-          contentType: fileRef.current.type
+          contentType: fileToUpload.type
         });
 
       if (uploadError) throw uploadError;
@@ -125,7 +181,9 @@ export const PixQRCodeUpload = ({ currentUrl, onUpload }: PixQRCodeUploadProps) 
       setShowPreviewDialog(false);
       setPreview('');
       setQrData('');
+      setIsGenerated(false);
       fileRef.current = null;
+      generatedBlobRef.current = null;
     } catch (error: any) {
       toast.error('Erro ao fazer upload: ' + error.message);
     } finally {
@@ -148,7 +206,23 @@ export const PixQRCodeUpload = ({ currentUrl, onUpload }: PixQRCodeUploadProps) 
             alt="QR Code PIX"
             className="w-40 h-40 object-contain rounded-lg bg-white p-2"
           />
-          <div className="flex gap-2">
+          <div className="flex flex-wrap justify-center gap-2">
+            {canGenerate && (
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                disabled={uploading || generating}
+                onClick={handleGenerateQRCode}
+              >
+                {generating ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Wand2 className="w-4 h-4 mr-2" />
+                )}
+                Gerar novo
+              </Button>
+            )}
             <Button
               type="button"
               variant="outline"
@@ -157,7 +231,7 @@ export const PixQRCodeUpload = ({ currentUrl, onUpload }: PixQRCodeUploadProps) 
               onClick={() => document.getElementById('pix-qr-upload')?.click()}
             >
               <Upload className="w-4 h-4 mr-2" />
-              Trocar
+              Upload
             </Button>
             <Button
               type="button"
@@ -172,33 +246,52 @@ export const PixQRCodeUpload = ({ currentUrl, onUpload }: PixQRCodeUploadProps) 
           </div>
         </div>
       ) : (
-        <div
-          className="flex flex-col items-center justify-center gap-3 p-6 border-2 border-dashed border-border rounded-lg bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
-          onClick={() => !validating && document.getElementById('pix-qr-upload')?.click()}
-        >
-          {validating ? (
+        <div className="flex flex-col items-center justify-center gap-4 p-6 border-2 border-dashed border-border rounded-lg bg-muted/30">
+          {validating || generating ? (
             <>
               <Loader2 className="w-12 h-12 text-muted-foreground animate-spin" />
-              <p className="text-sm font-medium">Validando QR Code...</p>
+              <p className="text-sm font-medium">
+                {generating ? 'Gerando QR Code...' : 'Validando QR Code...'}
+              </p>
             </>
           ) : (
             <>
               <QrCode className="w-12 h-12 text-muted-foreground" />
               <div className="text-center">
-                <p className="text-sm font-medium">Clique para fazer upload</p>
+                <p className="text-sm font-medium">Configure seu QR Code PIX</p>
                 <p className="text-xs text-muted-foreground">
-                  Faça upload da imagem do QR Code gerado pelo seu banco
+                  Gere automaticamente ou faça upload de uma imagem
                 </p>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={uploading || validating}
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Selecionar imagem
-              </Button>
+              <div className="flex flex-wrap justify-center gap-2">
+                {canGenerate && (
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    disabled={uploading || validating}
+                    onClick={handleGenerateQRCode}
+                  >
+                    <Wand2 className="w-4 h-4 mr-2" />
+                    Gerar automaticamente
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={uploading || validating}
+                  onClick={() => document.getElementById('pix-qr-upload')?.click()}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Fazer upload
+                </Button>
+              </div>
+              {!canGenerate && (
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  💡 Preencha a chave PIX acima para gerar automaticamente
+                </p>
+              )}
             </>
           )}
         </div>
@@ -218,7 +311,7 @@ export const PixQRCodeUpload = ({ currentUrl, onUpload }: PixQRCodeUploadProps) 
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <QrCode className="w-5 h-5" />
-              Confirmar QR Code PIX
+              {isGenerated ? 'QR Code PIX Gerado' : 'Confirmar QR Code PIX'}
             </DialogTitle>
           </DialogHeader>
           
@@ -233,12 +326,12 @@ export const PixQRCodeUpload = ({ currentUrl, onUpload }: PixQRCodeUploadProps) 
             
             <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
               <CheckCircle className="w-4 h-4" />
-              <span>QR Code válido detectado</span>
+              <span>{isGenerated ? 'QR Code gerado com sucesso' : 'QR Code válido detectado'}</span>
             </div>
             
             {qrData && (
               <p className="text-xs text-muted-foreground text-center max-w-full overflow-hidden text-ellipsis">
-                Conteúdo: {qrData.substring(0, 50)}{qrData.length > 50 ? '...' : ''}
+                {isGenerated ? qrData : `Conteúdo: ${qrData.substring(0, 50)}${qrData.length > 50 ? '...' : ''}`}
               </p>
             )}
           </div>
@@ -250,7 +343,9 @@ export const PixQRCodeUpload = ({ currentUrl, onUpload }: PixQRCodeUploadProps) 
                 setShowPreviewDialog(false);
                 setPreview('');
                 setQrData('');
+                setIsGenerated(false);
                 fileRef.current = null;
+                generatedBlobRef.current = null;
               }}
               disabled={uploading}
             >
