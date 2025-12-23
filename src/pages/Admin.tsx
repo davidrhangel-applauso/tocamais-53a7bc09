@@ -10,10 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Search, Trash2, Edit, Shield, ArrowLeft, Users, Music, RefreshCw, Eye } from "lucide-react";
+import { Search, Trash2, Shield, ArrowLeft, Users, Music, RefreshCw, Eye, BarChart3 } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
-
+import { AdminPaymentStats } from "@/components/AdminPaymentStats";
 type MusicStyle = Database["public"]["Enums"]["music_style"];
 type SubscriptionPlan = Database["public"]["Enums"]["subscription_plan"];
 
@@ -170,7 +171,7 @@ export default function Admin() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold">Painel Administrativo</h1>
-                <p className="text-muted-foreground">Gerenciar artistas da plataforma</p>
+                <p className="text-muted-foreground">Gerenciar artistas e finanças da plataforma</p>
               </div>
             </div>
           </div>
@@ -180,187 +181,207 @@ export default function Admin() {
           </Button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total de Artistas</CardDescription>
-              <CardTitle className="text-3xl flex items-center gap-2">
-                <Users className="w-6 h-6 text-primary" />
-                {artists.length}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Artistas PRO</CardDescription>
-              <CardTitle className="text-3xl flex items-center gap-2">
-                <Music className="w-6 h-6 text-yellow-500" />
-                {artists.filter(a => a.plano === "pro").length}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Ao Vivo Agora</CardDescription>
-              <CardTitle className="text-3xl flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-live animate-pulse" />
-                {artists.filter(a => a.ativo_ao_vivo).length}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        </div>
+        {/* Main Tabs */}
+        <Tabs defaultValue="artists" className="space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="artists" className="gap-2">
+              <Users className="w-4 h-4" />
+              Artistas
+            </TabsTrigger>
+            <TabsTrigger value="financeiro" className="gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Financeiro
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  placeholder="Buscar por nome ou cidade..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Select value={planFilter} onValueChange={setPlanFilter}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Filtrar por plano" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os planos</SelectItem>
-                  <SelectItem value="free">Free</SelectItem>
-                  <SelectItem value="pro">PRO</SelectItem>
-                </SelectContent>
-              </Select>
+          <TabsContent value="artists" className="space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription>Total de Artistas</CardDescription>
+                  <CardTitle className="text-3xl flex items-center gap-2">
+                    <Users className="w-6 h-6 text-primary" />
+                    {artists.length}
+                  </CardTitle>
+                </CardHeader>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription>Artistas PRO</CardDescription>
+                  <CardTitle className="text-3xl flex items-center gap-2">
+                    <Music className="w-6 h-6 text-yellow-500" />
+                    {artists.filter(a => a.plano === "pro").length}
+                  </CardTitle>
+                </CardHeader>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription>Ao Vivo Agora</CardDescription>
+                  <CardTitle className="text-3xl flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-live animate-pulse" />
+                    {artists.filter(a => a.ativo_ao_vivo).length}
+                  </CardTitle>
+                </CardHeader>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Artists Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Artistas ({filteredArtists.length})</CardTitle>
-            <CardDescription>Lista de todos os artistas cadastrados na plataforma</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : filteredArtists.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                Nenhum artista encontrado
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Artista</TableHead>
-                      <TableHead>Cidade</TableHead>
-                      <TableHead>Estilo</TableHead>
-                      <TableHead>Plano</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredArtists.map((artist) => (
-                      <TableRow key={artist.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar className="w-10 h-10">
-                              <AvatarImage src={artist.foto_url || undefined} />
-                              <AvatarFallback>{artist.nome[0]}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium">{artist.nome}</p>
-                              <p className="text-xs text-muted-foreground truncate max-w-[150px]">
-                                {artist.id}
-                              </p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{artist.cidade || "-"}</TableCell>
-                        <TableCell>{formatMusicStyle(artist.estilo_musical)}</TableCell>
-                        <TableCell>
-                          <Select
-                            value={artist.plano}
-                            onValueChange={(value) => handleUpdatePlan(artist.id, value as SubscriptionPlan)}
-                          >
-                            <SelectTrigger className="w-[100px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="free">Free</SelectItem>
-                              <SelectItem value="pro">PRO</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          {artist.ativo_ao_vivo ? (
-                            <Badge className="bg-live/20 text-live border-live/30">
-                              <span className="w-2 h-2 rounded-full bg-live mr-1.5 animate-pulse" />
-                              Ao Vivo
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary">Offline</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => navigate(`/artista/${artist.id}`)}
-                              title="Ver perfil"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
+            {/* Filters */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    <Input
+                      placeholder="Buscar por nome ou cidade..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Select value={planFilter} onValueChange={setPlanFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Filtrar por plano" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os planos</SelectItem>
+                      <SelectItem value="free">Free</SelectItem>
+                      <SelectItem value="pro">PRO</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Artists Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Artistas ({filteredArtists.length})</CardTitle>
+                <CardDescription>Lista de todos os artistas cadastrados na plataforma</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : filteredArtists.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    Nenhum artista encontrado
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Artista</TableHead>
+                          <TableHead>Cidade</TableHead>
+                          <TableHead>Estilo</TableHead>
+                          <TableHead>Plano</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredArtists.map((artist) => (
+                          <TableRow key={artist.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <Avatar className="w-10 h-10">
+                                  <AvatarImage src={artist.foto_url || undefined} />
+                                  <AvatarFallback>{artist.nome[0]}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="font-medium">{artist.nome}</p>
+                                  <p className="text-xs text-muted-foreground truncate max-w-[150px]">
+                                    {artist.id}
+                                  </p>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>{artist.cidade || "-"}</TableCell>
+                            <TableCell>{formatMusicStyle(artist.estilo_musical)}</TableCell>
+                            <TableCell>
+                              <Select
+                                value={artist.plano}
+                                onValueChange={(value) => handleUpdatePlan(artist.id, value as SubscriptionPlan)}
+                              >
+                                <SelectTrigger className="w-[100px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="free">Free</SelectItem>
+                                  <SelectItem value="pro">PRO</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                            <TableCell>
+                              {artist.ativo_ao_vivo ? (
+                                <Badge className="bg-live/20 text-live border-live/30">
+                                  <span className="w-2 h-2 rounded-full bg-live mr-1.5 animate-pulse" />
+                                  Ao Vivo
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary">Offline</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-end gap-2">
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                  onClick={() => setArtistToDelete(artist)}
+                                  onClick={() => navigate(`/artista/${artist.id}`)}
+                                  title="Ver perfil"
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  <Eye className="w-4 h-4" />
                                 </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Excluir Artista</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Tem certeza que deseja excluir o artista "{artist.nome}"? 
-                                    Esta ação é irreversível e irá excluir todos os dados relacionados 
-                                    (gorjetas, pedidos, mensagens, repertório, etc).
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDeleteArtist(artist)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    disabled={deleting}
-                                  >
-                                    {deleting ? "Excluindo..." : "Excluir"}
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                      onClick={() => setArtistToDelete(artist)}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Excluir Artista</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Tem certeza que deseja excluir o artista "{artist.nome}"? 
+                                        Esta ação é irreversível e irá excluir todos os dados relacionados 
+                                        (gorjetas, pedidos, mensagens, repertório, etc).
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => handleDeleteArtist(artist)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        disabled={deleting}
+                                      >
+                                        {deleting ? "Excluindo..." : "Excluir"}
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="financeiro">
+            <AdminPaymentStats />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
