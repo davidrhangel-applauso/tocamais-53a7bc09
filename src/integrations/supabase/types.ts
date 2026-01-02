@@ -119,6 +119,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "artist_subscriptions_artista_id_fkey"
+            columns: ["artista_id"]
+            isOneToOne: false
+            referencedRelation: "public_artist_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       gorjetas: {
@@ -185,10 +192,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "gorjetas_artista_id_fkey"
+            columns: ["artista_id"]
+            isOneToOne: false
+            referencedRelation: "public_artist_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "gorjetas_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gorjetas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "public_artist_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -227,10 +248,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "mensagens_destinatario_id_fkey"
+            columns: ["destinatario_id"]
+            isOneToOne: false
+            referencedRelation: "public_artist_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "mensagens_remetente_id_fkey"
             columns: ["remetente_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mensagens_remetente_id_fkey"
+            columns: ["remetente_id"]
+            isOneToOne: false
+            referencedRelation: "public_artist_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -266,6 +301,13 @@ export type Database = {
             columns: ["artista_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "musicas_repertorio_artista_id_fkey"
+            columns: ["artista_id"]
+            isOneToOne: false
+            referencedRelation: "public_artist_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -352,10 +394,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "pedidos_artista_id_fkey"
+            columns: ["artista_id"]
+            isOneToOne: false
+            referencedRelation: "public_artist_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "pedidos_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "public_artist_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -452,7 +508,75 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_artist_profiles: {
+        Row: {
+          ativo_ao_vivo: boolean | null
+          bio: string | null
+          cidade: string | null
+          created_at: string | null
+          estilo_musical: Database["public"]["Enums"]["music_style"] | null
+          foto_capa_url: string | null
+          foto_url: string | null
+          id: string | null
+          instagram: string | null
+          latitude: number | null
+          link_pix: string | null
+          longitude: number | null
+          nome: string | null
+          pix_qr_code_url: string | null
+          plano: Database["public"]["Enums"]["subscription_plan"] | null
+          spotify: string | null
+          status_destaque: boolean | null
+          tipo: Database["public"]["Enums"]["user_type"] | null
+          updated_at: string | null
+          youtube: string | null
+        }
+        Insert: {
+          ativo_ao_vivo?: boolean | null
+          bio?: string | null
+          cidade?: never
+          created_at?: string | null
+          estilo_musical?: Database["public"]["Enums"]["music_style"] | null
+          foto_capa_url?: string | null
+          foto_url?: string | null
+          id?: string | null
+          instagram?: never
+          latitude?: never
+          link_pix?: never
+          longitude?: never
+          nome?: string | null
+          pix_qr_code_url?: never
+          plano?: never
+          spotify?: never
+          status_destaque?: never
+          tipo?: Database["public"]["Enums"]["user_type"] | null
+          updated_at?: string | null
+          youtube?: never
+        }
+        Update: {
+          ativo_ao_vivo?: boolean | null
+          bio?: string | null
+          cidade?: never
+          created_at?: string | null
+          estilo_musical?: Database["public"]["Enums"]["music_style"] | null
+          foto_capa_url?: string | null
+          foto_url?: string | null
+          id?: string | null
+          instagram?: never
+          latitude?: never
+          link_pix?: never
+          longitude?: never
+          nome?: string | null
+          pix_qr_code_url?: never
+          plano?: never
+          spotify?: never
+          status_destaque?: never
+          tipo?: Database["public"]["Enums"]["user_type"] | null
+          updated_at?: string | null
+          youtube?: never
+        }
+        Relationships: []
+      }
     }
     Functions: {
       calculate_distance: {
@@ -511,6 +635,37 @@ export type Database = {
           id: string
           nome: string
         }[]
+      }
+      get_public_artist_fields: {
+        Args: { profile_row: Database["public"]["Tables"]["profiles"]["Row"] }
+        Returns: {
+          ativo_ao_vivo: boolean | null
+          bio: string | null
+          cidade: string | null
+          created_at: string | null
+          estilo_musical: Database["public"]["Enums"]["music_style"] | null
+          foto_capa_url: string | null
+          foto_url: string | null
+          id: string
+          instagram: string | null
+          latitude: number | null
+          link_pix: string | null
+          longitude: number | null
+          nome: string
+          pix_qr_code_url: string | null
+          plano: Database["public"]["Enums"]["subscription_plan"]
+          spotify: string | null
+          status_destaque: boolean | null
+          tipo: Database["public"]["Enums"]["user_type"]
+          updated_at: string | null
+          youtube: string | null
+        }
+        SetofOptions: {
+          from: "profiles"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       has_mercadopago_linked: { Args: { artist_id: string }; Returns: boolean }
       has_role: {
