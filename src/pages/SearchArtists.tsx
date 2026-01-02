@@ -7,13 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Music, Search, MapPin, ArrowLeft, Loader2, Filter } from "lucide-react";
+import { Music, Search, ArrowLeft, Loader2, Filter } from "lucide-react";
 import { toast } from "sonner";
 
 interface Artist {
   id: string;
   nome: string;
-  cidade: string | null;
   estilo_musical: string | null;
   foto_url: string | null;
   bio: string | null;
@@ -26,53 +25,31 @@ const SearchArtists = () => {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [filterCity, setFilterCity] = useState<string>("all");
   const [filterStyle, setFilterStyle] = useState<string>("all");
   const [filterLive, setFilterLive] = useState<string>("all");
-  const [cities, setCities] = useState<string[]>([]);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Carregar cidades disponíveis e artistas iniciais
+  // Carregar artistas iniciais
   useEffect(() => {
-    const fetchCities = async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("cidade")
-        .eq("tipo", "artista")
-        .not("cidade", "is", null)
-        .order("cidade");
-      
-      if (data) {
-        const uniqueCities = Array.from(new Set(data.map(d => d.cidade).filter(Boolean))) as string[];
-        setCities(uniqueCities);
-      }
-    };
-    
-    fetchCities();
     // Carregar todos os artistas inicialmente
-    searchArtists("", "all", "all", "all");
+    searchArtists("", "all", "all");
     setIsInitialLoad(false);
   }, []);
 
   // Função de busca em tempo real (debounced)
-  const searchArtists = useCallback(async (term: string, city: string, style: string, live: string) => {
+  const searchArtists = useCallback(async (term: string, style: string, live: string) => {
     setLoading(true);
     setHasSearched(true);
 
     try {
       let query = supabase
         .from("profiles")
-        .select("id, nome, cidade, estilo_musical, foto_url, bio, ativo_ao_vivo")
+        .select("id, nome, estilo_musical, foto_url, bio, ativo_ao_vivo")
         .eq("tipo", "artista");
 
       // Aplicar filtro de nome
       if (term.trim()) {
         query = query.or(`nome.ilike.${term}%,nome.ilike.% ${term}%,nome.ilike.%${term}%`);
-      }
-
-      // Aplicar filtro de cidade
-      if (city && city !== "all") {
-        query = query.eq("cidade", city);
       }
 
       // Aplicar filtro de estilo musical
@@ -107,11 +84,11 @@ const SearchArtists = () => {
     if (isInitialLoad) return; // Não executar na carga inicial
     
     const timeoutId = setTimeout(() => {
-      searchArtists(searchTerm, filterCity, filterStyle, filterLive);
+      searchArtists(searchTerm, filterStyle, filterLive);
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, filterCity, filterStyle, filterLive, searchArtists, isInitialLoad]);
+  }, [searchTerm, filterStyle, filterLive, searchArtists, isInitialLoad]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,7 +97,6 @@ const SearchArtists = () => {
 
   const clearFilters = () => {
     setSearchTerm("");
-    setFilterCity("all");
     setFilterStyle("all");
     setFilterLive("all");
     setArtists([]);
@@ -203,24 +179,7 @@ const SearchArtists = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Cidade</label>
-                <Select value={filterCity} onValueChange={setFilterCity}>
-                  <SelectTrigger className="bg-background">
-                    <SelectValue placeholder="Todas as cidades" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
-                    <SelectItem value="all">Todas as cidades</SelectItem>
-                    {cities.map((city) => (
-                      <SelectItem key={city} value={city}>
-                        {city}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Estilo Musical</label>
                 <Select value={filterStyle} onValueChange={setFilterStyle}>
@@ -253,7 +212,7 @@ const SearchArtists = () => {
               </div>
             </div>
 
-            {(filterCity !== "all" || filterStyle !== "all" || filterLive !== "all") && (
+            {(filterStyle !== "all" || filterLive !== "all") && (
               <Button
                 variant="outline"
                 size="sm"
@@ -281,7 +240,7 @@ const SearchArtists = () => {
                 <div className="flex flex-wrap items-center gap-2 mb-4">
                   <h2 className="text-xl font-semibold">
                     {artists.length} {artists.length === 1 ? "artista" : "artistas"}
-                    {searchTerm || filterCity !== "all" || filterStyle !== "all" || filterLive !== "all" 
+                    {searchTerm || filterStyle !== "all" || filterLive !== "all" 
                       ? (artists.length === 1 ? " encontrado" : " encontrados")
                       : " disponíveis"
                     }
@@ -290,12 +249,6 @@ const SearchArtists = () => {
                     {searchTerm && (
                       <Badge variant="secondary">
                         Nome: "{searchTerm}"
-                      </Badge>
-                    )}
-                    {filterCity !== "all" && (
-                      <Badge variant="secondary">
-                        <MapPin className="w-3 h-3 mr-1" />
-                        {filterCity}
                       </Badge>
                     )}
                     {filterStyle !== "all" && (
@@ -342,12 +295,6 @@ const SearchArtists = () => {
                         )}
                         
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          {artist.cidade && (
-                            <div className="flex items-center gap-1">
-                              <MapPin className="w-3 h-3" />
-                              {artist.cidade}
-                            </div>
-                          )}
                           {artist.estilo_musical && (
                             <div className="flex items-center gap-1">
                               <Music className="w-3 h-3" />
