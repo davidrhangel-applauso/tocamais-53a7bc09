@@ -17,7 +17,7 @@ interface DirectPixPaymentDialogProps {
   artistaNome: string;
   pixChave: string;
   pixTipoChave: string;
-  pixQrCodeUrl: string;
+  pixQrCodeUrl?: string;
   clienteId: string | null;
   sessionId: string;
 }
