@@ -531,12 +531,12 @@ const ArtistProfile = () => {
               </CardTitle>
               <CardDescription>
                 Apoie {artist.nome} com uma gorjeta
-                {isPro && pixInfo.pix_chave && artist.pix_qr_code_url ? " via PIX direto" : " via Pix"}
+                {isPro && pixInfo.pix_chave ? " via PIX direto" : " via Pix"}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Show different flow based on PRO + PIX próprio */}
-              {isPro && pixInfo.pix_chave && artist.pix_qr_code_url ? (
+              {isPro && pixInfo.pix_chave ? (
                 <>
                   {/* PRO with own PIX - simplified flow */}
                   <div className="p-4 bg-gradient-to-br from-amber-500/10 to-yellow-400/10 border border-amber-500/20 rounded-lg">
@@ -788,7 +788,7 @@ const ArtistProfile = () => {
       />
 
       {/* Direct PIX Payment Dialog (PRO only) */}
-      {pixInfo.pix_chave && artist.pix_qr_code_url && (
+      {pixInfo.pix_chave && (
         <DirectPixPaymentDialog
           open={directPixDialogOpen}
           onOpenChange={setDirectPixDialogOpen}
@@ -796,7 +796,7 @@ const ArtistProfile = () => {
           artistaNome={artist.nome}
           pixChave={pixInfo.pix_chave}
           pixTipoChave={pixInfo.pix_tipo_chave || "aleatoria"}
-          pixQrCodeUrl={artist.pix_qr_code_url}
+          pixQrCodeUrl={artist.pix_qr_code_url || undefined}
           clienteId={currentUserId}
           sessionId={sessionId}
         />
