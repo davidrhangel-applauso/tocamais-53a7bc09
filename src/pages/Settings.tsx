@@ -327,6 +327,7 @@ const Settings = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="cpf">CPF</SelectItem>
+                      <SelectItem value="cnpj">CNPJ</SelectItem>
                       <SelectItem value="email">E-mail</SelectItem>
                       <SelectItem value="celular">Celular</SelectItem>
                       <SelectItem value="aleatoria">Chave Aleatória</SelectItem>
@@ -340,6 +341,7 @@ const Settings = () => {
                     id="pix_chave"
                     placeholder={
                       pixInfo.pix_tipo_chave === "cpf" ? "000.000.000-00" :
+                      pixInfo.pix_tipo_chave === "cnpj" ? "00.000.000/0000-00" :
                       pixInfo.pix_tipo_chave === "email" ? "seu@email.com" :
                       pixInfo.pix_tipo_chave === "celular" ? "+55 11 99999-9999" :
                       "Cole sua chave aleatória aqui"
