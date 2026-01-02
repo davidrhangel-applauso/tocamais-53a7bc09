@@ -24,6 +24,7 @@ interface DirectPixPaymentDialogProps {
 
 const pixTipoChaveLabels: Record<string, string> = {
   cpf: "CPF",
+  cnpj: "CNPJ",
   email: "E-mail",
   celular: "Celular",
   aleatoria: "Chave Aleatória",

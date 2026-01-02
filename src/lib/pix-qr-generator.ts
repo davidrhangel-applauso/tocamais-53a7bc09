@@ -32,6 +32,7 @@ function formatPixKey(keyType: string, key: string): string {
   
   switch (keyType) {
     case 'cpf':
+    case 'cnpj':
       cleanKey = cleanKey.replace(/\D/g, '');
       break;
     case 'celular':
