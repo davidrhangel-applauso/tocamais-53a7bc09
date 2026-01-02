@@ -6,6 +6,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-session-id',
 };
 
+// Generic error messages for security
+const ERROR_MESSAGES = {
+  INVALID_VALUE: 'Valor inválido',
+  INVALID_ARTIST: 'Artista não encontrado',
+  MISSING_ID: 'Identificação necessária',
+  PAYMENT_FAILED: 'Não foi possível processar o pagamento. Tente novamente.',
+  INTERNAL_ERROR: 'Erro interno. Tente novamente mais tarde.',
+};
+
 interface PaymentRequest {
   valor: number;
   artista_id: string;
@@ -22,7 +31,7 @@ interface PaymentRequest {
 async function getEncryptionKey(): Promise<CryptoKey> {
   const keyString = Deno.env.get('ENCRYPTION_KEY');
   if (!keyString || keyString.length < 32) {
-    throw new Error('ENCRYPTION_KEY must be at least 32 characters');
+    throw new Error('Encryption configuration error');
   }
   
   const encoder = new TextEncoder();
@@ -40,10 +49,8 @@ async function getEncryptionKey(): Promise<CryptoKey> {
 async function decryptData(encryptedBase64: string): Promise<string> {
   const key = await getEncryptionKey();
   
-  // Decode base64
   const combined = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
   
-  // Extract IV and encrypted data
   const iv = combined.slice(0, 12);
   const encryptedData = combined.slice(12);
   
@@ -77,18 +84,15 @@ async function encryptData(plaintext: string): Promise<string> {
   return btoa(String.fromCharCode(...combined));
 }
 
-// Função auxiliar para verificar se string está criptografada (base64 com tamanho esperado)
 function isEncrypted(value: string): boolean {
   try {
     const decoded = atob(value);
-    // Encrypted tokens should be longer than raw tokens due to IV + encryption overhead
     return decoded.length > 50 && value.length > 100;
   } catch {
     return false;
   }
 }
 
-// Função auxiliar para obter token válido do artista (com refresh se necessário)
 async function getValidSellerToken(
   credentials: any,
   artistId: string,
@@ -98,41 +102,36 @@ async function getValidSellerToken(
     return null;
   }
 
-  // Descriptografar token se estiver criptografado
   let accessToken = credentials.access_token;
   let refreshToken = credentials.refresh_token;
   
   try {
     if (isEncrypted(accessToken)) {
-      console.log('Descriptografando access_token...');
       accessToken = await decryptData(accessToken);
     }
     if (refreshToken && isEncrypted(refreshToken)) {
       refreshToken = await decryptData(refreshToken);
     }
   } catch (decryptError) {
-    console.error('Erro ao descriptografar tokens:', decryptError);
+    console.error('[INTERNAL] Token decryption error');
     return null;
   }
 
-  // Verificar se token ainda é válido (com margem de 5 minutos)
   const expiresAt = new Date(credentials.token_expires_at);
   const now = new Date();
   const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
 
   if (expiresAt > fiveMinutesFromNow) {
-    console.log('Token do artista ainda válido até:', expiresAt.toISOString());
     return accessToken;
   }
 
-  // Token expirado ou prestes a expirar - fazer refresh
-  console.log('Token expirado, fazendo refresh...');
+  console.log('Token expired, refreshing...');
 
   const clientId = Deno.env.get('MERCADO_PAGO_CLIENT_ID');
   const clientSecret = Deno.env.get('MERCADO_PAGO_CLIENT_SECRET');
 
   if (!clientId || !clientSecret || !refreshToken) {
-    console.error('Não é possível fazer refresh: credenciais ou refresh_token ausentes');
+    console.error('[INTERNAL] Missing refresh credentials');
     return null;
   }
 
@@ -154,19 +153,15 @@ async function getValidSellerToken(
     const refreshData = await refreshResponse.json();
 
     if (!refreshResponse.ok || !refreshData.access_token) {
-      console.error('Erro ao fazer refresh do token:', refreshData);
+      console.error('[INTERNAL] Token refresh failed');
       return null;
     }
 
-    // Calcular nova data de expiração
     const newExpiresAt = new Date(Date.now() + (refreshData.expires_in * 1000)).toISOString();
-
-    // Criptografar novos tokens antes de salvar
     const encryptedAccessToken = await encryptData(refreshData.access_token);
     const encryptedRefreshToken = await encryptData(refreshData.refresh_token);
 
-    // Atualizar tokens no banco (tabela de credenciais)
-    const { error: updateError } = await supabase
+    await supabase
       .from('artist_mercadopago_credentials')
       .update({
         access_token: encryptedAccessToken,
@@ -176,15 +171,9 @@ async function getValidSellerToken(
       })
       .eq('artist_id', artistId);
 
-    if (updateError) {
-      console.error('Erro ao atualizar tokens no banco:', updateError);
-    } else {
-      console.log('Tokens atualizados com sucesso! Novo token expira em:', newExpiresAt);
-    }
-
     return refreshData.access_token;
   } catch (error) {
-    console.error('Erro no refresh de token:', error);
+    console.error('[INTERNAL] Token refresh error:', error);
     return null;
   }
 }
@@ -207,79 +196,78 @@ serve(async (req: Request) => {
       device_id,
     }: PaymentRequest = await req.json();
 
-    console.log('Creating Pix payment:', {
-      valor,
-      artista_id,
-      cliente_id,
-      cliente_nome,
-      cliente_cpf: cliente_cpf ? '***' : null, // Não logar CPF completo
-      session_id: session_id ? '***' : null, // Não logar session_id completo
-      pedido_musica,
-      pedido_mensagem,
-      device_id,
-    });
+    console.log('Creating Pix payment for artist:', artista_id);
 
-    // Validações básicas
+    // Validations
     if (!valor || valor <= 0) {
-      throw new Error('Valor inválido');
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.INVALID_VALUE }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
     if (!artista_id) {
-      throw new Error('ID do artista é obrigatório');
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.INVALID_ARTIST }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
-    // Validar que artista_id é um UUID válido
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(artista_id)) {
-      throw new Error('ID do artista inválido');
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.INVALID_ARTIST }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
-    // Validar que temos identificação (cliente_id ou session_id)
     if (!cliente_id && !session_id) {
-      throw new Error('É necessário fornecer cliente_id ou session_id');
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.MISSING_ID }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
-    // Validar formato do session_id se fornecido (deve ser UUID)
     if (session_id && !uuidRegex.test(session_id)) {
-      throw new Error('Session ID deve ser um UUID válido');
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.MISSING_ID }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
-    // Inicializar Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
-    // Buscar informações do artista (sem tokens sensíveis)
     const { data: artista, error: artistaError } = await supabase
       .from('profiles')
       .select('nome, id, tipo, plano')
       .eq('id', artista_id)
       .single();
 
-    if (artistaError || !artista) {
-      throw new Error('Artista não encontrado');
+    if (artistaError || !artista || artista.tipo !== 'artista') {
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.INVALID_ARTIST }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
-    // Validar que o perfil é realmente um artista
-    if (artista.tipo !== 'artista') {
-      throw new Error('Perfil não é um artista');
-    }
-
-    // Buscar credenciais do Mercado Pago da tabela segura
     const { data: credentials } = await supabase
       .from('artist_mercadopago_credentials')
       .select('seller_id, access_token, refresh_token, token_expires_at')
       .eq('artist_id', artista_id)
       .maybeSingle();
 
-    // Token da plataforma (fallback)
     const platformToken = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN');
     if (!platformToken) {
-      throw new Error('Token do Mercado Pago não configurado');
+      console.error('[INTERNAL] Platform token not configured');
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.PAYMENT_FAILED }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
-    // Verificar se artista é Pro (tem assinatura ativa)
     const { data: activeSubscription } = await supabase
       .from('artist_subscriptions')
       .select('id')
@@ -289,30 +277,21 @@ serve(async (req: Request) => {
       .single();
 
     const isPro = artista.plano === 'pro' && !!activeSubscription;
-    const taxaPercentual = isPro ? 0 : 0.20; // Pro: 0%, Free: 20%
+    const taxaPercentual = isPro ? 0 : 0.20;
 
-    console.log('Artist plan:', { plano: artista.plano, isPro, taxaPercentual });
-
-    // Calcular valores com taxa da plataforma dinâmica
     const valorBruto = valor;
     const taxaPlataforma = Number((valorBruto * taxaPercentual).toFixed(2));
     const valorLiquidoArtista = Number((valorBruto * (1 - taxaPercentual)).toFixed(2));
     const valorTotal = valorBruto;
 
-    // Gerar UUID da gorjeta ANTES de criar o pagamento
     const gorjetaId = crypto.randomUUID();
-
-    // Construir dados do pagamento para Pix
     const nomeCliente = cliente_nome || 'Cliente';
     const nomePartes = nomeCliente.split(' ');
     const firstName = nomePartes[0] || 'Cliente';
     const lastName = nomePartes.slice(1).join(' ') || 'Anônimo';
 
-    // Verificar se artista tem token OAuth válido para split payment
     const sellerToken = await getValidSellerToken(credentials, artista_id, supabase);
     const useSellerToken = sellerToken && credentials?.seller_id;
-
-    // Token a ser usado na requisição
     const tokenToUse = useSellerToken ? sellerToken : platformToken;
 
     const paymentData: any = {
@@ -347,34 +326,17 @@ serve(async (req: Request) => {
       notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-webhook`,
     };
 
-    // Adicionar CPF se fornecido
     if (cliente_cpf) {
       paymentData.payer.identification = {
         type: 'CPF',
         number: cliente_cpf,
       };
-      console.log('CPF adicionado ao pagamento');
     }
 
-    // Configurar split payment corretamente
     if (useSellerToken && taxaPlataforma > 0) {
       paymentData.application_fee = taxaPlataforma;
-      console.log('Split payment com token do artista:', {
-        application_fee: taxaPlataforma,
-        valor_total: valorTotal,
-        valor_artista_recebe: valorLiquidoArtista,
-        valor_plataforma_recebe: taxaPlataforma,
-      });
-    } else if (useSellerToken) {
-      console.log('Artista Pro - 100% do pagamento vai para o artista');
-    } else {
-      console.log('Artista sem token OAuth - pagamento vai para plataforma');
     }
 
-    console.log('Chamando API do Mercado Pago via fetch...');
-    console.log('Usando token:', useSellerToken ? 'do artista' : 'da plataforma');
-
-    // Gerar chave de idempotência única
     const idempotencyKey = crypto.randomUUID();
 
     const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
@@ -387,21 +349,17 @@ serve(async (req: Request) => {
       body: JSON.stringify(paymentData),
     });
 
-    console.log('Mercado Pago raw response status:', mpResponse.status);
-
     if (!mpResponse.ok) {
-      const errorBody = await mpResponse.text();
-      console.error('Mercado Pago error body:', errorBody);
-      throw new Error('Erro ao criar pagamento Pix no Mercado Pago');
+      console.error('[INTERNAL] Payment API error:', mpResponse.status);
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.PAYMENT_FAILED }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
     const mpData: any = await mpResponse.json();
-    console.log('Mercado Pago response - Payment ID:', mpData.id);
-
-    // Calcular expiração (30 minutos)
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
-    // Inserir gorjeta no banco com dados do pagamento e valores calculados
     const { data: gorjeta, error: gorjetaError } = await supabase
       .from('gorjetas')
       .insert({
@@ -425,11 +383,14 @@ serve(async (req: Request) => {
       .single();
 
     if (gorjetaError) {
-      console.error('Error inserting gorjeta:', gorjetaError);
-      throw new Error('Erro ao salvar gorjeta no banco');
+      console.error('[INTERNAL] Database error:', gorjetaError);
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.INTERNAL_ERROR }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
-    console.log('Gorjeta created successfully:', gorjeta.id);
+    console.log('Payment created successfully:', gorjeta.id);
 
     return new Response(
       JSON.stringify({
@@ -445,15 +406,12 @@ serve(async (req: Request) => {
       },
     );
   } catch (error) {
-    console.error('Error in create-pix-payment:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+    console.error('[INTERNAL] Unexpected error:', error);
     return new Response(
-      JSON.stringify({
-        error: errorMessage,
-      }),
+      JSON.stringify({ error: ERROR_MESSAGES.INTERNAL_ERROR }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+        status: 500,
       },
     );
   }

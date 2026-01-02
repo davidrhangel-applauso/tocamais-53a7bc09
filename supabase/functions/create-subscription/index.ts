@@ -6,6 +6,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Generic error messages for security
+const ERROR_MESSAGES = {
+  INVALID_ARTIST: 'Artista não encontrado',
+  NOT_ARTIST: 'Apenas artistas podem assinar o plano Pro',
+  ALREADY_SUBSCRIBED: 'Você já possui uma assinatura ativa',
+  PAYMENT_FAILED: 'Não foi possível processar o pagamento. Tente novamente.',
+  INTERNAL_ERROR: 'Erro interno. Tente novamente mais tarde.',
+};
+
 interface SubscriptionRequest {
   artista_id: string;
 }
@@ -18,16 +27,22 @@ serve(async (req: Request) => {
   try {
     const { artista_id }: SubscriptionRequest = await req.json();
 
-    console.log('Creating subscription for artist:', artista_id);
+    console.log('Creating subscription for artist');
 
     if (!artista_id) {
-      throw new Error('ID do artista é obrigatório');
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.INVALID_ARTIST }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
-    // Validar UUID
+    // Validate UUID
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(artista_id)) {
-      throw new Error('ID do artista inválido');
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.INVALID_ARTIST }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
     const supabase = createClient(
@@ -35,22 +50,28 @@ serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
-    // Verificar se artista existe e é do tipo artista
+    // Verify artist exists
     const { data: artista, error: artistaError } = await supabase
       .from('profiles')
-      .select('id, nome, tipo, mercadopago_seller_id')
+      .select('id, nome, tipo')
       .eq('id', artista_id)
       .single();
 
     if (artistaError || !artista) {
-      throw new Error('Artista não encontrado');
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.INVALID_ARTIST }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
     if (artista.tipo !== 'artista') {
-      throw new Error('Apenas artistas podem assinar o plano Pro');
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.NOT_ARTIST }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
-    // Verificar se já tem assinatura ativa
+    // Check for existing active subscription
     const { data: existingSub } = await supabase
       .from('artist_subscriptions')
       .select('id, status, ends_at')
@@ -60,19 +81,24 @@ serve(async (req: Request) => {
       .single();
 
     if (existingSub) {
-      throw new Error('Você já possui uma assinatura ativa');
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.ALREADY_SUBSCRIBED }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
     const mercadoPagoToken = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN');
     if (!mercadoPagoToken) {
-      throw new Error('Token do Mercado Pago não configurado');
+      console.error('[INTERNAL] MP token not configured');
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.PAYMENT_FAILED }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
-    // Gerar UUID da assinatura
     const subscriptionId = crypto.randomUUID();
     const valorAssinatura = 39.90;
 
-    // Criar pagamento único mensal via Pix
     const paymentData = {
       transaction_amount: valorAssinatura,
       description: 'Assinatura Pro - Gorjetas 100%',
@@ -99,8 +125,6 @@ serve(async (req: Request) => {
       notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/subscription-webhook`,
     };
 
-    console.log('Creating subscription payment...');
-
     const idempotencyKey = crypto.randomUUID();
 
     const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
@@ -114,27 +138,23 @@ serve(async (req: Request) => {
     });
 
     if (!mpResponse.ok) {
-      const errorBody = await mpResponse.text();
-      console.error('Mercado Pago error:', errorBody);
-      throw new Error('Erro ao criar pagamento da assinatura');
+      console.error('[INTERNAL] MP API error:', mpResponse.status);
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.PAYMENT_FAILED }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
     const mpData = await mpResponse.json();
-    console.log('Subscription payment created:', mpData.id);
 
-    // Calcular data de expiração (30 dias a partir de agora, será ativada quando pago)
-    const startsAt = null; // Será definido quando o pagamento for aprovado
-    const endsAt = null;
-
-    // Criar registro da assinatura pendente
     const { data: subscription, error: subError } = await supabase
       .from('artist_subscriptions')
       .insert({
         id: subscriptionId,
         artista_id,
         status: 'pending',
-        starts_at: startsAt,
-        ends_at: endsAt,
+        starts_at: null,
+        ends_at: null,
         payment_id: mpData.id.toString(),
         valor: valorAssinatura,
       })
@@ -142,11 +162,14 @@ serve(async (req: Request) => {
       .single();
 
     if (subError) {
-      console.error('Error creating subscription:', subError);
-      throw new Error('Erro ao criar assinatura');
+      console.error('[INTERNAL] Database error:', subError);
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.INTERNAL_ERROR }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
-    console.log('Subscription created:', subscription.id);
+    console.log('Subscription created successfully');
 
     return new Response(
       JSON.stringify({
@@ -162,13 +185,12 @@ serve(async (req: Request) => {
       },
     );
   } catch (error) {
-    console.error('Error in create-subscription:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+    console.error('[INTERNAL] Unexpected error:', error);
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: ERROR_MESSAGES.INTERNAL_ERROR }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+        status: 500,
       },
     );
   }
