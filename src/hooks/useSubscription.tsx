@@ -47,7 +47,11 @@ export function useSubscription(artistaId: string | null): UseSubscriptionReturn
         .limit(1)
         .single();
 
+      // Check if profile is PRO
+      const isProfilePro = profile?.plano === 'pro';
+      
       if (sub && sub.ends_at) {
+        // Has subscription with expiration date (paid subscription)
         const endsAt = new Date(sub.ends_at);
         const now = new Date();
         const diffTime = endsAt.getTime() - now.getTime();
@@ -55,7 +59,12 @@ export function useSubscription(artistaId: string | null): UseSubscriptionReturn
         
         setDaysRemaining(diffDays > 0 ? diffDays : 0);
         setSubscription(sub);
-        setIsPro(profile?.plano === 'pro' && diffDays > 0);
+        setIsPro(isProfilePro && diffDays > 0);
+      } else if (isProfilePro) {
+        // PRO without subscription or with ends_at = null (admin-granted permanent PRO)
+        setSubscription(sub || null);
+        setDaysRemaining(null); // Permanent PRO has no expiration
+        setIsPro(true);
       } else {
         setSubscription(null);
         setDaysRemaining(null);
