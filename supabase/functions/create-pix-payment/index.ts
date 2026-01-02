@@ -268,15 +268,20 @@ serve(async (req: Request) => {
       );
     }
 
+    // Check for active subscription with ends_at (paid subscription)
     const { data: activeSubscription } = await supabase
       .from('artist_subscriptions')
-      .select('id')
+      .select('id, ends_at')
       .eq('artista_id', artista_id)
       .eq('status', 'active')
-      .gte('ends_at', new Date().toISOString())
-      .single();
+      .maybeSingle();
 
-    const isPro = artista.plano === 'pro' && !!activeSubscription;
+    // PRO if: profile is pro AND (no subscription required OR has valid subscription OR permanent PRO with null ends_at)
+    const isPro = artista.plano === 'pro' && (
+      !activeSubscription || // Admin-granted PRO without subscription record
+      activeSubscription.ends_at === null || // Admin-granted permanent PRO
+      new Date(activeSubscription.ends_at) > new Date() // Active paid subscription
+    );
     const taxaPercentual = isPro ? 0 : 0.20;
 
     const valorBruto = valor;
