@@ -344,6 +344,9 @@ serve(async (req: Request) => {
 
     const idempotencyKey = crypto.randomUUID();
 
+    console.log('Using token type:', useSellerToken ? 'seller' : 'platform');
+    console.log('Payment data:', JSON.stringify(paymentData, null, 2));
+
     const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
       headers: {
@@ -354,15 +357,20 @@ serve(async (req: Request) => {
       body: JSON.stringify(paymentData),
     });
 
+    // Read response body as text first for debugging
+    const mpResponseText = await mpResponse.text();
+    console.log('Mercado Pago response status:', mpResponse.status);
+    console.log('Mercado Pago response body:', mpResponseText);
+
     if (!mpResponse.ok) {
-      console.error('[INTERNAL] Payment API error:', mpResponse.status);
+      console.error('[INTERNAL] Payment API error:', mpResponse.status, mpResponseText);
       return new Response(
         JSON.stringify({ error: ERROR_MESSAGES.PAYMENT_FAILED }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
-    const mpData: any = await mpResponse.json();
+    const mpData: any = JSON.parse(mpResponseText);
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
     const { data: gorjeta, error: gorjetaError } = await supabase
