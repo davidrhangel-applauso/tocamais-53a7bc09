@@ -1,4 +1,4 @@
-import { Home, Music, Heart, BarChart3, Settings, MessageCircle, LogOut, Clock, CheckCircle, XCircle, CircleCheck, ChevronDown, Shield } from "lucide-react";
+import { Home, Music, Heart, BarChart3, Settings, MessageCircle, LogOut, Clock, CheckCircle, XCircle, CircleCheck, ChevronDown, Shield, HelpCircle } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -50,6 +50,7 @@ const pedidosItems = [
 const secondaryItems = [
   { title: "Mensagens", url: "/conversas", icon: MessageCircle },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
+  { title: "Ajuda", url: "/instrucoes", icon: HelpCircle },
 ];
 
 export function AppSidebar({ artistName, artistPhoto, ativoAoVivo }: AppSidebarProps) {

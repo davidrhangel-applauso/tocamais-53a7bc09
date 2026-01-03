@@ -16,6 +16,7 @@ import Messages from "./pages/Messages";
 import Conversations from "./pages/Conversations";
 import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
+import Instructions from "./pages/Instructions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/mensagens" element={<Messages />} />
             <Route path="/configuracoes" element={<Settings />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/instrucoes" element={<Instructions />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
