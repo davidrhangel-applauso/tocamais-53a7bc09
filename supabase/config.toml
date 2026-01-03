@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.subscription-webhook]
 verify_jwt = false
+
+[functions.cleanup-archived-pedidos]
+verify_jwt = false
