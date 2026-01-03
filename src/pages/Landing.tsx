@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Music, Heart, Star, Users } from "lucide-react";
+import { Music, Heart, Star, Users, HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +34,17 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Help Button - Fixed */}
+      <Button
+        variant="outline"
+        size="sm"
+        className="fixed top-4 right-4 z-50 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-background shadow-lg"
+        onClick={() => navigate("/instrucoes")}
+      >
+        <HelpCircle className="h-4 w-4 mr-2" />
+        Como usar
+      </Button>
+
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Background Image with Overlay */}
