@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Music, Plus, Trash2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Music, Plus, Trash2, Upload, FileText, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -14,9 +15,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Musica {
   id: string;
+  titulo: string;
+  artista_original: string | null;
+}
+
+interface ParsedMusic {
   titulo: string;
   artista_original: string | null;
 }
@@ -29,10 +36,15 @@ export default function MusicRepertoire({ artistaId }: MusicRepertoireProps) {
   const [musicas, setMusicas] = useState<Musica[]>([]);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
+  const [openImportDialog, setOpenImportDialog] = useState(false);
   const [novaMusica, setNovaMusica] = useState({
     titulo: "",
     artista_original: "",
   });
+  const [importText, setImportText] = useState("");
+  const [parsedMusics, setParsedMusics] = useState<ParsedMusic[]>([]);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadMusicas();
@@ -94,6 +106,118 @@ export default function MusicRepertoire({ artistaId }: MusicRepertoireProps) {
     }
   };
 
+  const parseTextInput = (text: string): ParsedMusic[] => {
+    const lines = text.split('\n').filter(line => line.trim());
+    return lines.map(line => {
+      // Try to detect "Title - Artist" or "Title;Artist" or just "Title"
+      const separators = [' - ', ' – ', ';', ',', '\t'];
+      for (const sep of separators) {
+        if (line.includes(sep)) {
+          const parts = line.split(sep);
+          return {
+            titulo: parts[0].trim(),
+            artista_original: parts.slice(1).join(sep).trim() || null,
+          };
+        }
+      }
+      return { titulo: line.trim(), artista_original: null };
+    }).filter(m => m.titulo.length > 0);
+  };
+
+  const parseCSV = (content: string): ParsedMusic[] => {
+    const lines = content.split('\n').filter(line => line.trim());
+    const results: ParsedMusic[] = [];
+    
+    // Skip header if it looks like one
+    const startIndex = lines[0]?.toLowerCase().includes('titulo') || 
+                       lines[0]?.toLowerCase().includes('title') ||
+                       lines[0]?.toLowerCase().includes('música') ? 1 : 0;
+    
+    for (let i = startIndex; i < lines.length; i++) {
+      const line = lines[i];
+      // Handle quoted CSV values
+      const match = line.match(/^"?([^",]+)"?,\s*"?([^"]*)"?$/);
+      if (match) {
+        results.push({
+          titulo: match[1].trim(),
+          artista_original: match[2].trim() || null,
+        });
+      } else {
+        // Fallback to simple split
+        const parts = line.split(',');
+        if (parts[0]?.trim()) {
+          results.push({
+            titulo: parts[0].trim(),
+            artista_original: parts[1]?.trim() || null,
+          });
+        }
+      }
+    }
+    return results;
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (file.name.endsWith('.csv')) {
+        const parsed = parseCSV(content);
+        setParsedMusics(parsed);
+        toast.success(`${parsed.length} músicas encontradas no CSV`);
+      } else {
+        const parsed = parseTextInput(content);
+        setParsedMusics(parsed);
+        toast.success(`${parsed.length} músicas encontradas`);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleTextParse = () => {
+    const parsed = parseTextInput(importText);
+    setParsedMusics(parsed);
+    if (parsed.length > 0) {
+      toast.success(`${parsed.length} músicas encontradas`);
+    } else {
+      toast.error("Nenhuma música encontrada no texto");
+    }
+  };
+
+  const handleBulkImport = async () => {
+    if (parsedMusics.length === 0) {
+      toast.error("Nenhuma música para importar");
+      return;
+    }
+
+    setImporting(true);
+    const toInsert = parsedMusics.map(m => ({
+      artista_id: artistaId,
+      titulo: m.titulo,
+      artista_original: m.artista_original,
+    }));
+
+    const { error } = await supabase.from("musicas_repertorio").insert(toInsert);
+
+    if (error) {
+      console.error("Erro ao importar músicas:", error);
+      toast.error("Erro ao importar músicas");
+    } else {
+      toast.success(`${parsedMusics.length} músicas importadas!`);
+      setParsedMusics([]);
+      setImportText("");
+      setOpenImportDialog(false);
+      loadMusicas();
+    }
+    setImporting(false);
+  };
+
+  const removeFromParsed = (index: number) => {
+    setParsedMusics(prev => prev.filter((_, i) => i !== index));
+  };
+
   if (loading) {
     return <div className="text-center text-muted-foreground">Carregando...</div>;
   }
@@ -109,57 +233,196 @@ export default function MusicRepertoire({ artistaId }: MusicRepertoireProps) {
             {musicas.length} {musicas.length === 1 ? 'música' : 'músicas'}
           </span>
         </div>
-        <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="w-full sm:w-auto">
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-[95vw] sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Adicionar Música</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleAddMusica} className="space-y-4">
-              <div>
-                <Label htmlFor="titulo">Título da Música *</Label>
-                <Input
-                  id="titulo"
-                  value={novaMusica.titulo}
-                  onChange={(e) =>
-                    setNovaMusica({ ...novaMusica, titulo: e.target.value })
-                  }
-                  placeholder="Ex: Evidências"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="artista">Artista Original</Label>
-                <Input
-                  id="artista"
-                  value={novaMusica.artista_original}
-                  onChange={(e) =>
-                    setNovaMusica({
-                      ...novaMusica,
-                      artista_original: e.target.value,
-                    })
-                  }
-                  placeholder="Ex: Chitãozinho & Xororó"
-                />
-              </div>
-              <Button type="submit" className="w-full">
+        <div className="flex gap-2">
+          {/* Import Button */}
+          <Dialog open={openImportDialog} onOpenChange={(open) => {
+            setOpenImportDialog(open);
+            if (!open) {
+              setParsedMusics([]);
+              setImportText("");
+            }
+          }}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline" className="flex-1 sm:flex-none">
+                <Upload className="h-4 w-4 mr-2" />
+                Importar
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+              <DialogHeader>
+                <DialogTitle>Importar Músicas em Lote</DialogTitle>
+              </DialogHeader>
+              
+              <Tabs defaultValue="text" className="flex-1 flex flex-col min-h-0">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="text" className="text-xs sm:text-sm">
+                    <FileText className="h-4 w-4 mr-1 sm:mr-2" />
+                    Lista de Texto
+                  </TabsTrigger>
+                  <TabsTrigger value="csv" className="text-xs sm:text-sm">
+                    <Upload className="h-4 w-4 mr-1 sm:mr-2" />
+                    Arquivo CSV
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="text" className="flex-1 flex flex-col min-h-0 space-y-3">
+                  <div className="space-y-2">
+                    <Label>Cole sua lista de músicas</Label>
+                    <Textarea
+                      value={importText}
+                      onChange={(e) => setImportText(e.target.value)}
+                      placeholder={`Uma música por linha. Exemplos:\n\nEvidências - Chitãozinho & Xororó\nAi Se Eu Te Pego - Michel Teló\nMeu Abrigo\nSó Hoje`}
+                      className="h-32 text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Formatos aceitos: "Título - Artista", "Título; Artista" ou apenas "Título"
+                    </p>
+                  </div>
+                  <Button 
+                    type="button" 
+                    variant="secondary" 
+                    onClick={handleTextParse}
+                    disabled={!importText.trim()}
+                    size="sm"
+                  >
+                    Analisar Lista
+                  </Button>
+                </TabsContent>
+                
+                <TabsContent value="csv" className="flex-1 flex flex-col min-h-0 space-y-3">
+                  <div className="space-y-2">
+                    <Label>Envie um arquivo CSV ou TXT</Label>
+                    <input
+                      type="file"
+                      accept=".csv,.txt"
+                      onChange={handleFileUpload}
+                      ref={fileInputRef}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Selecionar Arquivo
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      CSV com colunas: titulo, artista_original
+                    </p>
+                  </div>
+                </TabsContent>
+              </Tabs>
+
+              {/* Preview of parsed musics */}
+              {parsedMusics.length > 0 && (
+                <div className="border-t pt-3 mt-3 flex flex-col min-h-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-sm font-medium">
+                      Músicas a importar ({parsedMusics.length})
+                    </Label>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setParsedMusics([])}
+                      className="text-xs h-7"
+                    >
+                      Limpar
+                    </Button>
+                  </div>
+                  <ScrollArea className="max-h-40 border rounded-md">
+                    <div className="p-2 space-y-1">
+                      {parsedMusics.map((m, i) => (
+                        <div 
+                          key={i} 
+                          className="flex items-center justify-between text-xs p-1.5 rounded bg-muted/50 group"
+                        >
+                          <div className="flex-1 min-w-0 pr-2">
+                            <span className="font-medium truncate block">{m.titulo}</span>
+                            {m.artista_original && (
+                              <span className="text-muted-foreground truncate block">
+                                {m.artista_original}
+                              </span>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 opacity-50 hover:opacity-100"
+                            onClick={() => removeFromParsed(i)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                  <Button 
+                    onClick={handleBulkImport} 
+                    disabled={importing}
+                    className="w-full mt-3"
+                  >
+                    {importing ? "Importando..." : `Importar ${parsedMusics.length} músicas`}
+                  </Button>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+          
+          {/* Add Single Button */}
+          <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="flex-1 sm:flex-none">
+                <Plus className="h-4 w-4 mr-2" />
                 Adicionar
               </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent className="max-w-[95vw] sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Adicionar Música</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleAddMusica} className="space-y-4">
+                <div>
+                  <Label htmlFor="titulo">Título da Música *</Label>
+                  <Input
+                    id="titulo"
+                    value={novaMusica.titulo}
+                    onChange={(e) =>
+                      setNovaMusica({ ...novaMusica, titulo: e.target.value })
+                    }
+                    placeholder="Ex: Evidências"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="artista">Artista Original</Label>
+                  <Input
+                    id="artista"
+                    value={novaMusica.artista_original}
+                    onChange={(e) =>
+                      setNovaMusica({
+                        ...novaMusica,
+                        artista_original: e.target.value,
+                      })
+                    }
+                    placeholder="Ex: Chitãozinho & Xororó"
+                  />
+                </div>
+                <Button type="submit" className="w-full">
+                  Adicionar
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {musicas.length === 0 ? (
         <div className="text-center py-6 sm:py-8 text-muted-foreground">
           <Music className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 opacity-50" />
           <p className="text-sm sm:text-base">Nenhuma música no repertório</p>
-          <p className="text-xs sm:text-sm">Adicione músicas para facilitar os pedidos</p>
+          <p className="text-xs sm:text-sm">Adicione músicas ou importe uma lista</p>
         </div>
       ) : (
         <ScrollArea className="h-[50vh] sm:h-[400px] -mx-4 sm:mx-0 px-4 sm:px-0 sm:pr-4">
