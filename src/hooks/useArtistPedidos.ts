@@ -12,6 +12,8 @@ export interface Pedido {
   cliente_id: string | null;
   cliente_nome: string | null;
   valor: number | null;
+  artista_id: string;
+  session_id: string | null;
   profiles: {
     nome: string;
     foto_url: string | null;
@@ -31,6 +33,8 @@ async function fetchPedidos(artistId: string): Promise<Pedido[]> {
       cliente_id,
       cliente_nome,
       valor,
+      artista_id,
+      session_id,
       profiles:cliente_id (nome, foto_url)
     `)
     .eq("artista_id", artistId)
@@ -40,6 +44,8 @@ async function fetchPedidos(artistId: string): Promise<Pedido[]> {
 
   return (data || []).map((pedido: any) => ({
     ...pedido,
+    artista_id: pedido.artista_id,
+    session_id: pedido.session_id,
     profiles: pedido.profiles || null,
   }));
 }
@@ -139,6 +145,55 @@ export function useBulkUpdatePedidos() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["artist-pedidos"] });
+      queryClient.invalidateQueries({ queryKey: ["artist-stats"] });
+    },
+  });
+}
+
+export function useConfirmPixPayment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ pedido }: { pedido: Pedido }) => {
+      if (!pedido.valor || pedido.valor <= 0) {
+        throw new Error("Valor inválido");
+      }
+
+      // 1. Create gorjeta with status approved (PRO artists: 0% fee)
+      const { error: gorjetaError } = await supabase
+        .from("gorjetas")
+        .insert({
+          artista_id: pedido.artista_id,
+          cliente_id: pedido.cliente_id,
+          cliente_nome: pedido.cliente_nome,
+          session_id: pedido.session_id,
+          valor: pedido.valor,
+          valor_liquido_artista: pedido.valor, // 100% for PRO artists
+          taxa_plataforma: 0, // PRO artists don't pay platform fee
+          status_pagamento: 'approved',
+          pedido_musica: pedido.musica,
+          pedido_mensagem: pedido.mensagem,
+        });
+
+      if (gorjetaError) throw gorjetaError;
+
+      // 2. Update pedido status to pendente
+      const { error: pedidoError } = await supabase
+        .from("pedidos")
+        .update({ status: 'pendente' })
+        .eq("id", pedido.id);
+
+      if (pedidoError) throw pedidoError;
+    },
+    onSuccess: () => {
+      toast.success("PIX confirmado! Gorjeta registrada ✅");
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao confirmar PIX: ${error.message ?? "tente novamente"}`);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["artist-pedidos"] });
+      queryClient.invalidateQueries({ queryKey: ["artist-gorjetas"] });
       queryClient.invalidateQueries({ queryKey: ["artist-stats"] });
     },
   });

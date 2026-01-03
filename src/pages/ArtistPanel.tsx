@@ -18,7 +18,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import MusicRepertoire from "@/components/MusicRepertoire";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useArtistPedidos, useUpdatePedidoStatus, useBulkUpdatePedidos, Pedido } from "@/hooks/useArtistPedidos";
+import { useArtistPedidos, useUpdatePedidoStatus, useBulkUpdatePedidos, useConfirmPixPayment, Pedido } from "@/hooks/useArtistPedidos";
 import { useArtistGorjetas, Gorjeta } from "@/hooks/useArtistGorjetas";
 import { useArtistStats } from "@/hooks/useArtistStats";
 import { SkeletonStatsGrid, SkeletonPedidoList } from "@/components/ui/skeleton-card";
@@ -40,6 +40,7 @@ const ArtistPanel = () => {
   const { data: stats, isLoading: statsLoading } = useArtistStats(artistId);
   const updatePedidoStatus = useUpdatePedidoStatus();
   const bulkUpdatePedidos = useBulkUpdatePedidos();
+  const confirmPixPayment = useConfirmPixPayment();
 
   // Check subscription status
   const { isPro } = useSubscription(artistId);
@@ -336,8 +337,8 @@ const ArtistPanel = () => {
                           <div className="flex gap-2">
                             <Button
                               size="sm"
-                              onClick={() => handleUpdatePedidoStatus(pedido.id, "pendente")}
-                              disabled={updatePedidoStatus.isPending}
+                              onClick={() => confirmPixPayment.mutate({ pedido })}
+                              disabled={confirmPixPayment.isPending}
                               className="flex-1 sm:flex-none"
                             >
                               <Check className="w-4 h-4 mr-1" />
