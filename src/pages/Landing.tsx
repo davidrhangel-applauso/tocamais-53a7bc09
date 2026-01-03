@@ -34,16 +34,6 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Help Button - Fixed */}
-      <Button
-        variant="outline"
-        size="sm"
-        className="fixed top-4 right-4 z-50 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-background shadow-lg"
-        onClick={() => navigate("/instrucoes")}
-      >
-        <HelpCircle className="h-4 w-4 mr-2" />
-        Como usar
-      </Button>
 
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -97,6 +87,16 @@ const Landing = () => {
               Sou Cliente
             </Button>
           </div>
+          
+          {/* Help Link */}
+          <button
+            onClick={() => navigate("/instrucoes")}
+            className="mt-6 inline-flex items-center gap-1.5 text-white/70 hover:text-white text-sm transition-colors animate-fade-in"
+            style={{ animationDelay: '0.6s' }}
+          >
+            <HelpCircle className="h-4 w-4" />
+            Como funciona o app?
+          </button>
         </div>
       </section>
 
