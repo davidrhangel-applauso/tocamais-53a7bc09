@@ -198,3 +198,73 @@ export function useConfirmPixPayment() {
     },
   });
 }
+
+export function useDeleteOldPedidos() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      artistId, 
+      olderThanDays, 
+      statuses 
+    }: { 
+      artistId: string; 
+      olderThanDays: number;
+      statuses: string[];
+    }) => {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
+
+      const { data, error } = await supabase
+        .from("pedidos")
+        .delete()
+        .eq("artista_id", artistId)
+        .in("status", statuses)
+        .lt("created_at", cutoffDate.toISOString())
+        .select("id");
+
+      if (error) throw error;
+      return data?.length || 0;
+    },
+    onSuccess: (count) => {
+      if (count > 0) {
+        toast.success(`${count} pedido(s) antigo(s) removido(s) 🗑️`);
+      } else {
+        toast.info("Nenhum pedido antigo encontrado para remover");
+      }
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao limpar pedidos: ${error.message ?? "tente novamente"}`);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["artist-pedidos"] });
+      queryClient.invalidateQueries({ queryKey: ["artist-stats"] });
+    },
+  });
+}
+
+export function useBulkDeletePedidos() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ pedidoIds }: { pedidoIds: string[] }) => {
+      const { error } = await supabase
+        .from("pedidos")
+        .delete()
+        .in("id", pedidoIds);
+
+      if (error) throw error;
+      return pedidoIds.length;
+    },
+    onSuccess: (count) => {
+      toast.success(`${count} pedido(s) removido(s) 🗑️`);
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao remover pedidos: ${error.message ?? "tente novamente"}`);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["artist-pedidos"] });
+      queryClient.invalidateQueries({ queryKey: ["artist-stats"] });
+    },
+  });
+}

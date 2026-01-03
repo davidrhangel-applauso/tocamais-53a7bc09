@@ -18,13 +18,14 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import MusicRepertoire from "@/components/MusicRepertoire";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useArtistPedidos, useUpdatePedidoStatus, useBulkUpdatePedidos, useConfirmPixPayment, Pedido } from "@/hooks/useArtistPedidos";
+import { useArtistPedidos, useUpdatePedidoStatus, useBulkUpdatePedidos, useConfirmPixPayment, useDeleteOldPedidos, Pedido } from "@/hooks/useArtistPedidos";
 import { useArtistGorjetas, Gorjeta } from "@/hooks/useArtistGorjetas";
 import { useArtistStats } from "@/hooks/useArtistStats";
 import { SkeletonStatsGrid, SkeletonPedidoList } from "@/components/ui/skeleton-card";
 import { PullToRefresh } from "@/components/ui/pull-to-refresh";
 import { useQueryClient } from "@tanstack/react-query";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { ClearOldOrdersDialog } from "@/components/ClearOldOrdersDialog";
 
 const ArtistPanel = () => {
   const navigate = useNavigate();
@@ -269,35 +270,48 @@ const ArtistPanel = () => {
 
         {/* Tabs for Pedidos and Gorjetas */}
         <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="space-y-4 sm:space-y-6">
-          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 pb-1">
-            <TabsList className="inline-flex w-max sm:w-auto h-auto gap-1 p-1">
-              {pedidosAguardandoPixConfirmacao.length > 0 && (
-                <TabsTrigger value="aguardando_pix" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 bg-amber-500/10 border-amber-500/30 whitespace-nowrap">
-                  💰 PIX ({pedidosAguardandoPixConfirmacao.length})
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+            <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 pb-1">
+              <TabsList className="inline-flex w-max sm:w-auto h-auto gap-1 p-1">
+                {pedidosAguardandoPixConfirmacao.length > 0 && (
+                  <TabsTrigger value="aguardando_pix" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 bg-amber-500/10 border-amber-500/30 whitespace-nowrap">
+                    💰 PIX ({pedidosAguardandoPixConfirmacao.length})
+                  </TabsTrigger>
+                )}
+                <TabsTrigger value="pendentes" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
+                  ⏳ ({pedidosPendentes.length})
                 </TabsTrigger>
-              )}
-              <TabsTrigger value="pendentes" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
-                ⏳ ({pedidosPendentes.length})
-              </TabsTrigger>
-              <TabsTrigger value="aceitos" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
-                ✅ ({pedidosAceitos.length})
-              </TabsTrigger>
-              <TabsTrigger value="concluidos" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
-                ✔ ({pedidosConcluidos.length})
-              </TabsTrigger>
-              <TabsTrigger value="recusados" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
-                ❌ ({pedidosRecusados.length})
-              </TabsTrigger>
-              <TabsTrigger value="gorjetas" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
-                💝 ({gorjetas.length})
-              </TabsTrigger>
-              <TabsTrigger value="historico" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
-                💰
-              </TabsTrigger>
-              <TabsTrigger value="repertorio" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
-                🎵
-              </TabsTrigger>
-            </TabsList>
+                <TabsTrigger value="aceitos" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
+                  ✅ ({pedidosAceitos.length})
+                </TabsTrigger>
+                <TabsTrigger value="concluidos" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
+                  ✔ ({pedidosConcluidos.length})
+                </TabsTrigger>
+                <TabsTrigger value="recusados" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
+                  ❌ ({pedidosRecusados.length})
+                </TabsTrigger>
+                <TabsTrigger value="gorjetas" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
+                  💝 ({gorjetas.length})
+                </TabsTrigger>
+                <TabsTrigger value="historico" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
+                  💰
+                </TabsTrigger>
+                <TabsTrigger value="repertorio" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
+                  🎵
+                </TabsTrigger>
+              </TabsList>
+            </div>
+            
+            {/* Clear old orders button - show when there are old orders */}
+            {(pedidosConcluidos.length > 0 || pedidosRecusados.length > 0) && artistId && (
+              <ClearOldOrdersDialog 
+                artistId={artistId} 
+                counts={{
+                  concluidos: pedidosConcluidos.length,
+                  recusados: pedidosRecusados.length,
+                }}
+              />
+            )}
           </div>
 
           {/* Aguardando Confirmação PIX - Only for PRO artists with own PIX */}
