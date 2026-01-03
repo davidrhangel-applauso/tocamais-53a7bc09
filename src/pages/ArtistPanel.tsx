@@ -18,7 +18,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import MusicRepertoire from "@/components/MusicRepertoire";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useArtistPedidos, useUpdatePedidoStatus, useBulkUpdatePedidos, useConfirmPixPayment, useDeleteOldPedidos, Pedido } from "@/hooks/useArtistPedidos";
+import { useArtistPedidos, useUpdatePedidoStatus, useBulkUpdatePedidos, useConfirmPixPayment, Pedido } from "@/hooks/useArtistPedidos";
 import { useArtistGorjetas, Gorjeta } from "@/hooks/useArtistGorjetas";
 import { useArtistStats } from "@/hooks/useArtistStats";
 import { SkeletonStatsGrid, SkeletonPedidoList } from "@/components/ui/skeleton-card";

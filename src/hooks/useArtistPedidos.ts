@@ -14,15 +14,17 @@ export interface Pedido {
   valor: number | null;
   artista_id: string;
   session_id: string | null;
+  arquivado: boolean;
+  arquivado_at: string | null;
   profiles: {
     nome: string;
     foto_url: string | null;
   } | null;
 }
 
-async function fetchPedidos(artistId: string): Promise<Pedido[]> {
+async function fetchPedidos(artistId: string, includeArchived = false): Promise<Pedido[]> {
   // Use PostgREST join to avoid N+1 queries
-  const { data, error } = await supabase
+  let query = supabase
     .from("pedidos")
     .select(`
       id,
@@ -35,10 +37,17 @@ async function fetchPedidos(artistId: string): Promise<Pedido[]> {
       valor,
       artista_id,
       session_id,
+      arquivado,
+      arquivado_at,
       profiles:cliente_id (nome, foto_url)
     `)
-    .eq("artista_id", artistId)
-    .order("created_at", { ascending: false });
+    .eq("artista_id", artistId);
+
+  if (!includeArchived) {
+    query = query.eq("arquivado", false);
+  }
+
+  const { data, error } = await query.order("created_at", { ascending: false });
 
   if (error) throw error;
 
@@ -46,6 +55,8 @@ async function fetchPedidos(artistId: string): Promise<Pedido[]> {
     ...pedido,
     artista_id: pedido.artista_id,
     session_id: pedido.session_id,
+    arquivado: pedido.arquivado ?? false,
+    arquivado_at: pedido.arquivado_at,
     profiles: pedido.profiles || null,
   }));
 }
@@ -199,7 +210,7 @@ export function useConfirmPixPayment() {
   });
 }
 
-export function useDeleteOldPedidos() {
+export function useArchiveOldPedidos() {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -217,8 +228,12 @@ export function useDeleteOldPedidos() {
 
       const { data, error } = await supabase
         .from("pedidos")
-        .delete()
+        .update({ 
+          arquivado: true, 
+          arquivado_at: new Date().toISOString() 
+        })
         .eq("artista_id", artistId)
+        .eq("arquivado", false)
         .in("status", statuses)
         .lt("created_at", cutoffDate.toISOString())
         .select("id");
@@ -228,42 +243,113 @@ export function useDeleteOldPedidos() {
     },
     onSuccess: (count) => {
       if (count > 0) {
-        toast.success(`${count} pedido(s) antigo(s) removido(s) 🗑️`);
+        toast.success(`${count} pedido(s) arquivado(s) 📦`);
       } else {
-        toast.info("Nenhum pedido antigo encontrado para remover");
+        toast.info("Nenhum pedido encontrado para arquivar");
       }
     },
     onError: (error: any) => {
-      toast.error(`Erro ao limpar pedidos: ${error.message ?? "tente novamente"}`);
+      toast.error(`Erro ao arquivar pedidos: ${error.message ?? "tente novamente"}`);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["artist-pedidos"] });
+      queryClient.invalidateQueries({ queryKey: ["artist-archived-pedidos"] });
       queryClient.invalidateQueries({ queryKey: ["artist-stats"] });
     },
   });
 }
 
-export function useBulkDeletePedidos() {
+export function useRestorePedidos() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ pedidoIds }: { pedidoIds: string[] }) => {
       const { error } = await supabase
         .from("pedidos")
-        .delete()
+        .update({ 
+          arquivado: false, 
+          arquivado_at: null 
+        })
         .in("id", pedidoIds);
 
       if (error) throw error;
       return pedidoIds.length;
     },
     onSuccess: (count) => {
-      toast.success(`${count} pedido(s) removido(s) 🗑️`);
+      toast.success(`${count} pedido(s) restaurado(s) ✅`);
     },
     onError: (error: any) => {
-      toast.error(`Erro ao remover pedidos: ${error.message ?? "tente novamente"}`);
+      toast.error(`Erro ao restaurar pedidos: ${error.message ?? "tente novamente"}`);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["artist-pedidos"] });
+      queryClient.invalidateQueries({ queryKey: ["artist-archived-pedidos"] });
+      queryClient.invalidateQueries({ queryKey: ["artist-stats"] });
+    },
+  });
+}
+
+export function useArchivedPedidos(artistId: string | null) {
+  return useQuery({
+    queryKey: ["artist-archived-pedidos", artistId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pedidos")
+        .select(`
+          id,
+          musica,
+          mensagem,
+          status,
+          created_at,
+          cliente_id,
+          cliente_nome,
+          valor,
+          artista_id,
+          session_id,
+          arquivado,
+          arquivado_at,
+          profiles:cliente_id (nome, foto_url)
+        `)
+        .eq("artista_id", artistId!)
+        .eq("arquivado", true)
+        .order("arquivado_at", { ascending: false });
+
+      if (error) throw error;
+      return (data || []).map((pedido: any) => ({
+        ...pedido,
+        profiles: pedido.profiles || null,
+      })) as Pedido[];
+    },
+    enabled: !!artistId,
+    staleTime: 30000,
+  });
+}
+
+export function useBulkArchivePedidos() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ pedidoIds }: { pedidoIds: string[] }) => {
+      const { error } = await supabase
+        .from("pedidos")
+        .update({ 
+          arquivado: true, 
+          arquivado_at: new Date().toISOString() 
+        })
+        .in("id", pedidoIds);
+
+      if (error) throw error;
+      return pedidoIds.length;
+    },
+    onSuccess: (count) => {
+      toast.success(`${count} pedido(s) arquivado(s) 📦`);
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao arquivar pedidos: ${error.message ?? "tente novamente"}`);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["artist-pedidos"] });
+      queryClient.invalidateQueries({ queryKey: ["artist-archived-pedidos"] });
       queryClient.invalidateQueries({ queryKey: ["artist-stats"] });
     },
   });

@@ -308,6 +308,8 @@ export type Database = {
       }
       pedidos: {
         Row: {
+          arquivado: boolean
+          arquivado_at: string | null
           artista_id: string
           cliente_id: string | null
           cliente_nome: string | null
@@ -320,6 +322,8 @@ export type Database = {
           valor: number | null
         }
         Insert: {
+          arquivado?: boolean
+          arquivado_at?: string | null
           artista_id: string
           cliente_id?: string | null
           cliente_nome?: string | null
@@ -332,6 +336,8 @@ export type Database = {
           valor?: number | null
         }
         Update: {
+          arquivado?: boolean
+          arquivado_at?: string | null
           artista_id?: string
           cliente_id?: string | null
           cliente_nome?: string | null
