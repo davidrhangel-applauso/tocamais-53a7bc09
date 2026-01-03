@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,8 @@ import { useArtistPedidos, useUpdatePedidoStatus, useBulkUpdatePedidos, useConfi
 import { useArtistGorjetas, Gorjeta } from "@/hooks/useArtistGorjetas";
 import { useArtistStats } from "@/hooks/useArtistStats";
 import { SkeletonStatsGrid, SkeletonPedidoList } from "@/components/ui/skeleton-card";
+import { PullToRefresh } from "@/components/ui/pull-to-refresh";
+import { useQueryClient } from "@tanstack/react-query";
 
 const ArtistPanel = () => {
   const navigate = useNavigate();
@@ -35,12 +37,22 @@ const ArtistPanel = () => {
   const [selectedPedidos, setSelectedPedidos] = useState<string[]>([]);
 
   // Use React Query hooks
+  const queryClient = useQueryClient();
   const { data: pedidos = [], isLoading: pedidosLoading } = useArtistPedidos(artistId);
   const { data: gorjetas = [], isLoading: gorjetasLoading } = useArtistGorjetas(artistId);
   const { data: stats, isLoading: statsLoading } = useArtistStats(artistId);
   const updatePedidoStatus = useUpdatePedidoStatus();
   const bulkUpdatePedidos = useBulkUpdatePedidos();
   const confirmPixPayment = useConfirmPixPayment();
+
+  // Pull-to-refresh handler
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["artist-pedidos", artistId] }),
+      queryClient.invalidateQueries({ queryKey: ["artist-gorjetas", artistId] }),
+      queryClient.invalidateQueries({ queryKey: ["artist-stats", artistId] }),
+    ]);
+  }, [queryClient, artistId]);
 
   // Check subscription status
   const { isPro } = useSubscription(artistId);
@@ -178,7 +190,8 @@ const ArtistPanel = () => {
             </div>
           </header>
 
-          <main className="flex-1 overflow-auto p-3 sm:p-6">
+          <PullToRefresh onRefresh={handleRefresh} className="flex-1 overflow-auto">
+            <div className="p-3 sm:p-6">
         {/* Welcome and Live Status */}
         <div className="mb-4 sm:mb-8">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
@@ -725,7 +738,8 @@ const ArtistPanel = () => {
             )}
           </TabsContent>
         </Tabs>
-          </main>
+            </div>
+          </PullToRefresh>
         </div>
       </div>
     </SidebarProvider>
