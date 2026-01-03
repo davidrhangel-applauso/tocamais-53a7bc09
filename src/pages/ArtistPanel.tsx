@@ -159,44 +159,47 @@ const ArtistPanel = () => {
         />
 
         <div className="flex-1 flex flex-col">
-          <header className="border-b border-border/40 bg-background/80 backdrop-blur-sm sticky top-0 z-40 h-16 flex items-center px-6">
-            <SidebarTrigger className="mr-4">
+          <header className="border-b border-border/40 bg-background/80 backdrop-blur-sm sticky top-0 z-40 h-14 sm:h-16 flex items-center px-3 sm:px-6">
+            <SidebarTrigger className="mr-2 sm:mr-4">
               <Menu className="w-5 h-5" />
             </SidebarTrigger>
-            <div className="flex items-center gap-2 flex-1">
-              <Music className="w-6 h-6 text-primary" />
-              <h1 className="text-xl font-bold text-gradient">Painel do Artista</h1>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <Music className="w-5 h-5 sm:w-6 sm:h-6 text-primary shrink-0" />
+              <h1 className="text-base sm:text-xl font-bold text-gradient truncate">Painel</h1>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <NotificationBell userId={artistId || undefined} />
-              <Button variant="outline" size="sm" onClick={() => navigate("/home?preview=true")}>
+              <Button variant="outline" size="sm" onClick={() => navigate("/home?preview=true")} className="hidden sm:inline-flex">
                 Ver como Cliente
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => navigate("/home?preview=true")} className="sm:hidden h-8 w-8">
+                <Heart className="w-4 h-4" />
               </Button>
             </div>
           </header>
 
           <main className="flex-1 overflow-auto p-3 sm:p-6">
         {/* Welcome and Live Status */}
-        <div className="mb-8">
-          <div className="flex flex-wrap items-center gap-3 mb-4">
-            <h2 className="text-3xl font-bold">Olá, {artistName}! 👋</h2>
+        <div className="mb-4 sm:mb-8">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <h2 className="text-xl sm:text-3xl font-bold">Olá, {artistName}! 👋</h2>
             {isPro ? (
-              <Badge className="text-sm px-3 py-1 bg-gradient-to-r from-amber-500 to-yellow-400 text-black border-0">
-                ⭐ Pro • 0% taxa
+              <Badge className="text-xs sm:text-sm px-2 sm:px-3 py-0.5 sm:py-1 bg-gradient-to-r from-amber-500 to-yellow-400 text-black border-0">
+                ⭐ Pro
               </Badge>
             ) : (
-              <Badge variant="outline" className="text-sm px-3 py-1">
-                Free • 20% taxa
+              <Badge variant="outline" className="text-xs sm:text-sm px-2 sm:px-3 py-0.5 sm:py-1">
+                Free
               </Badge>
             )}
           </div>
           <Card className="border-primary/20">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full ${ativoAoVivo ? 'bg-green-500 animate-pulse' : 'bg-muted'}`} />
-                  <Label htmlFor="live-status" className="text-lg cursor-pointer">
-                    Status: {ativoAoVivo ? "Ao Vivo" : "Offline"}
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shrink-0 ${ativoAoVivo ? 'bg-green-500 animate-pulse' : 'bg-muted'}`} />
+                  <Label htmlFor="live-status" className="text-sm sm:text-lg cursor-pointer">
+                    {ativoAoVivo ? "🔴 Ao Vivo" : "Offline"}
                   </Label>
                 </div>
                 <Switch
@@ -205,10 +208,10 @@ const ArtistPanel = () => {
                   onCheckedChange={handleToggleLiveStatus}
                 />
               </div>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2">
                 {ativoAoVivo
-                  ? "Você está visível como ao vivo para os clientes"
-                  : "Ative para mostrar que está ao vivo"}
+                  ? "Visível para clientes"
+                  : "Ative para aparecer ao vivo"}
               </p>
             </CardContent>
           </Card>
@@ -218,71 +221,70 @@ const ArtistPanel = () => {
         {statsLoading ? (
           <SkeletonStatsGrid />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardDescription>Pedidos Pendentes</CardDescription>
-                <CardTitle className="text-4xl text-accent">{stats?.pedidos_pendentes ?? 0}</CardTitle>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-8">
+            <Card className="overflow-hidden">
+              <CardHeader className="p-3 sm:pb-3 sm:p-6">
+                <CardDescription className="text-xs sm:text-sm">Pendentes</CardDescription>
+                <CardTitle className="text-2xl sm:text-4xl text-accent">{stats?.pedidos_pendentes ?? 0}</CardTitle>
               </CardHeader>
             </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardDescription>Pedidos Aceitos</CardDescription>
-                <CardTitle className="text-4xl text-primary">{stats?.pedidos_aceitos ?? 0}</CardTitle>
+            <Card className="overflow-hidden">
+              <CardHeader className="p-3 sm:pb-3 sm:p-6">
+                <CardDescription className="text-xs sm:text-sm">Aceitos</CardDescription>
+                <CardTitle className="text-2xl sm:text-4xl text-primary">{stats?.pedidos_aceitos ?? 0}</CardTitle>
               </CardHeader>
             </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardDescription>Gorjetas Hoje</CardDescription>
-                <CardTitle className="text-4xl text-green-600">
+            <Card className="overflow-hidden">
+              <CardHeader className="p-3 sm:pb-3 sm:p-6">
+                <CardDescription className="text-xs sm:text-sm">Hoje</CardDescription>
+                <CardTitle className="text-xl sm:text-4xl text-green-600">
                   R$ {(stats?.gorjetas_hoje ?? 0).toFixed(2)}
                 </CardTitle>
               </CardHeader>
             </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardDescription>Total em Gorjetas</CardDescription>
-                <CardTitle className="text-4xl text-green-600">
+            <Card className="overflow-hidden">
+              <CardHeader className="p-3 sm:pb-3 sm:p-6">
+                <CardDescription className="text-xs sm:text-sm">Total</CardDescription>
+                <CardTitle className="text-xl sm:text-4xl text-green-600">
                   R$ {(stats?.gorjetas_total ?? 0).toFixed(2)}
                 </CardTitle>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Valor líquido após dedução de 20% da taxa da plataforma (artistas Pro: 0%)
-                </p>
               </CardHeader>
             </Card>
           </div>
         )}
 
         {/* Tabs for Pedidos and Gorjetas */}
-        <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="space-y-6">
-          <TabsList className="grid grid-cols-3 sm:grid-cols-4 md:inline-flex md:w-auto h-auto gap-1 p-1">
-            {pedidosAguardandoPixConfirmacao.length > 0 && (
-              <TabsTrigger value="aguardando_pix" className="text-xs sm:text-sm px-2 sm:px-3 bg-amber-500/10 border-amber-500/30">
-                💰 PIX ({pedidosAguardandoPixConfirmacao.length})
+        <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="space-y-4 sm:space-y-6">
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 pb-1">
+            <TabsList className="inline-flex w-max sm:w-auto h-auto gap-1 p-1">
+              {pedidosAguardandoPixConfirmacao.length > 0 && (
+                <TabsTrigger value="aguardando_pix" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 bg-amber-500/10 border-amber-500/30 whitespace-nowrap">
+                  💰 PIX ({pedidosAguardandoPixConfirmacao.length})
+                </TabsTrigger>
+              )}
+              <TabsTrigger value="pendentes" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
+                ⏳ ({pedidosPendentes.length})
               </TabsTrigger>
-            )}
-            <TabsTrigger value="pendentes" className="text-xs sm:text-sm px-2 sm:px-3">
-              ⏳ Pendentes ({pedidosPendentes.length})
-            </TabsTrigger>
-            <TabsTrigger value="aceitos" className="text-xs sm:text-sm px-2 sm:px-3">
-              ✅ Aceitos ({pedidosAceitos.length})
-            </TabsTrigger>
-            <TabsTrigger value="concluidos" className="text-xs sm:text-sm px-2 sm:px-3">
-              ✔ Concluídos ({pedidosConcluidos.length})
-            </TabsTrigger>
-            <TabsTrigger value="recusados" className="text-xs sm:text-sm px-2 sm:px-3">
-              ❌ Recusados ({pedidosRecusados.length})
-            </TabsTrigger>
-            <TabsTrigger value="gorjetas" className="text-xs sm:text-sm px-2 sm:px-3">
-              💝 Gorjetas ({gorjetas.length})
-            </TabsTrigger>
-            <TabsTrigger value="historico" className="text-xs sm:text-sm px-2 sm:px-3">
-              💰 Pagamentos
-            </TabsTrigger>
-            <TabsTrigger value="repertorio" className="text-xs sm:text-sm px-2 sm:px-3 col-span-3 sm:col-span-1">
-              🎵 Repertório
-            </TabsTrigger>
-          </TabsList>
+              <TabsTrigger value="aceitos" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
+                ✅ ({pedidosAceitos.length})
+              </TabsTrigger>
+              <TabsTrigger value="concluidos" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
+                ✔ ({pedidosConcluidos.length})
+              </TabsTrigger>
+              <TabsTrigger value="recusados" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
+                ❌ ({pedidosRecusados.length})
+              </TabsTrigger>
+              <TabsTrigger value="gorjetas" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
+                💝 ({gorjetas.length})
+              </TabsTrigger>
+              <TabsTrigger value="historico" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
+                💰
+              </TabsTrigger>
+              <TabsTrigger value="repertorio" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
+                🎵
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Aguardando Confirmação PIX - Only for PRO artists with own PIX */}
           <TabsContent value="aguardando_pix" className="space-y-4">
@@ -592,24 +594,24 @@ const ArtistPanel = () => {
             ) : (
               pedidosConcluidos.map((pedido) => (
                 <Card key={pedido.id} className="border-green-500/20">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <Avatar>
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-start gap-3">
+                      <Avatar className="w-10 h-10 shrink-0">
                         <AvatarImage src={pedido.profiles?.foto_url || undefined} />
                         <AvatarFallback>{(pedido.profiles?.nome || pedido.cliente_nome || "Anônimo")[0]}</AvatarFallback>
                       </Avatar>
-                      <div className="flex-1">
-                        <p className="font-semibold">{pedido.profiles?.nome || pedido.cliente_nome || "Anônimo"}</p>
-                        <p className="text-sm text-muted-foreground mb-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold truncate">{pedido.profiles?.nome || pedido.cliente_nome || "Anônimo"}</p>
+                        <p className="text-xs text-muted-foreground mb-2">
                           {new Date(pedido.created_at).toLocaleString("pt-BR")}
                         </p>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Music className="w-4 h-4 text-green-600" />
-                          <p className="font-medium text-lg">{pedido.musica}</p>
-                          <Badge className="ml-2 bg-green-600">✓ Concluído</Badge>
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <Music className="w-4 h-4 text-green-600 shrink-0" />
+                          <p className="font-medium truncate">{pedido.musica}</p>
+                          <Badge className="bg-green-600 text-xs">✓</Badge>
                         </div>
                         {pedido.mensagem && (
-                          <p className="text-sm text-muted-foreground italic">
+                          <p className="text-sm text-muted-foreground italic line-clamp-2">
                             "{pedido.mensagem}"
                           </p>
                         )}
@@ -634,24 +636,24 @@ const ArtistPanel = () => {
             ) : (
               pedidosRecusados.map((pedido) => (
                 <Card key={pedido.id} className="opacity-60">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <Avatar>
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-start gap-3">
+                      <Avatar className="w-10 h-10 shrink-0">
                         <AvatarImage src={pedido.profiles?.foto_url || undefined} />
                         <AvatarFallback>{(pedido.profiles?.nome || pedido.cliente_nome || "Anônimo")[0]}</AvatarFallback>
                       </Avatar>
-                      <div className="flex-1">
-                        <p className="font-semibold">{pedido.profiles?.nome || pedido.cliente_nome || "Anônimo"}</p>
-                        <p className="text-sm text-muted-foreground mb-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold truncate">{pedido.profiles?.nome || pedido.cliente_nome || "Anônimo"}</p>
+                        <p className="text-xs text-muted-foreground mb-2">
                           {new Date(pedido.created_at).toLocaleString("pt-BR")}
                         </p>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Music className="w-4 h-4 text-muted-foreground" />
-                          <p className="font-medium text-lg">{pedido.musica}</p>
-                          <Badge variant="destructive" className="ml-2">Recusado</Badge>
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <Music className="w-4 h-4 text-muted-foreground shrink-0" />
+                          <p className="font-medium truncate">{pedido.musica}</p>
+                          <Badge variant="destructive" className="text-xs">✗</Badge>
                         </div>
                         {pedido.mensagem && (
-                          <p className="text-sm text-muted-foreground italic">
+                          <p className="text-sm text-muted-foreground italic line-clamp-2">
                             "{pedido.mensagem}"
                           </p>
                         )}
