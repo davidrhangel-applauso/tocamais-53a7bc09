@@ -24,6 +24,7 @@ import { useArtistStats } from "@/hooks/useArtistStats";
 import { SkeletonStatsGrid, SkeletonPedidoList } from "@/components/ui/skeleton-card";
 import { PullToRefresh } from "@/components/ui/pull-to-refresh";
 import { useQueryClient } from "@tanstack/react-query";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 const ArtistPanel = () => {
   const navigate = useNavigate();
@@ -740,6 +741,16 @@ const ArtistPanel = () => {
         </Tabs>
             </div>
           </PullToRefresh>
+          
+          {/* Mobile Bottom Navigation */}
+          <MobileBottomNav
+            pendentes={pedidosPendentes.length}
+            aceitos={pedidosAceitos.length}
+            aguardandoPix={pedidosAguardandoPixConfirmacao.length}
+          />
+          
+          {/* Bottom padding for mobile nav */}
+          <div className="h-20 sm:hidden" />
         </div>
       </div>
     </SidebarProvider>
