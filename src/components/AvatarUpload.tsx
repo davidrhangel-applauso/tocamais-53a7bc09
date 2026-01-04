@@ -36,39 +36,101 @@ function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: numbe
   );
 }
 
+// Função para corrigir orientação EXIF da imagem (problema comum em fotos de celular)
+const fixImageOrientation = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas context not available'));
+          return;
+        }
+
+        // Definir dimensões máximas para evitar problemas de memória em mobile
+        const maxSize = 1500;
+        let { width, height } = img;
+        
+        if (width > height && width > maxSize) {
+          height = (height * maxSize) / width;
+          width = maxSize;
+        } else if (height > maxSize) {
+          width = (width * maxSize) / height;
+          height = maxSize;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Desenhar imagem redimensionada
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        resolve(canvas.toDataURL('image/jpeg', 0.9));
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsDataURL(file);
+  });
+};
+
 export const AvatarUpload = ({ currentUrl, onUpload, userName }: AvatarUploadProps) => {
   const [uploading, setUploading] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [imgSrc, setImgSrc] = useState<string>('');
   const [crop, setCrop] = useState<CropType>();
   const [completedCrop, setCompletedCrop] = useState<CropType>();
   const [showCropDialog, setShowCropDialog] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onSelectFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Reset input para permitir selecionar o mesmo arquivo novamente
+    if (inputRef.current) {
+      inputRef.current.value = '';
+    }
 
     if (!file.type.startsWith('image/')) {
       toast.error('Por favor, selecione uma imagem válida');
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('A imagem deve ter no máximo 5MB');
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 10MB');
       return;
     }
 
-    const reader = new FileReader();
-    reader.addEventListener('load', () => {
-      setImgSrc(reader.result?.toString() || '');
+    try {
+      setProcessing(true);
+      toast.loading('Processando imagem...', { id: 'processing' });
+      
+      // Processar imagem para corrigir orientação e redimensionar
+      const processedImage = await fixImageOrientation(file);
+      
+      setImgSrc(processedImage);
       setShowCropDialog(true);
-    });
-    reader.readAsDataURL(file);
+      toast.dismiss('processing');
+    } catch (error) {
+      console.error('Erro ao processar imagem:', error);
+      toast.dismiss('processing');
+      toast.error('Erro ao processar imagem. Tente novamente.');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const { width, height } = e.currentTarget;
-    setCrop(centerAspectCrop(width, height, 1));
+    const initialCrop = centerAspectCrop(width, height, 1);
+    setCrop(initialCrop);
+    setCompletedCrop(initialCrop);
   }, []);
 
   const getCroppedImg = useCallback(async (): Promise<Blob | null> => {
@@ -89,8 +151,10 @@ export const AvatarUpload = ({ currentUrl, onUpload, userName }: AvatarUploadPro
       height: (completedCrop.height / 100) * image.height * scaleY,
     };
 
-    canvas.width = pixelCrop.width;
-    canvas.height = pixelCrop.height;
+    // Tamanho fixo para o avatar final
+    const outputSize = 400;
+    canvas.width = outputSize;
+    canvas.height = outputSize;
 
     ctx.drawImage(
       image,
@@ -100,12 +164,12 @@ export const AvatarUpload = ({ currentUrl, onUpload, userName }: AvatarUploadPro
       pixelCrop.height,
       0,
       0,
-      pixelCrop.width,
-      pixelCrop.height,
+      outputSize,
+      outputSize,
     );
 
     return new Promise((resolve) => {
-      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.9);
+      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.85);
     });
   }, [completedCrop]);
 
@@ -122,7 +186,7 @@ export const AvatarUpload = ({ currentUrl, onUpload, userName }: AvatarUploadPro
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
-      const fileName = `${user.id}/${Math.random()}.jpg`;
+      const fileName = `${user.id}/${Date.now()}.jpg`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
@@ -137,11 +201,17 @@ export const AvatarUpload = ({ currentUrl, onUpload, userName }: AvatarUploadPro
         .from('avatars')
         .getPublicUrl(fileName);
 
-      onUpload(publicUrl);
+      // Adicionar timestamp para evitar cache
+      const urlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
+      
+      onUpload(urlWithTimestamp);
       toast.success('Foto atualizada com sucesso!');
       setShowCropDialog(false);
       setImgSrc('');
+      setCrop(undefined);
+      setCompletedCrop(undefined);
     } catch (error: any) {
+      console.error('Erro no upload:', error);
       toast.error('Erro ao fazer upload: ' + error.message);
     } finally {
       setUploading(false);
@@ -152,10 +222,23 @@ export const AvatarUpload = ({ currentUrl, onUpload, userName }: AvatarUploadPro
     onUpload('');
   };
 
+  const handleDialogClose = (open: boolean) => {
+    if (!open && !uploading) {
+      setShowCropDialog(false);
+      setImgSrc('');
+      setCrop(undefined);
+      setCompletedCrop(undefined);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center gap-4">
       <Avatar className="w-32 h-32">
-        <AvatarImage src={currentUrl || undefined} alt={userName} />
+        <AvatarImage 
+          src={currentUrl || undefined} 
+          alt={userName}
+          key={currentUrl} // Force re-render when URL changes
+        />
         <AvatarFallback className="text-2xl">
           {userName.substring(0, 2).toUpperCase()}
         </AvatarFallback>
@@ -165,11 +248,11 @@ export const AvatarUpload = ({ currentUrl, onUpload, userName }: AvatarUploadPro
         <Button
           type="button"
           variant="outline"
-          disabled={uploading}
-          onClick={() => document.getElementById('avatar-upload')?.click()}
+          disabled={uploading || processing}
+          onClick={() => inputRef.current?.click()}
         >
           <Upload className="w-4 h-4 mr-2" />
-          {uploading ? 'Enviando...' : 'Upload'}
+          {processing ? 'Processando...' : uploading ? 'Enviando...' : 'Upload'}
         </Button>
 
         {currentUrl && (
@@ -177,7 +260,7 @@ export const AvatarUpload = ({ currentUrl, onUpload, userName }: AvatarUploadPro
             type="button"
             variant="ghost"
             onClick={handleRemove}
-            disabled={uploading}
+            disabled={uploading || processing}
           >
             <X className="w-4 h-4 mr-2" />
             Remover
@@ -186,16 +269,17 @@ export const AvatarUpload = ({ currentUrl, onUpload, userName }: AvatarUploadPro
       </div>
 
       <input
+        ref={inputRef}
         id="avatar-upload"
         type="file"
         accept="image/*"
         className="hidden"
         onChange={onSelectFile}
-        disabled={uploading}
+        disabled={uploading || processing}
       />
 
-      <Dialog open={showCropDialog} onOpenChange={setShowCropDialog}>
-        <DialogContent className="sm:max-w-lg">
+      <Dialog open={showCropDialog} onOpenChange={handleDialogClose}>
+        <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Crop className="w-5 h-5" />
@@ -203,7 +287,7 @@ export const AvatarUpload = ({ currentUrl, onUpload, userName }: AvatarUploadPro
             </DialogTitle>
           </DialogHeader>
           
-          <div className="flex justify-center py-4">
+          <div className="flex justify-center py-4 touch-manipulation">
             {imgSrc && (
               <ReactCrop
                 crop={crop}
@@ -211,33 +295,33 @@ export const AvatarUpload = ({ currentUrl, onUpload, userName }: AvatarUploadPro
                 onComplete={(_, percentCrop) => setCompletedCrop(percentCrop)}
                 aspect={1}
                 circularCrop
-                className="max-h-[400px]"
+                className="max-h-[50vh] sm:max-h-[400px]"
               >
                 <img
                   ref={imgRef}
                   src={imgSrc}
                   alt="Imagem para recorte"
                   onLoad={onImageLoad}
-                  className="max-h-[400px] w-auto"
+                  className="max-h-[50vh] sm:max-h-[400px] w-auto"
+                  style={{ touchAction: 'none' }}
                 />
               </ReactCrop>
             )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
-              onClick={() => {
-                setShowCropDialog(false);
-                setImgSrc('');
-              }}
+              onClick={() => handleDialogClose(false)}
               disabled={uploading}
+              className="w-full sm:w-auto"
             >
               Cancelar
             </Button>
             <Button
               onClick={handleCropConfirm}
               disabled={uploading || !completedCrop}
+              className="w-full sm:w-auto"
             >
               {uploading ? 'Salvando...' : 'Confirmar'}
             </Button>
