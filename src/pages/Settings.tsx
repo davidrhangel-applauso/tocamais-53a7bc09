@@ -169,7 +169,10 @@ const Settings = () => {
             Voltar
           </Button>
           <h1 className="text-2xl font-bold text-gradient">Configurações</h1>
-          <div className="w-20" />
+          <Button onClick={handleSave} disabled={saving} size="sm">
+            <Save className="w-4 h-4 mr-2" />
+            {saving ? "Salvando..." : "Salvar"}
+          </Button>
         </div>
       </header>
 
