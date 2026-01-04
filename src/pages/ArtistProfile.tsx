@@ -306,11 +306,11 @@ const ArtistProfile = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
+      <main className="container mx-auto px-4 py-4 md:py-8 max-w-4xl">
         {/* Artist Header */}
-        <Card className="mb-8 border-primary/20 overflow-hidden">
+        <Card className="mb-6 md:mb-8 border-primary/20 overflow-hidden">
           {/* Cover Photo */}
-          <div ref={coverRef} className="w-full h-48 md:h-64 relative overflow-hidden">
+          <div ref={coverRef} className="w-full h-36 md:h-64 relative overflow-hidden">
             {artist.foto_capa_url ? (
               <img 
                 src={artist.foto_capa_url} 
@@ -324,102 +324,181 @@ const ArtistProfile = () => {
                 style={{ transform: `translateY(${scrollY * 0.3}px)` }}
               />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
           </div>
-          <CardContent className="p-8 -mt-16 relative">
-            <div className="flex flex-col md:flex-row gap-6 items-start">
-              <Avatar className="w-32 h-32 ring-4 ring-background">
-                <AvatarImage src={artist.foto_url} />
-                <AvatarFallback className="text-3xl">{artist.nome[0]}</AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-1">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h1 className="text-4xl font-bold mb-2">{artist.nome}</h1>
-                    {canViewSensitiveData && artist.cidade && (
-                      <p className="text-lg text-muted-foreground mb-2">{artist.cidade}</p>
-                    )}
-                    <div className="flex gap-2 flex-wrap">
-                      <Badge variant="secondary" className="text-base px-3 py-1">
-                        {artist.estilo_musical}
-                      </Badge>
-                      {isPro ? (
-                        <Badge className="text-base px-3 py-1 bg-gradient-to-r from-amber-500 to-yellow-400 text-black border-0">
-                          ⭐ Pro • 0% taxa
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-base px-3 py-1">
-                          Free • 20% taxa
-                        </Badge>
-                      )}
-                      {artist.status_destaque && (
-                        <Badge variant="default" className="text-base px-3 py-1">
-                          ⭐ Destaque
-                        </Badge>
-                      )}
-                      {artist.ativo_ao_vivo && (
-                        <Badge variant="default" className="text-base px-3 py-1 bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">
-                          <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2" />
-                          AO VIVO
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
+          
+          <CardContent className="px-4 md:px-8 pb-6 -mt-12 md:-mt-16 relative">
+            {/* Mobile Layout - Avatar centered */}
+            {isMobile ? (
+              <div className="flex flex-col items-center text-center">
+                <Avatar className="w-24 h-24 ring-4 ring-background shadow-xl">
+                  <AvatarImage src={artist.foto_url} />
+                  <AvatarFallback className="text-2xl">{artist.nome[0]}</AvatarFallback>
+                </Avatar>
+                
+                <h1 className="text-2xl font-bold mt-3 mb-1">{artist.nome}</h1>
+                
+                {canViewSensitiveData && artist.cidade && (
+                  <p className="text-sm text-muted-foreground mb-2">{artist.cidade}</p>
+                )}
+                
+                {/* Compact badges row */}
+                <div className="flex gap-1.5 flex-wrap justify-center mb-3">
+                  <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                    {artist.estilo_musical}
+                  </Badge>
+                  {isPro ? (
+                    <Badge className="text-xs px-2 py-0.5 bg-gradient-to-r from-amber-500 to-yellow-400 text-black border-0">
+                      ⭐ Pro
+                    </Badge>
+                  ) : null}
+                  {artist.ativo_ao_vivo && (
+                    <Badge className="text-xs px-2 py-0.5 bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">
+                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse mr-1" />
+                      AO VIVO
+                    </Badge>
+                  )}
                 </div>
-
+                
                 {artist.bio && (
-                  <p className="text-foreground mb-4 leading-relaxed">{artist.bio}</p>
+                  <p className="text-sm text-muted-foreground mb-4 leading-relaxed line-clamp-3">
+                    {artist.bio}
+                  </p>
                 )}
 
-                {/* Social Links */}
+                {/* Social Links - compact on mobile */}
                 {canViewSensitiveData ? (
-                  <div className="flex gap-3 flex-wrap">
+                  <div className="flex gap-2 justify-center mb-4">
                     {artist.instagram && (
-                      <Button variant="outline" size="sm" asChild>
+                      <Button variant="outline" size="icon" className="h-9 w-9" asChild>
                         <a href={artist.instagram} target="_blank" rel="noopener noreferrer">
-                          <Instagram className="w-4 h-4 mr-2" />
-                          Instagram
+                          <Instagram className="w-4 h-4" />
                         </a>
                       </Button>
                     )}
                     {artist.youtube && (
-                      <Button variant="outline" size="sm" asChild>
+                      <Button variant="outline" size="icon" className="h-9 w-9" asChild>
                         <a href={artist.youtube} target="_blank" rel="noopener noreferrer">
-                          <Youtube className="w-4 h-4 mr-2" />
-                          YouTube
+                          <Youtube className="w-4 h-4" />
                         </a>
                       </Button>
                     )}
                     {artist.spotify && (
-                      <Button variant="outline" size="sm" asChild>
+                      <Button variant="outline" size="icon" className="h-9 w-9" asChild>
                         <a href={artist.spotify} target="_blank" rel="noopener noreferrer">
-                          <Music2 className="w-4 h-4 mr-2" />
-                          Spotify
+                          <Music2 className="w-4 h-4" />
                         </a>
                       </Button>
                     )}
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                    <Lock className="w-4 h-4" />
-                    <p>Links de redes sociais visíveis após interação com o artista</p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded-lg mb-4">
+                    <Lock className="w-3 h-3" />
+                    <p>Links visíveis após interação</p>
                   </div>
                 )}
 
-                {/* Quick tip button - visible on mobile in header */}
-                {isMobile && (
-                  <Button 
-                    className="mt-4 w-full bg-gradient-to-r from-primary to-accent hover:opacity-90"
-                    size="lg"
-                    onClick={scrollToTipCard}
-                  >
-                    <Heart className="w-5 h-5 mr-2" />
-                    Enviar Gorjeta
-                  </Button>
-                )}
+                {/* Prominent tip button on mobile */}
+                <Button 
+                  className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg"
+                  size="lg"
+                  onClick={() => {
+                    if (isPro && pixInfo.pix_chave) {
+                      setDirectPixDialogOpen(true);
+                    } else {
+                      scrollToTipCard();
+                    }
+                  }}
+                >
+                  <Heart className="w-5 h-5 mr-2" />
+                  Enviar Gorjeta
+                  {isPro && <Badge className="ml-2 text-[10px] bg-white/20 border-0">0% taxa</Badge>}
+                </Button>
               </div>
-            </div>
+            ) : (
+              /* Desktop Layout */
+              <div className="flex flex-col md:flex-row gap-6 items-start">
+                <Avatar className="w-32 h-32 ring-4 ring-background">
+                  <AvatarImage src={artist.foto_url} />
+                  <AvatarFallback className="text-3xl">{artist.nome[0]}</AvatarFallback>
+                </Avatar>
+                
+                <div className="flex-1">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h1 className="text-4xl font-bold mb-2">{artist.nome}</h1>
+                      {canViewSensitiveData && artist.cidade && (
+                        <p className="text-lg text-muted-foreground mb-2">{artist.cidade}</p>
+                      )}
+                      <div className="flex gap-2 flex-wrap">
+                        <Badge variant="secondary" className="text-base px-3 py-1">
+                          {artist.estilo_musical}
+                        </Badge>
+                        {isPro ? (
+                          <Badge className="text-base px-3 py-1 bg-gradient-to-r from-amber-500 to-yellow-400 text-black border-0">
+                            ⭐ Pro • 0% taxa
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-base px-3 py-1">
+                            Free • 20% taxa
+                          </Badge>
+                        )}
+                        {artist.status_destaque && (
+                          <Badge variant="default" className="text-base px-3 py-1">
+                            ⭐ Destaque
+                          </Badge>
+                        )}
+                        {artist.ativo_ao_vivo && (
+                          <Badge variant="default" className="text-base px-3 py-1 bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">
+                            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2" />
+                            AO VIVO
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {artist.bio && (
+                    <p className="text-foreground mb-4 leading-relaxed">{artist.bio}</p>
+                  )}
+
+                  {/* Social Links */}
+                  {canViewSensitiveData ? (
+                    <div className="flex gap-3 flex-wrap">
+                      {artist.instagram && (
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={artist.instagram} target="_blank" rel="noopener noreferrer">
+                            <Instagram className="w-4 h-4 mr-2" />
+                            Instagram
+                          </a>
+                        </Button>
+                      )}
+                      {artist.youtube && (
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={artist.youtube} target="_blank" rel="noopener noreferrer">
+                            <Youtube className="w-4 h-4 mr-2" />
+                            YouTube
+                          </a>
+                        </Button>
+                      )}
+                      {artist.spotify && (
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={artist.spotify} target="_blank" rel="noopener noreferrer">
+                            <Music2 className="w-4 h-4 mr-2" />
+                            Spotify
+                          </a>
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+                      <Lock className="w-4 h-4" />
+                      <p>Links de redes sociais visíveis após interação com o artista</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
