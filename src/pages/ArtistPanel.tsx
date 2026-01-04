@@ -219,7 +219,7 @@ const ArtistPanel = () => {
                 <div className="flex items-center gap-2 sm:gap-3">
                   <div className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shrink-0 ${ativoAoVivo ? 'bg-green-500 animate-pulse' : 'bg-muted'}`} />
                   <Label htmlFor="live-status" className="text-sm sm:text-lg cursor-pointer">
-                    {ativoAoVivo ? "🔴 Ao Vivo" : "Offline"}
+                    {ativoAoVivo ? "Ao Vivo" : "Offline"}
                   </Label>
                 </div>
                 <Switch
