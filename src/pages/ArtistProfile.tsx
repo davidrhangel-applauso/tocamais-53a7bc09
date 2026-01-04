@@ -11,7 +11,8 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Music, Heart, Instagram, Youtube, Music2, ExternalLink, Lock } from "lucide-react";
+import { ArrowLeft, Music, Heart, Instagram, Youtube, Music2, ExternalLink, Lock, DollarSign } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { useProfilePermissions } from "@/hooks/useProfilePermissions";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -161,6 +162,12 @@ const ArtistProfile = () => {
   
   // Check if artist is Pro
   const { isPro, isLoading: subscriptionLoading } = useSubscription(id || null);
+  const isMobile = useIsMobile();
+  const tipCardRef = useRef<HTMLDivElement>(null);
+  
+  const scrollToTipCard = () => {
+    tipCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   useEffect(() => {
     checkAuth();
@@ -352,10 +359,10 @@ const ArtistProfile = () => {
                         </Badge>
                       )}
                       {artist.ativo_ao_vivo && (
-                        <div className="flex items-center gap-2 px-3 py-1 bg-secondary/50 rounded-full">
-                          <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-                          <span className="text-base font-medium text-foreground">AO VIVO</span>
-                        </div>
+                        <Badge variant="default" className="text-base px-3 py-1 bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">
+                          <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2" />
+                          AO VIVO
+                        </Badge>
                       )}
                     </div>
                   </div>
@@ -398,6 +405,18 @@ const ArtistProfile = () => {
                     <Lock className="w-4 h-4" />
                     <p>Links de redes sociais visíveis após interação com o artista</p>
                   </div>
+                )}
+
+                {/* Quick tip button - visible on mobile in header */}
+                {isMobile && (
+                  <Button 
+                    className="mt-4 w-full bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                    size="lg"
+                    onClick={scrollToTipCard}
+                  >
+                    <Heart className="w-5 h-5 mr-2" />
+                    Enviar Gorjeta
+                  </Button>
                 )}
               </div>
             </div>
@@ -523,7 +542,7 @@ const ArtistProfile = () => {
           </Card>
 
           {/* Tip Card */}
-          <Card>
+          <Card ref={tipCardRef}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Heart className="w-5 h-5 text-accent" />
@@ -800,6 +819,22 @@ const ArtistProfile = () => {
           clienteId={currentUserId}
           sessionId={sessionId}
         />
+      )}
+
+      {/* Floating tip button for mobile */}
+      {isMobile && (
+        <Button
+          className="fixed bottom-20 right-4 z-40 rounded-full h-14 w-14 shadow-lg bg-gradient-to-r from-primary to-accent hover:opacity-90 p-0"
+          onClick={() => {
+            if (isPro && pixInfo.pix_chave) {
+              setDirectPixDialogOpen(true);
+            } else {
+              scrollToTipCard();
+            }
+          }}
+        >
+          <DollarSign className="w-6 h-6" />
+        </Button>
       )}
     </div>
   );
