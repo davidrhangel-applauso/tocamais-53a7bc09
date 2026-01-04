@@ -824,7 +824,7 @@ const ArtistProfile = () => {
       {/* Floating tip button for mobile */}
       {isMobile && (
         <Button
-          className="fixed bottom-20 right-4 z-40 rounded-full h-14 w-14 shadow-lg bg-gradient-to-r from-primary to-accent hover:opacity-90 p-0"
+          className="fixed bottom-20 right-4 z-40 rounded-full h-14 w-14 shadow-lg bg-gradient-to-r from-primary to-accent hover:opacity-90 p-0 animate-pulse hover:animate-none"
           onClick={() => {
             if (isPro && pixInfo.pix_chave) {
               setDirectPixDialogOpen(true);
