@@ -18,7 +18,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import MusicRepertoire from "@/components/MusicRepertoire";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useArtistPedidos, useUpdatePedidoStatus, useBulkUpdatePedidos, useConfirmPixPayment, Pedido } from "@/hooks/useArtistPedidos";
+import { useArtistPedidos, useUpdatePedidoStatus, useBulkUpdatePedidos, useConfirmPixPayment, useDeletePedido, useArchivePedido, Pedido } from "@/hooks/useArtistPedidos";
 import { useArtistGorjetas, Gorjeta } from "@/hooks/useArtistGorjetas";
 import { useArtistStats } from "@/hooks/useArtistStats";
 import { SkeletonStatsGrid, SkeletonPedidoList } from "@/components/ui/skeleton-card";
@@ -26,6 +26,8 @@ import { PullToRefresh } from "@/components/ui/pull-to-refresh";
 import { useQueryClient } from "@tanstack/react-query";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { ClearOldOrdersDialog } from "@/components/ClearOldOrdersDialog";
+import { SwipeablePedidoCard } from "@/components/SwipeablePedidoCard";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ArtistPanel = () => {
   const navigate = useNavigate();
@@ -46,6 +48,9 @@ const ArtistPanel = () => {
   const updatePedidoStatus = useUpdatePedidoStatus();
   const bulkUpdatePedidos = useBulkUpdatePedidos();
   const confirmPixPayment = useConfirmPixPayment();
+  const deletePedido = useDeletePedido();
+  const archivePedido = useArchivePedido();
+  const isMobile = useIsMobile();
 
   // Pull-to-refresh handler
   const handleRefresh = useCallback(async () => {
@@ -620,34 +625,48 @@ const ArtistPanel = () => {
                 </CardContent>
               </Card>
             ) : (
-              pedidosConcluidos.map((pedido) => (
-                <Card key={pedido.id} className="border-green-500/20">
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex items-start gap-3">
-                      <Avatar className="w-10 h-10 shrink-0">
-                        <AvatarImage src={pedido.profiles?.foto_url || undefined} />
-                        <AvatarFallback>{(pedido.profiles?.nome || pedido.cliente_nome || "Anônimo")[0]}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold truncate">{pedido.profiles?.nome || pedido.cliente_nome || "Anônimo"}</p>
-                        <p className="text-xs text-muted-foreground mb-2">
-                          {new Date(pedido.created_at).toLocaleString("pt-BR")}
-                        </p>
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <Music className="w-4 h-4 text-green-600 shrink-0" />
-                          <p className="font-medium truncate">{pedido.musica}</p>
-                          <Badge className="bg-green-600 text-xs">✓</Badge>
+              <>
+                {isMobile && (
+                  <p className="text-xs text-muted-foreground text-center mb-2">
+                    👆 Deslize para arquivar (←) ou excluir (→)
+                  </p>
+                )}
+                {pedidosConcluidos.map((pedido) => (
+                  <SwipeablePedidoCard
+                    key={pedido.id}
+                    onSwipeLeft={() => archivePedido.mutate({ pedidoId: pedido.id })}
+                    onSwipeRight={() => deletePedido.mutate({ pedidoId: pedido.id })}
+                    disabled={!isMobile}
+                  >
+                    <Card className="border-green-500/20">
+                      <CardContent className="p-4 sm:p-6">
+                        <div className="flex items-start gap-3">
+                          <Avatar className="w-10 h-10 shrink-0">
+                            <AvatarImage src={pedido.profiles?.foto_url || undefined} />
+                            <AvatarFallback>{(pedido.profiles?.nome || pedido.cliente_nome || "Anônimo")[0]}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold truncate">{pedido.profiles?.nome || pedido.cliente_nome || "Anônimo"}</p>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              {new Date(pedido.created_at).toLocaleString("pt-BR")}
+                            </p>
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                              <Music className="w-4 h-4 text-green-600 shrink-0" />
+                              <p className="font-medium truncate">{pedido.musica}</p>
+                              <Badge className="bg-green-600 text-xs">✓</Badge>
+                            </div>
+                            {pedido.mensagem && (
+                              <p className="text-sm text-muted-foreground italic line-clamp-2">
+                                "{pedido.mensagem}"
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        {pedido.mensagem && (
-                          <p className="text-sm text-muted-foreground italic line-clamp-2">
-                            "{pedido.mensagem}"
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                      </CardContent>
+                    </Card>
+                  </SwipeablePedidoCard>
+                ))}
+              </>
             )}
           </TabsContent>
 
@@ -662,34 +681,48 @@ const ArtistPanel = () => {
                 </CardContent>
               </Card>
             ) : (
-              pedidosRecusados.map((pedido) => (
-                <Card key={pedido.id} className="opacity-60">
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex items-start gap-3">
-                      <Avatar className="w-10 h-10 shrink-0">
-                        <AvatarImage src={pedido.profiles?.foto_url || undefined} />
-                        <AvatarFallback>{(pedido.profiles?.nome || pedido.cliente_nome || "Anônimo")[0]}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold truncate">{pedido.profiles?.nome || pedido.cliente_nome || "Anônimo"}</p>
-                        <p className="text-xs text-muted-foreground mb-2">
-                          {new Date(pedido.created_at).toLocaleString("pt-BR")}
-                        </p>
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <Music className="w-4 h-4 text-muted-foreground shrink-0" />
-                          <p className="font-medium truncate">{pedido.musica}</p>
-                          <Badge variant="destructive" className="text-xs">✗</Badge>
+              <>
+                {isMobile && (
+                  <p className="text-xs text-muted-foreground text-center mb-2">
+                    👆 Deslize para arquivar (←) ou excluir (→)
+                  </p>
+                )}
+                {pedidosRecusados.map((pedido) => (
+                  <SwipeablePedidoCard
+                    key={pedido.id}
+                    onSwipeLeft={() => archivePedido.mutate({ pedidoId: pedido.id })}
+                    onSwipeRight={() => deletePedido.mutate({ pedidoId: pedido.id })}
+                    disabled={!isMobile}
+                  >
+                    <Card className="opacity-60">
+                      <CardContent className="p-4 sm:p-6">
+                        <div className="flex items-start gap-3">
+                          <Avatar className="w-10 h-10 shrink-0">
+                            <AvatarImage src={pedido.profiles?.foto_url || undefined} />
+                            <AvatarFallback>{(pedido.profiles?.nome || pedido.cliente_nome || "Anônimo")[0]}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold truncate">{pedido.profiles?.nome || pedido.cliente_nome || "Anônimo"}</p>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              {new Date(pedido.created_at).toLocaleString("pt-BR")}
+                            </p>
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                              <Music className="w-4 h-4 text-muted-foreground shrink-0" />
+                              <p className="font-medium truncate">{pedido.musica}</p>
+                              <Badge variant="destructive" className="text-xs">✗</Badge>
+                            </div>
+                            {pedido.mensagem && (
+                              <p className="text-sm text-muted-foreground italic line-clamp-2">
+                                "{pedido.mensagem}"
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        {pedido.mensagem && (
-                          <p className="text-sm text-muted-foreground italic line-clamp-2">
-                            "{pedido.mensagem}"
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                      </CardContent>
+                    </Card>
+                  </SwipeablePedidoCard>
+                ))}
+              </>
             )}
           </TabsContent>
 

@@ -354,3 +354,59 @@ export function useBulkArchivePedidos() {
     },
   });
 }
+
+export function useDeletePedido() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ pedidoId }: { pedidoId: string }) => {
+      // Delete only the pedido, gorjetas are NOT affected
+      const { error } = await supabase
+        .from("pedidos")
+        .delete()
+        .eq("id", pedidoId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Pedido excluído 🗑️");
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao excluir pedido: ${error.message ?? "tente novamente"}`);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["artist-pedidos"] });
+      queryClient.invalidateQueries({ queryKey: ["artist-archived-pedidos"] });
+      queryClient.invalidateQueries({ queryKey: ["artist-stats"] });
+    },
+  });
+}
+
+export function useArchivePedido() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ pedidoId }: { pedidoId: string }) => {
+      const { error } = await supabase
+        .from("pedidos")
+        .update({ 
+          arquivado: true, 
+          arquivado_at: new Date().toISOString() 
+        })
+        .eq("id", pedidoId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Pedido arquivado 📦");
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao arquivar pedido: ${error.message ?? "tente novamente"}`);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["artist-pedidos"] });
+      queryClient.invalidateQueries({ queryKey: ["artist-archived-pedidos"] });
+      queryClient.invalidateQueries({ queryKey: ["artist-stats"] });
+    },
+  });
+}
