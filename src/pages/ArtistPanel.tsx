@@ -424,47 +424,45 @@ const ArtistPanel = () => {
           </TabsContent>
 
           {/* Histórico de Pagamentos */}
-          <TabsContent value="historico" className="space-y-6">
-            {artistId && <MercadoPagoLink userId={artistId} />}
-            
-            {/* Aviso sobre liberação de pagamentos */}
-            <Card className="border-amber-500/30 bg-amber-500/5">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <span>⏱️</span>
-                  Receba seus pagamentos mais rápido
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm text-muted-foreground">
-                <p>
-                  Por padrão, o Mercado Pago retém os pagamentos por até 14 dias antes de liberar para sua conta. 
-                  Para receber mais rápido, você pode:
-                </p>
-                <ol className="list-decimal list-inside space-y-2 ml-2">
-                  <li>
-                    <strong>Verificar sua conta:</strong> Complete a verificação de identidade no app do Mercado Pago
-                  </li>
-                  <li>
-                    <strong>Ativar liberação imediata:</strong> No app Mercado Pago, vá em{" "}
-                    <span className="font-medium text-foreground">Seu negócio → Configurações → Liberação de dinheiro</span>
-                  </li>
-                  <li>
-                    <strong>Manter histórico positivo:</strong> Quanto mais vendas sem problemas, mais rápido o dinheiro é liberado
-                  </li>
-                </ol>
-                <p className="text-xs pt-2 border-t border-border/50">
-                  💡 Contas verificadas com bom histórico podem receber pagamentos em até 24 horas.
-                </p>
-                <a 
-                  href="/configuracoes" 
-                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-2"
-                >
-                  📖 Ver FAQ completo sobre pagamentos
-                </a>
-              </CardContent>
-            </Card>
-            
+          <TabsContent value="historico" className="space-y-4 sm:space-y-6">
+            {/* Histórico de Pagamentos primeiro - mais importante */}
             <PaymentHistory gorjetas={gorjetas} />
+            
+            {/* MercadoPago e Dicas em acordeão colapsável no mobile */}
+            <details className="group">
+              <summary className="flex items-center justify-between cursor-pointer p-3 sm:p-4 bg-muted/50 rounded-lg border hover:bg-muted/70 transition-colors">
+                <span className="font-medium text-sm sm:text-base flex items-center gap-2">
+                  💳 Configurações de Pagamento
+                </span>
+                <span className="text-muted-foreground text-xs group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="mt-3 space-y-4">
+                {artistId && <MercadoPagoLink userId={artistId} />}
+                
+                {/* Aviso sobre liberação de pagamentos - compacto */}
+                <Card className="border-amber-500/30 bg-amber-500/5">
+                  <CardHeader className="p-3 sm:pb-3 sm:p-6">
+                    <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                      <span>⏱️</span>
+                      Receber mais rápido
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0 space-y-2 text-xs sm:text-sm text-muted-foreground">
+                    <p>
+                      Por padrão, o Mercado Pago retém os pagamentos por até 14 dias. Para receber mais rápido:
+                    </p>
+                    <ol className="list-decimal list-inside space-y-1 ml-1 text-xs">
+                      <li><strong>Verificar sua conta</strong> no app do Mercado Pago</li>
+                      <li><strong>Ativar liberação imediata</strong> em Seu negócio → Configurações</li>
+                      <li><strong>Manter histórico positivo</strong> de vendas</li>
+                    </ol>
+                    <p className="text-[10px] sm:text-xs pt-2 border-t border-border/50">
+                      💡 Contas verificadas podem receber em até 24h.
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </details>
           </TabsContent>
 
           {/* Repertório */}
