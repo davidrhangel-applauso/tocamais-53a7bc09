@@ -272,6 +272,30 @@ const ArtistPanel = () => {
             </Card>
           </div>
         )}
+        {/* Alert for pending PIX confirmations */}
+        {pedidosAguardandoPixConfirmacao.length > 0 && currentTab !== "aguardando_pix" && (
+          <Card className="border-amber-500 bg-amber-500/10 mb-4 animate-pulse cursor-pointer" onClick={() => setSearchParams({ tab: "aguardando_pix" })}>
+            <CardContent className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center text-black font-bold">
+                  {pedidosAguardandoPixConfirmacao.length}
+                </div>
+                <div>
+                  <p className="font-semibold text-amber-700 dark:text-amber-400">
+                    {pedidosAguardandoPixConfirmacao.length === 1 
+                      ? "1 PIX aguardando confirmação" 
+                      : `${pedidosAguardandoPixConfirmacao.length} PIX aguardando confirmação`}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Clique aqui para confirmar recebimento e registrar na sua conta</p>
+                </div>
+              </div>
+              <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-black">
+                <Check className="w-4 h-4 mr-1" />
+                Confirmar
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Tabs for Pedidos and Gorjetas */}
         <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="space-y-4 sm:space-y-6">
