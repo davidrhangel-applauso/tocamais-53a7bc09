@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { ClearOldOrdersDialog } from "@/components/ClearOldOrdersDialog";
 import { SwipeablePedidoCard } from "@/components/SwipeablePedidoCard";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
 
 const ArtistPanel = () => {
   const navigate = useNavigate();
@@ -160,6 +161,38 @@ const ArtistPanel = () => {
 
   const currentTab = searchParams.get("tab") || "pendentes";
 
+  // Tab order for swipe navigation
+  const tabOrder = useMemo(() => {
+    const tabs = ["pendentes", "aceitos", "gorjetas", "repertorio"];
+    // Add PIX tab if there are pending confirmations
+    if (pedidosAguardandoPixConfirmacao.length > 0) {
+      tabs.splice(2, 0, "aguardando_pix");
+    }
+    return tabs;
+  }, [pedidosAguardandoPixConfirmacao.length]);
+
+  // Swipe navigation handlers
+  const navigateToNextTab = useCallback(() => {
+    const currentIndex = tabOrder.indexOf(currentTab);
+    if (currentIndex < tabOrder.length - 1) {
+      setSearchParams({ tab: tabOrder[currentIndex + 1] });
+    }
+  }, [currentTab, tabOrder, setSearchParams]);
+
+  const navigateToPrevTab = useCallback(() => {
+    const currentIndex = tabOrder.indexOf(currentTab);
+    if (currentIndex > 0) {
+      setSearchParams({ tab: tabOrder[currentIndex - 1] });
+    }
+  }, [currentTab, tabOrder, setSearchParams]);
+
+  const swipeHandlers = useSwipeNavigation({
+    onSwipeLeft: navigateToNextTab,
+    onSwipeRight: navigateToPrevTab,
+    threshold: 60,
+    allowedTime: 400,
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -198,7 +231,10 @@ const ArtistPanel = () => {
           </header>
 
           <PullToRefresh onRefresh={handleRefresh} className="flex-1 overflow-auto">
-            <div className="p-3 sm:p-6">
+            <div 
+              className="p-3 sm:p-6"
+              {...(isMobile ? swipeHandlers : {})}
+            >
         {/* Welcome and Live Status */}
         <div className="mb-4 sm:mb-8">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
