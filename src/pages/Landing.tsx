@@ -1,14 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Music, Heart, Star, Users, HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/hero-concert.jpg";
 import { waitForProfile } from "@/lib/auth-utils";
 import { NearbyArtists } from "@/components/NearbyArtists";
+import { PremiumOfferModal } from "@/components/PremiumOfferModal";
 
 const Landing = () => {
   const navigate = useNavigate();
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -30,6 +32,22 @@ const Landing = () => {
         await supabase.auth.signOut();
       }
     }
+  };
+
+  const handleArtistClick = () => {
+    setShowPremiumModal(true);
+  };
+
+  const handleContinueFree = () => {
+    setShowPremiumModal(false);
+    navigate("/auth");
+  };
+
+  const handleSelectPlan = (plan: "monthly" | "annual" | "biennial") => {
+    // Store selected plan in sessionStorage to use after registration
+    sessionStorage.setItem("selectedPremiumPlan", plan);
+    setShowPremiumModal(false);
+    navigate("/auth?upgrade=true");
   };
 
   return (
@@ -74,7 +92,7 @@ const Landing = () => {
             <Button
               size="lg"
               className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 bg-gradient-to-r from-primary to-primary-glow hover:shadow-2xl hover:shadow-primary/50 transition-all duration-300 hover:scale-105 font-semibold shadow-xl w-full sm:w-auto"
-              onClick={() => navigate("/auth")}
+              onClick={handleArtistClick}
             >
               Sou Artista
             </Button>
@@ -209,6 +227,14 @@ const Landing = () => {
           <p className="text-xs sm:text-sm text-muted-foreground/80 px-4">Conectando artistas e público através da música</p>
         </div>
       </footer>
+
+      {/* Premium Offer Modal */}
+      <PremiumOfferModal
+        open={showPremiumModal}
+        onOpenChange={setShowPremiumModal}
+        onContinueFree={handleContinueFree}
+        onSelectPlan={handleSelectPlan}
+      />
     </div>
   );
 };
