@@ -299,34 +299,35 @@ const ArtistPanel = () => {
 
         {/* Tabs for Pedidos and Gorjetas */}
         <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="space-y-4 sm:space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-            <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 pb-1">
-              <TabsList className="inline-flex w-max sm:w-auto h-auto gap-1 p-1">
+          {/* TabsList - hidden on mobile since we use MobileBottomNav */}
+          <div className="hidden sm:flex sm:flex-row sm:items-center justify-between gap-4">
+            <div className="overflow-x-auto">
+              <TabsList className="inline-flex w-auto h-auto gap-1 p-1">
                 {pedidosAguardandoPixConfirmacao.length > 0 && (
-                  <TabsTrigger value="aguardando_pix" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 bg-amber-500/10 border-amber-500/30 whitespace-nowrap">
+                  <TabsTrigger value="aguardando_pix" className="text-sm px-3 py-2 bg-amber-500/10 border-amber-500/30 whitespace-nowrap">
                     💰 PIX ({pedidosAguardandoPixConfirmacao.length})
                   </TabsTrigger>
                 )}
-                <TabsTrigger value="pendentes" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
-                  ⏳ ({pedidosPendentes.length})
+                <TabsTrigger value="pendentes" className="text-sm px-3 py-2 whitespace-nowrap">
+                  ⏳ Pendentes ({pedidosPendentes.length})
                 </TabsTrigger>
-                <TabsTrigger value="aceitos" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
-                  ✅ ({pedidosAceitos.length})
+                <TabsTrigger value="aceitos" className="text-sm px-3 py-2 whitespace-nowrap">
+                  ✅ Aceitos ({pedidosAceitos.length})
                 </TabsTrigger>
-                <TabsTrigger value="concluidos" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
-                  ✔ ({pedidosConcluidos.length})
+                <TabsTrigger value="concluidos" className="text-sm px-3 py-2 whitespace-nowrap">
+                  ✔ Concluídos ({pedidosConcluidos.length})
                 </TabsTrigger>
-                <TabsTrigger value="recusados" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
-                  ❌ ({pedidosRecusados.length})
+                <TabsTrigger value="recusados" className="text-sm px-3 py-2 whitespace-nowrap">
+                  ❌ Recusados ({pedidosRecusados.length})
                 </TabsTrigger>
-                <TabsTrigger value="gorjetas" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
-                  💝 ({gorjetas.length})
+                <TabsTrigger value="gorjetas" className="text-sm px-3 py-2 whitespace-nowrap">
+                  💝 Gorjetas ({gorjetas.length})
                 </TabsTrigger>
-                <TabsTrigger value="historico" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
-                  💰
+                <TabsTrigger value="historico" className="text-sm px-3 py-2 whitespace-nowrap">
+                  💰 Histórico
                 </TabsTrigger>
-                <TabsTrigger value="repertorio" className="text-xs px-2 py-1.5 sm:text-sm sm:px-3 sm:py-2 whitespace-nowrap">
-                  🎵
+                <TabsTrigger value="repertorio" className="text-sm px-3 py-2 whitespace-nowrap">
+                  🎵 Repertório
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -342,6 +343,19 @@ const ArtistPanel = () => {
               />
             )}
           </div>
+
+          {/* Mobile: Clear old orders button inline */}
+          {isMobile && (pedidosConcluidos.length > 0 || pedidosRecusados.length > 0) && artistId && (
+            <div className="flex justify-end">
+              <ClearOldOrdersDialog 
+                artistId={artistId} 
+                counts={{
+                  concluidos: pedidosConcluidos.length,
+                  recusados: pedidosRecusados.length,
+                }}
+              />
+            </div>
+          )}
 
           {/* Aguardando Confirmação PIX - Only for PRO artists with own PIX */}
           <TabsContent value="aguardando_pix" className="space-y-4">
@@ -816,6 +830,9 @@ const ArtistPanel = () => {
             pendentes={pedidosPendentes.length}
             aceitos={pedidosAceitos.length}
             aguardandoPix={pedidosAguardandoPixConfirmacao.length}
+            concluidos={pedidosConcluidos.length}
+            recusados={pedidosRecusados.length}
+            gorjetas={gorjetas.length}
           />
           
           {/* Bottom padding for mobile nav */}
