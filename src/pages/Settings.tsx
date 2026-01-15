@@ -388,8 +388,8 @@ const Settings = () => {
               </div>
             )}
 
-            {/* Payment Settings - Only for artists */}
-            {profile.tipo === "artista" && (
+            {/* Payment Settings - Only for FREE artists */}
+            {profile.tipo === "artista" && !isPro && (
               <div className="space-y-4">
                 <MercadoPagoLink userId={profile.id} isPro={isPro} />
               </div>
