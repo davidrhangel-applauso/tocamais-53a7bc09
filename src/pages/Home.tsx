@@ -85,12 +85,16 @@ const Home = () => {
     }
   };
 
+  // ID do administrador que deve ser ocultado da lista de artistas
+  const ADMIN_USER_ID = "0120d3e5-2c0c-4115-a27f-94dcf5e7ae7d";
+
   const fetchArtists = async () => {
     try {
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("tipo", "artista")
+        .neq("id", ADMIN_USER_ID)
         .order("status_destaque", { ascending: false })
         .order("nome");
 

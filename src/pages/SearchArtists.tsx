@@ -19,6 +19,9 @@ interface Artist {
   ativo_ao_vivo: boolean | null;
 }
 
+// ID do administrador que deve ser ocultado da lista de artistas
+const ADMIN_USER_ID = "0120d3e5-2c0c-4115-a27f-94dcf5e7ae7d";
+
 const SearchArtists = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
@@ -45,7 +48,8 @@ const SearchArtists = () => {
       let query = supabase
         .from("profiles")
         .select("id, nome, estilo_musical, foto_url, bio, ativo_ao_vivo")
-        .eq("tipo", "artista");
+        .eq("tipo", "artista")
+        .neq("id", ADMIN_USER_ID);
 
       // Aplicar filtro de nome
       if (term.trim()) {
