@@ -164,8 +164,10 @@ export const CoverPhotoUpload = ({ currentUrl, onUpload }: CoverPhotoUploadProps
 
   return (
     <div className="space-y-3">
-      <label className="text-sm font-medium">Foto de Capa</label>
-      
+      <div className="flex items-baseline justify-between">
+        <label className="text-sm font-medium">Foto de Capa</label>
+        <span className="text-xs text-muted-foreground">Tamanho ideal: 1920×1080px</span>
+      </div>
       {/* Cover Photo Preview */}
       <div className="relative w-full aspect-video bg-muted rounded-lg overflow-hidden border border-border">
         {currentUrl ? (
