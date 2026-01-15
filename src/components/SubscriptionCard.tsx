@@ -122,7 +122,7 @@ export function SubscriptionCard({ artistaId }: SubscriptionCardProps) {
                 </h3>
                 {isPro && <Badge variant="default" className="text-xs">Atual</Badge>}
               </div>
-              <p className="text-2xl font-bold">R$ 39,90<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
+              <p className="text-2xl font-bold">R$ 19,90<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2 text-primary">
                   <Zap className="h-4 w-4" />
@@ -174,7 +174,7 @@ export function SubscriptionCard({ artistaId }: SubscriptionCardProps) {
               ) : (
                 <>
                   <Crown className="h-4 w-4 mr-2" />
-                  Assinar Plano Pro - R$ 39,90/mês
+                  Assinar Plano Pro - R$ 19,90/mês
                 </>
               )}
             </Button>
@@ -191,7 +191,7 @@ export function SubscriptionCard({ artistaId }: SubscriptionCardProps) {
               Pague para Ativar o Pro
             </DialogTitle>
             <DialogDescription>
-              Escaneie o QR Code ou copie o código Pix para pagar R$ 39,90
+              Escaneie o QR Code ou copie o código Pix para pagar R$ 19,90
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
