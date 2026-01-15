@@ -20,6 +20,9 @@ interface NearbyArtist {
   distance_km: number;
 }
 
+// ID do administrador que deve ser ocultado da lista de artistas
+const ADMIN_USER_ID = "0120d3e5-2c0c-4115-a27f-94dcf5e7ae7d";
+
 export const NearbyArtists = () => {
   const navigate = useNavigate();
   const { getCurrentPosition, loading: geoLoading, error: geoError } = useGeolocation();
@@ -41,7 +44,9 @@ export const NearbyArtists = () => {
       });
 
       if (error) throw error;
-      setArtists(data || []);
+      // Filtrar o administrador dos resultados
+      const filteredData = (data || []).filter(artist => artist.id !== ADMIN_USER_ID);
+      setArtists(filteredData);
       setHasSearched(true);
     } catch (error: any) {
       console.error('Error searching nearby artists:', error);
