@@ -19,8 +19,11 @@ interface Artist {
   ativo_ao_vivo: boolean | null;
 }
 
-// ID do administrador que deve ser ocultado da lista de artistas
-const ADMIN_USER_ID = "0120d3e5-2c0c-4115-a27f-94dcf5e7ae7d";
+// IDs dos administradores que devem ser ocultados da lista de artistas
+const ADMIN_USER_IDS = [
+  "0120d3e5-2c0c-4115-a27f-94dcf5e7ae7d",
+  "ae4abf4e-d360-49a5-ad3e-9cb3a710ca26"
+];
 
 const SearchArtists = () => {
   const navigate = useNavigate();
@@ -49,7 +52,7 @@ const SearchArtists = () => {
         .from("profiles")
         .select("id, nome, estilo_musical, foto_url, bio, ativo_ao_vivo")
         .eq("tipo", "artista")
-        .neq("id", ADMIN_USER_ID);
+        .not("id", "in", `(${ADMIN_USER_IDS.join(",")})`);
 
       // Aplicar filtro de nome
       if (term.trim()) {
