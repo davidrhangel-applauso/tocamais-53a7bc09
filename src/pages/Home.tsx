@@ -85,8 +85,11 @@ const Home = () => {
     }
   };
 
-  // ID do administrador que deve ser ocultado da lista de artistas
-  const ADMIN_USER_ID = "0120d3e5-2c0c-4115-a27f-94dcf5e7ae7d";
+  // IDs dos administradores que devem ser ocultados da lista de artistas
+  const ADMIN_USER_IDS = [
+    "0120d3e5-2c0c-4115-a27f-94dcf5e7ae7d",
+    "ae4abf4e-d360-49a5-ad3e-9cb3a710ca26"
+  ];
 
   const fetchArtists = async () => {
     try {
@@ -94,7 +97,7 @@ const Home = () => {
         .from("profiles")
         .select("*")
         .eq("tipo", "artista")
-        .neq("id", ADMIN_USER_ID)
+        .not("id", "in", `(${ADMIN_USER_IDS.join(",")})`)
         .order("status_destaque", { ascending: false })
         .order("nome");
 
