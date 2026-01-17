@@ -17,6 +17,7 @@ import { MercadoPagoLink } from "@/components/MercadoPagoLink";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import MusicRepertoire from "@/components/MusicRepertoire";
+import { SetlistManager } from "@/components/SetlistManager";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useArtistPedidos, useUpdatePedidoStatus, useBulkUpdatePedidos, useConfirmPixPayment, useDeletePedido, useArchivePedido, Pedido } from "@/hooks/useArtistPedidos";
 import { useArtistGorjetas, Gorjeta } from "@/hooks/useArtistGorjetas";
@@ -365,6 +366,9 @@ const ArtistPanel = () => {
                 <TabsTrigger value="repertorio" className="text-sm px-3 py-2 whitespace-nowrap">
                   🎵 Repertório
                 </TabsTrigger>
+                <TabsTrigger value="setlists" className="text-sm px-3 py-2 whitespace-nowrap">
+                  📋 Setlists
+                </TabsTrigger>
               </TabsList>
             </div>
             
@@ -518,6 +522,11 @@ const ArtistPanel = () => {
           {/* Repertório */}
           <TabsContent value="repertorio" className="space-y-6">
             {artistId && <MusicRepertoire artistaId={artistId} />}
+          </TabsContent>
+
+          {/* Setlists */}
+          <TabsContent value="setlists" className="space-y-6">
+            {artistId && <SetlistManager artistaId={artistId} />}
           </TabsContent>
 
           {/* Pedidos Pendentes */}
