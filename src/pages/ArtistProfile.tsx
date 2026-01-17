@@ -19,7 +19,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useSessionId } from "@/hooks/useSessionId";
 import { z } from "zod";
 import { TipPaymentDialog } from "@/components/TipPaymentDialog";
-import { DirectPixPaymentDialog } from "@/components/DirectPixPaymentDialog";
+import { TwoStepPixPaymentDialog } from "@/components/TwoStepPixPaymentDialog";
 import { validarCPF, formatarCPF, limparCPF } from "@/lib/cpf-utils";
 
 // Validation schema for song requests
@@ -934,18 +934,18 @@ const ArtistProfile = () => {
         pedidoMensagem={pedidoMensagem || null}
       />
 
-      {/* Direct PIX Payment Dialog (PRO only) */}
+      {/* Two-Step PIX Payment Dialog (PRO only) */}
       {pixInfo.pix_chave && (
-        <DirectPixPaymentDialog
+        <TwoStepPixPaymentDialog
           open={directPixDialogOpen}
           onOpenChange={setDirectPixDialogOpen}
           artistaId={artist.id}
           artistaNome={artist.nome}
           pixChave={pixInfo.pix_chave}
           pixTipoChave={pixInfo.pix_tipo_chave || "aleatoria"}
-          pixQrCodeUrl={artist.pix_qr_code_url || undefined}
           clienteId={currentUserId}
           sessionId={sessionId}
+          musicas={musicas}
         />
       )}
 
