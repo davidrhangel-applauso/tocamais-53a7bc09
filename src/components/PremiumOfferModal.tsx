@@ -165,12 +165,12 @@ export function PremiumOfferModal({
               Assinar PRO - R$ {plans.find(p => p.id === selectedPlan)?.price.toFixed(2).replace(".", ",")}
             </Button>
             <Button
-              variant="ghost"
-              size="sm"
-              className="w-full text-muted-foreground hover:text-foreground"
+              variant="outline"
+              size="lg"
+              className="w-full border-2 border-primary/50 hover:border-primary hover:bg-primary/10 font-medium"
               onClick={onContinueFree}
             >
-              Continuar com plano Free
+              Continuar para login
             </Button>
           </div>
 
