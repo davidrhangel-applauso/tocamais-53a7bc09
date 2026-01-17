@@ -435,6 +435,75 @@ export type Database = {
         }
         Relationships: []
       }
+      setlist_musicas: {
+        Row: {
+          created_at: string | null
+          id: string
+          musica_id: string
+          ordem: number | null
+          setlist_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          musica_id: string
+          ordem?: number | null
+          setlist_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          musica_id?: string
+          ordem?: number | null
+          setlist_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "setlist_musicas_musica_id_fkey"
+            columns: ["musica_id"]
+            isOneToOne: false
+            referencedRelation: "musicas_repertorio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "setlist_musicas_setlist_id_fkey"
+            columns: ["setlist_id"]
+            isOneToOne: false
+            referencedRelation: "setlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      setlists: {
+        Row: {
+          artista_id: string
+          ativa: boolean | null
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string | null
+        }
+        Insert: {
+          artista_id: string
+          ativa?: boolean | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string | null
+        }
+        Update: {
+          artista_id?: string
+          ativa?: boolean | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

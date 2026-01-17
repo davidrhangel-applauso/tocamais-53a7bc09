@@ -111,6 +111,11 @@ interface Musica {
   artista_original: string | null;
 }
 
+interface ActiveSetlist {
+  id: string;
+  nome: string;
+}
+
 const ArtistProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -120,6 +125,7 @@ const ArtistProfile = () => {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [musicas, setMusicas] = useState<Musica[]>([]);
+  const [activeSetlist, setActiveSetlist] = useState<ActiveSetlist | null>(null);
   const [musicaCustomizada, setMusicaCustomizada] = useState(false);
   const [musicaGorjetaCustomizada, setMusicaGorjetaCustomizada] = useState(false);
   const [scrollY, setScrollY] = useState(0);
@@ -202,14 +208,41 @@ const ArtistProfile = () => {
         setPixInfo(pixData[0]);
       }
 
-      // Buscar músicas do repertório
-      const { data: musicasData } = await supabase
-        .from("musicas_repertorio")
-        .select("*")
+      // Check for active setlist
+      const { data: setlistData } = await supabase
+        .from("setlists")
+        .select("id, nome")
         .eq("artista_id", id)
-        .order("titulo", { ascending: true });
+        .eq("ativa", true)
+        .maybeSingle();
 
-      setMusicas(musicasData || []);
+      if (setlistData) {
+        setActiveSetlist(setlistData);
+        
+        // Fetch musicas from the active setlist
+        const { data: setlistMusicasData } = await supabase
+          .from("setlist_musicas")
+          .select("musica_id, musicas_repertorio(id, titulo, artista_original)")
+          .eq("setlist_id", setlistData.id)
+          .order("ordem", { ascending: true });
+
+        const musicasFromSetlist = setlistMusicasData
+          ?.map(sm => sm.musicas_repertorio as unknown as Musica)
+          .filter(Boolean) || [];
+        
+        setMusicas(musicasFromSetlist);
+      } else {
+        setActiveSetlist(null);
+        
+        // Fetch all musicas from repertoire
+        const { data: musicasData } = await supabase
+          .from("musicas_repertorio")
+          .select("*")
+          .eq("artista_id", id)
+          .order("titulo", { ascending: true });
+
+        setMusicas(musicasData || []);
+      }
     } catch (error: any) {
       toast.error("Erro ao carregar perfil do artista");
       navigate("/home");
