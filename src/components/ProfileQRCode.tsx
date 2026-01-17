@@ -10,7 +10,7 @@ interface ProfileQRCodeProps {
   artistName: string;
 }
 
-const PRODUCTION_URL = "https://tocamais.lovable.app";
+const PRODUCTION_URL = "https://tocamais.app";
 
 const ProfileQRCode = ({ artistId, artistName }: ProfileQRCodeProps) => {
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);

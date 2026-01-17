@@ -53,7 +53,7 @@ serve(async (req) => {
   }
 
   // Obter URL do app das variáveis de ambiente ou usar fallback
-  const appUrl = Deno.env.get('APP_URL') || 'https://id-preview--be6d7b14-8d70-4f34-91f4-6a3fe00db815.lovable.app';
+  const appUrl = Deno.env.get('APP_URL') || 'https://tocamais.app';
 
   try {
     const url = new URL(req.url);
