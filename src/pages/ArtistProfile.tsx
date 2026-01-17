@@ -526,7 +526,7 @@ const ArtistProfile = () => {
               >
                 <Heart className="w-5 h-5" />
                 <span className="text-sm font-medium">Gorjeta + Pedido</span>
-                <span className="text-xs text-muted-foreground">Apoie e peça uma música</span>
+                <span className="text-xs text-white">Apoie e peça uma música</span>
               </Button>
               <Button
                 variant={interactionType === 'request' ? 'default' : 'outline'}
