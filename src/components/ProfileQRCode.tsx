@@ -10,12 +10,14 @@ interface ProfileQRCodeProps {
   artistName: string;
 }
 
+const PRODUCTION_URL = "https://tocamais.lovable.app";
+
 const ProfileQRCode = ({ artistId, artistName }: ProfileQRCodeProps) => {
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const profileUrl = `${window.location.origin}/artista/${artistId}`;
+  const profileUrl = `${PRODUCTION_URL}/artista/${artistId}`;
 
   useEffect(() => {
     generateQRCode();
