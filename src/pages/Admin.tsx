@@ -12,9 +12,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Search, Trash2, Shield, ArrowLeft, Users, Music, RefreshCw, Eye, BarChart3 } from "lucide-react";
+import { Search, Trash2, Shield, ArrowLeft, Users, Music, RefreshCw, Eye, BarChart3, Crown } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { AdminPaymentStats } from "@/components/AdminPaymentStats";
+import { AdminSubscriptions } from "@/components/AdminSubscriptions";
 type MusicStyle = Database["public"]["Enums"]["music_style"];
 type SubscriptionPlan = Database["public"]["Enums"]["subscription_plan"];
 
@@ -183,10 +184,14 @@ export default function Admin() {
 
         {/* Main Tabs */}
         <Tabs defaultValue="artists" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-lg grid-cols-3">
             <TabsTrigger value="artists" className="gap-2">
               <Users className="w-4 h-4" />
               Artistas
+            </TabsTrigger>
+            <TabsTrigger value="assinaturas" className="gap-2">
+              <Crown className="w-4 h-4" />
+              Assinaturas
             </TabsTrigger>
             <TabsTrigger value="financeiro" className="gap-2">
               <BarChart3 className="w-4 h-4" />
@@ -376,6 +381,10 @@ export default function Admin() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="assinaturas">
+            <AdminSubscriptions />
           </TabsContent>
 
           <TabsContent value="financeiro">

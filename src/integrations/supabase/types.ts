@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          setting_key: string
+          setting_value: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          setting_key: string
+          setting_value: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       artist_mercadopago_credentials: {
         Row: {
           access_token: string | null
@@ -509,6 +533,64 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      subscription_receipts: {
+        Row: {
+          admin_notes: string | null
+          artista_id: string
+          created_at: string | null
+          id: string
+          receipt_url: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+          subscription_id: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          artista_id: string
+          created_at?: string | null
+          id?: string
+          receipt_url: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          subscription_id?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          artista_id?: string
+          created_at?: string | null
+          id?: string
+          receipt_url?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_receipts_artista_id_fkey"
+            columns: ["artista_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_receipts_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_receipts_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "artist_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
