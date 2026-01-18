@@ -132,6 +132,7 @@ const ArtistProfile = () => {
   const [musicaGorjetaCustomizada, setMusicaGorjetaCustomizada] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [openMusicCombobox, setOpenMusicCombobox] = useState(false);
+  const [openMusicGorjetaCombobox, setOpenMusicGorjetaCombobox] = useState(false);
   const coverRef = useRef<HTMLDivElement>(null);
 
   // Parallax scroll effect
@@ -682,26 +683,52 @@ const ArtistProfile = () => {
                       {musicas.length > 0 ? (
                         !musicaGorjetaCustomizada ? (
                           <div>
-                            <Label htmlFor="pedidoMusica-select">Escolha uma música do repertório</Label>
-                            <Select value={pedidoMusica} onValueChange={setPedidoMusica}>
-                              <SelectTrigger id="pedidoMusica-select">
-                                <SelectValue placeholder="Selecione uma música" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {musicas.map((m) => (
-                                  <SelectItem key={m.id} value={m.titulo}>
-                                    <div className="flex flex-col">
-                                      <span>{m.titulo}</span>
-                                      {m.artista_original && (
-                                        <span className="text-xs text-muted-foreground">
-                                          {m.artista_original}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <Label>Escolha uma música do repertório</Label>
+                            <Popover open={openMusicGorjetaCombobox} onOpenChange={setOpenMusicGorjetaCombobox}>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  role="combobox"
+                                  aria-expanded={openMusicGorjetaCombobox}
+                                  className="w-full justify-between font-normal"
+                                >
+                                  {pedidoMusica ? pedidoMusica : "Selecione uma música..."}
+                                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                                <Command>
+                                  <CommandInput placeholder="Buscar música..." />
+                                  <CommandList>
+                                    <CommandEmpty>Nenhuma música encontrada.</CommandEmpty>
+                                    <CommandGroup>
+                                      {musicas.map((m) => (
+                                        <CommandItem
+                                          key={m.id}
+                                          value={`${m.titulo} ${m.artista_original || ''}`}
+                                          onSelect={() => {
+                                            setPedidoMusica(m.titulo);
+                                            setOpenMusicGorjetaCombobox(false);
+                                          }}
+                                        >
+                                          <Check
+                                            className={`mr-2 h-4 w-4 ${pedidoMusica === m.titulo ? "opacity-100" : "opacity-0"}`}
+                                          />
+                                          <div className="flex flex-col">
+                                            <span>{m.titulo}</span>
+                                            {m.artista_original && (
+                                              <span className="text-xs text-muted-foreground">
+                                                {m.artista_original}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
                             <Button
                               type="button"
                               variant="link"
