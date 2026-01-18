@@ -233,86 +233,96 @@ export function DirectPixPaymentDialog({
             )}
           </div>
 
-          {/* Dynamic QR Code */}
-          <div className="flex flex-col items-center gap-3">
-            {generatingQr ? (
-              <div className="w-48 h-48 flex items-center justify-center bg-muted rounded-lg">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          {/* Show PIX info only when value is >= 1 */}
+          {parseCurrencyToNumber(valorGorjeta) >= 1 ? (
+            <>
+              {/* Dynamic QR Code */}
+              <div className="flex flex-col items-center gap-3">
+                {generatingQr ? (
+                  <div className="w-48 h-48 flex items-center justify-center bg-muted rounded-lg">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  </div>
+                ) : dynamicQrCode ? (
+                  <div className="bg-white p-4 rounded-lg shadow-sm">
+                    <img
+                      src={dynamicQrCode}
+                      alt="QR Code PIX"
+                      className="w-48 h-48 object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-48 h-48 flex items-center justify-center bg-muted rounded-lg">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  </div>
+                )}
+                {dynamicQrCode && valorGorjeta && (
+                  <p className="text-sm text-green-600 font-medium">
+                    ✓ QR Code com R$ {valorGorjeta} incluso
+                  </p>
+                )}
+                {dynamicQrCode && (
+                  <p className="text-xs text-muted-foreground">Escaneie com o app do seu banco</p>
+                )}
               </div>
-            ) : dynamicQrCode ? (
-              <div className="bg-white p-4 rounded-lg shadow-sm">
-                <img
-                  src={dynamicQrCode}
-                  alt="QR Code PIX"
-                  className="w-48 h-48 object-contain"
-                />
+
+              {/* PIX Copia e Cola */}
+              {pixChave && pixTipoChave && pixCopiaCola && (
+                <div className="space-y-2">
+                  <Label className="text-sm">Ou copie o código PIX</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={pixCopiaCola || ""}
+                      readOnly
+                      className="font-mono text-xs truncate"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleCopyPixCode}
+                      title="Copiar código completo"
+                      disabled={!pixCopiaCola}
+                    >
+                      {copiedCode ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-green-600">
+                    Código com valor R$ {valorGorjeta} incluso
+                  </p>
+                </div>
+              )}
+
+              {/* PIX Key */}
+              <div className="space-y-2">
+                <Label className="text-sm text-muted-foreground">
+                  Chave PIX ({pixTipoChaveLabels[pixTipoChave] || pixTipoChave})
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={pixChave}
+                    readOnly
+                    className="font-mono text-xs"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleCopyPixKey}
+                  >
+                    {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
               </div>
-            ) : (
+            </>
+          ) : (
+            /* Placeholder when no value entered */
+            <div className="flex flex-col items-center gap-3">
               <div className="w-48 h-48 flex items-center justify-center bg-muted rounded-lg text-center p-4">
                 <div className="text-muted-foreground">
                   <QrCode className="w-12 h-12 mx-auto mb-2 opacity-30" />
                   <p className="text-sm">Digite o valor para gerar o QR Code</p>
                 </div>
               </div>
-            )}
-            {dynamicQrCode && valorGorjeta && (
-              <p className="text-sm text-green-600 font-medium">
-                ✓ QR Code com R$ {valorGorjeta} incluso
-              </p>
-            )}
-            {dynamicQrCode && (
-              <p className="text-xs text-muted-foreground">Escaneie com o app do seu banco</p>
-            )}
-          </div>
-
-          {/* PIX Copia e Cola */}
-          {pixChave && pixTipoChave && (
-            <div className="space-y-2">
-              <Label className="text-sm">Ou copie o código PIX</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={pixCopiaCola || ""}
-                  readOnly
-                  className="font-mono text-xs truncate"
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleCopyPixCode}
-                  title="Copiar código completo"
-                  disabled={!pixCopiaCola}
-                >
-                  {copiedCode ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                </Button>
-              </div>
-              {valorGorjeta && parseCurrencyToNumber(valorGorjeta) >= 1 && (
-                <p className="text-xs text-green-600">
-                  Código com valor R$ {valorGorjeta} incluso
-                </p>
-              )}
             </div>
           )}
-
-          {/* PIX Key - Collapsible/secondary */}
-          <div className="space-y-2">
-            <Label className="text-sm text-muted-foreground">
-              Chave PIX ({pixTipoChaveLabels[pixTipoChave] || pixTipoChave})
-            </Label>
-            <div className="flex gap-2">
-              <Input
-                value={pixChave}
-                readOnly
-                className="font-mono text-xs"
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleCopyPixKey}
-              >
-                {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-              </Button>
-            </div>
-          </div>
 
           {/* Warning */}
           <div className="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
