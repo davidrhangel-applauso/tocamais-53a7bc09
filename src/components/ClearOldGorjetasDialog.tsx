@@ -92,14 +92,14 @@ export function ClearOldGorjetasDialog({ artistId, counts }: ClearOldGorjetasDia
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Archive className="h-4 w-4" />
-          <span className="hidden sm:inline">Arquivar</span>
+          <span className="hidden sm:inline">Arquivar Gorjetas</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Archive className="h-5 w-5 text-primary" />
-            Gerenciar Arquivamento
+            Gerenciar Arquivamento de Gorjetas
           </DialogTitle>
           <DialogDescription>
             Arquive gorjetas antigas para manter o histórico organizado. Você pode restaurá-las depois.

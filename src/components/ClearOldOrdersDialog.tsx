@@ -82,14 +82,14 @@ export function ClearOldOrdersDialog({ artistId, counts }: ClearOldOrdersDialogP
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Archive className="h-4 w-4" />
-          <span className="hidden sm:inline">Arquivar</span>
+          <span className="hidden sm:inline">Arquivar Pedidos</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Archive className="h-5 w-5 text-primary" />
-            Gerenciar Arquivamento
+            Gerenciar Arquivamento de Pedidos
           </DialogTitle>
           <DialogDescription>
             Arquive pedidos antigos para manter o painel organizado. Você pode restaurá-los depois.
