@@ -123,6 +123,8 @@ export type Database = {
       }
       gorjetas: {
         Row: {
+          arquivado: boolean
+          arquivado_at: string | null
           artista_id: string
           cliente_id: string | null
           cliente_nome: string | null
@@ -141,6 +143,8 @@ export type Database = {
           valor_liquido_artista: number
         }
         Insert: {
+          arquivado?: boolean
+          arquivado_at?: string | null
           artista_id: string
           cliente_id?: string | null
           cliente_nome?: string | null
@@ -159,6 +163,8 @@ export type Database = {
           valor_liquido_artista: number
         }
         Update: {
+          arquivado?: boolean
+          arquivado_at?: string | null
           artista_id?: string
           cliente_id?: string | null
           cliente_nome?: string | null

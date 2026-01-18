@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DollarSign, Calendar, Filter, Search, Music, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { ClearOldGorjetasDialog } from "./ClearOldGorjetasDialog";
 
 interface Gorjeta {
   id: string;
@@ -27,9 +28,10 @@ interface Gorjeta {
 
 interface PaymentHistoryProps {
   gorjetas: Gorjeta[];
+  artistId?: string;
 }
 
-const PaymentHistory = ({ gorjetas }: PaymentHistoryProps) => {
+const PaymentHistory = ({ gorjetas, artistId }: PaymentHistoryProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"date" | "value">("date");
@@ -136,8 +138,21 @@ const PaymentHistory = ({ gorjetas }: PaymentHistoryProps) => {
       {/* Filtros e Busca - Mobile Optimized */}
       <Card>
         <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-4">
-          <CardTitle className="text-base sm:text-xl">Histórico</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">Suas gorjetas recebidas</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base sm:text-xl">Histórico</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Suas gorjetas recebidas</CardDescription>
+            </div>
+            {artistId && gorjetas.length > 0 && (
+              <ClearOldGorjetasDialog
+                artistId={artistId}
+                counts={{
+                  aprovadas: gorjetas.filter(g => g.status_pagamento === "approved").length,
+                  pendentes: gorjetas.filter(g => g.status_pagamento === "pending").length,
+                }}
+              />
+            )}
+          </div>
         </CardHeader>
         <CardContent className="p-3 sm:p-6 pt-0 space-y-3 sm:space-y-4">
           {/* Busca */}
