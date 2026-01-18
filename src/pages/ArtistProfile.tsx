@@ -11,7 +11,9 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Music, Heart, Instagram, Youtube, Music2, ExternalLink, Lock, DollarSign, ListMusic, Search } from "lucide-react";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ArrowLeft, Music, Heart, Instagram, Youtube, Music2, ExternalLink, Lock, DollarSign, ListMusic, Check, ChevronsUpDown } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { useProfilePermissions } from "@/hooks/useProfilePermissions";
@@ -129,7 +131,7 @@ const ArtistProfile = () => {
   const [musicaCustomizada, setMusicaCustomizada] = useState(false);
   const [musicaGorjetaCustomizada, setMusicaGorjetaCustomizada] = useState(false);
   const [scrollY, setScrollY] = useState(0);
-  const [musicSearchTerm, setMusicSearchTerm] = useState("");
+  const [openMusicCombobox, setOpenMusicCombobox] = useState(false);
   const coverRef = useRef<HTMLDivElement>(null);
 
   // Parallax scroll effect
@@ -839,44 +841,54 @@ const ArtistProfile = () => {
                 {musicas.length > 0 ? (
                   !musicaCustomizada ? (
                     <div className="space-y-2">
-                      <Label htmlFor="musica-select">Escolha uma música do repertório *</Label>
-                      {/* Search input for musicas */}
-                      {musicas.length > 10 && (
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            placeholder="Buscar música..."
-                            value={musicSearchTerm}
-                            onChange={(e) => setMusicSearchTerm(e.target.value)}
-                            className="pl-9 h-9"
-                          />
-                        </div>
-                      )}
-                      <Select value={musica} onValueChange={setMusica}>
-                        <SelectTrigger id="musica-select">
-                          <SelectValue placeholder="Selecione uma música" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {musicas
-                            .filter(m => 
-                              !musicSearchTerm || 
-                              m.titulo.toLowerCase().includes(musicSearchTerm.toLowerCase()) ||
-                              (m.artista_original && m.artista_original.toLowerCase().includes(musicSearchTerm.toLowerCase()))
-                            )
-                            .map((m) => (
-                            <SelectItem key={m.id} value={m.titulo}>
-                              <div className="flex flex-col">
-                                <span>{m.titulo}</span>
-                                {m.artista_original && (
-                                  <span className="text-xs text-muted-foreground">
-                                    {m.artista_original}
-                                  </span>
-                                )}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label>Escolha uma música do repertório *</Label>
+                      <Popover open={openMusicCombobox} onOpenChange={setOpenMusicCombobox}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={openMusicCombobox}
+                            className="w-full justify-between font-normal"
+                          >
+                            {musica ? musica : "Selecione uma música..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                          <Command>
+                            <CommandInput placeholder="Buscar música..." />
+                            <CommandList>
+                              <CommandEmpty>Nenhuma música encontrada.</CommandEmpty>
+                              <CommandGroup>
+                                {musicas.map((m) => (
+                                  <CommandItem
+                                    key={m.id}
+                                    value={`${m.titulo} ${m.artista_original || ''}`}
+                                    onSelect={() => {
+                                      setMusica(m.titulo);
+                                      setOpenMusicCombobox(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={`mr-2 h-4 w-4 ${
+                                        musica === m.titulo ? "opacity-100" : "opacity-0"
+                                      }`}
+                                    />
+                                    <div className="flex flex-col">
+                                      <span>{m.titulo}</span>
+                                      {m.artista_original && (
+                                        <span className="text-xs text-muted-foreground">
+                                          {m.artista_original}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                       <Button
                         type="button"
                         variant="link"
