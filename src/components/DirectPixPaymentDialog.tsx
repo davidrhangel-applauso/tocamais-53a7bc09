@@ -162,15 +162,16 @@ export function DirectPixPaymentDialog({
     setLoading(true);
     try {
       // Create pedido with status aguardando_confirmacao_pix
+      const valorNumerico = parseCurrencyToNumber(valorGorjeta);
       const { error } = await supabase.from("pedidos").insert({
         artista_id: artistaId,
         cliente_id: clienteId,
         cliente_nome: clienteNome.trim(),
         session_id: sessionId,
-        musica: pedidoMusica.trim() || `Gorjeta R$ ${parseFloat(valorGorjeta).toFixed(2)}`,
+        musica: pedidoMusica.trim() || `Gorjeta R$ ${valorNumerico.toFixed(2).replace('.', ',')}`,
         mensagem: pedidoMensagem.trim() || null,
         status: "aguardando_confirmacao_pix",
-        valor: parseFloat(valorGorjeta),
+        valor: valorNumerico,
       });
 
       if (error) throw error;
