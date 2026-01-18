@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.cleanup-archived-pedidos]
 verify_jwt = false
+
+[functions.create-manual-subscription]
+verify_jwt = false
