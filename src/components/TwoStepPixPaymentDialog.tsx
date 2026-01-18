@@ -185,11 +185,6 @@ export function TwoStepPixPaymentDialog({
       return;
     }
 
-    if (!pedidoMusica.trim()) {
-      toast.error("Por favor, escolha ou digite uma música");
-      return;
-    }
-
     setCreatingPedido(true);
     try {
       // For RLS to work: if user is not authenticated (clienteId is null), 
@@ -198,7 +193,7 @@ export function TwoStepPixPaymentDialog({
         artista_id: artistaId,
         cliente_nome: clienteNome.trim(),
         session_id: sessionId,
-        musica: pedidoMusica.trim(),
+        musica: pedidoMusica.trim() || "Gorjeta sem pedido de música",
         mensagem: pedidoMensagem.trim() || null,
         status: "aguardando_pix",
         valor: null,
@@ -303,7 +298,7 @@ export function TwoStepPixPaymentDialog({
               {musicas.length > 0 ? (
                 !musicaCustomizada ? (
                   <div className="space-y-2">
-                    <Label htmlFor="pedidoMusica-select">Escolha uma música *</Label>
+                    <Label htmlFor="pedidoMusica-select">Escolha uma música (opcional)</Label>
                     <Select value={pedidoMusica} onValueChange={setPedidoMusica}>
                       <SelectTrigger id="pedidoMusica-select">
                         <SelectValue placeholder="Selecione uma música" />
@@ -363,7 +358,7 @@ export function TwoStepPixPaymentDialog({
                 )
               ) : (
                 <div className="space-y-2">
-                  <Label htmlFor="pedidoMusica">Música *</Label>
+                  <Label htmlFor="pedidoMusica">Música (opcional)</Label>
                   <Input
                     id="pedidoMusica"
                     placeholder="Nome da música ou artista"
@@ -392,7 +387,7 @@ export function TwoStepPixPaymentDialog({
               <div className="flex flex-col gap-2 pt-2">
                 <Button
                   onClick={handleCriarPedido}
-                  disabled={creatingPedido || !clienteNome.trim() || !pedidoMusica.trim()}
+                  disabled={creatingPedido || !clienteNome.trim()}
                   className="w-full"
                 >
                   {creatingPedido ? (
