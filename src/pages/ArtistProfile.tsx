@@ -697,7 +697,14 @@ const ArtistProfile = () => {
                                 </Button>
                               </PopoverTrigger>
                               <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                <Command>
+                                <Command
+                                  shouldFilter={true}
+                                  filter={(value, search) => {
+                                    const normalize = (str: string) =>
+                                      str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                                    return normalize(value).includes(normalize(search)) ? 1 : 0;
+                                  }}
+                                >
                                   <CommandInput placeholder="Buscar música..." />
                                   <CommandList>
                                     <CommandEmpty>Nenhuma música encontrada.</CommandEmpty>
@@ -882,7 +889,14 @@ const ArtistProfile = () => {
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                          <Command>
+                          <Command
+                            shouldFilter={true}
+                            filter={(value, search) => {
+                              const normalize = (str: string) =>
+                                str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                              return normalize(value).includes(normalize(search)) ? 1 : 0;
+                            }}
+                          >
                             <CommandInput placeholder="Buscar música..." />
                             <CommandList>
                               <CommandEmpty>Nenhuma música encontrada.</CommandEmpty>
