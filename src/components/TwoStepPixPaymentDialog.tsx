@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Copy, Check, QrCode, Clock, Loader2, ArrowLeft, ArrowRight, CheckCircle2, Music } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Copy, Check, QrCode, Clock, Loader2, ArrowLeft, ArrowRight, CheckCircle2, Music, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { generatePixPayload, generatePixQRCodeDataUrl } from "@/lib/pix-qr-generator";
@@ -58,6 +59,7 @@ export function TwoStepPixPaymentDialog({
   const [musicaCustomizada, setMusicaCustomizada] = useState(false);
   const [creatingPedido, setCreatingPedido] = useState(false);
   const [pedidoId, setPedidoId] = useState<string | null>(null);
+  const [openMusicCombobox, setOpenMusicCombobox] = useState(false);
   
   // Step 2: Payment state
   const [valorGorjeta, setValorGorjeta] = useState("");
@@ -302,25 +304,58 @@ export function TwoStepPixPaymentDialog({
                 !musicaCustomizada ? (
                   <div className="space-y-2">
                     <Label htmlFor="pedidoMusica-select">Escolha uma música (opcional)</Label>
-                    <Select value={pedidoMusica} onValueChange={setPedidoMusica}>
-                      <SelectTrigger id="pedidoMusica-select">
-                        <SelectValue placeholder="Selecione uma música" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {musicas.map((m) => (
-                          <SelectItem key={m.id} value={m.titulo}>
-                            <div className="flex flex-col">
-                              <span>{m.titulo}</span>
-                              {m.artista_original && (
-                                <span className="text-xs text-muted-foreground">
-                                  {m.artista_original}
-                                </span>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={openMusicCombobox} onOpenChange={setOpenMusicCombobox}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={openMusicCombobox}
+                          className="w-full justify-between font-normal"
+                        >
+                          {pedidoMusica ? pedidoMusica : "Selecione uma música..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                        <Command
+                          shouldFilter={true}
+                          filter={(value, search) => {
+                            const normalize = (str: string) =>
+                              str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                            return normalize(value).includes(normalize(search)) ? 1 : 0;
+                          }}
+                        >
+                          <CommandInput placeholder="Buscar música..." />
+                          <CommandList>
+                            <CommandEmpty>Nenhuma música encontrada.</CommandEmpty>
+                            <CommandGroup>
+                              {musicas.map((m) => (
+                                <CommandItem
+                                  key={m.id}
+                                  value={`${m.titulo} ${m.artista_original || ''}`}
+                                  onSelect={() => {
+                                    setPedidoMusica(m.titulo);
+                                    setOpenMusicCombobox(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={`mr-2 h-4 w-4 ${pedidoMusica === m.titulo ? "opacity-100" : "opacity-0"}`}
+                                  />
+                                  <div className="flex flex-col">
+                                    <span>{m.titulo}</span>
+                                    {m.artista_original && (
+                                      <span className="text-xs text-muted-foreground">
+                                        {m.artista_original}
+                                      </span>
+                                    )}
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     <Button
                       type="button"
                       variant="link"
