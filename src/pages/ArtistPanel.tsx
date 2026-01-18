@@ -27,6 +27,7 @@ import { PullToRefresh } from "@/components/ui/pull-to-refresh";
 import { useQueryClient } from "@tanstack/react-query";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { ClearOldOrdersDialog } from "@/components/ClearOldOrdersDialog";
+import { ClearOldGorjetasDialog } from "@/components/ClearOldGorjetasDialog";
 import { SwipeablePedidoCard } from "@/components/SwipeablePedidoCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
@@ -500,7 +501,7 @@ const ArtistPanel = () => {
           {/* Histórico de Pagamentos */}
           <TabsContent value="historico" className="space-y-4 sm:space-y-6">
             {/* Histórico de Pagamentos primeiro - mais importante */}
-            <PaymentHistory gorjetas={gorjetas} />
+            <PaymentHistory gorjetas={gorjetas} artistId={artistId || undefined} />
             
             {/* MercadoPago e Dicas em acordeão colapsável no mobile */}
             <details className="group">
