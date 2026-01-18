@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { Music, Plus, Trash2, Upload, FileText, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Music, Plus, Trash2, Upload, FileText, X, Search, Pencil, ListMusic } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -13,14 +14,25 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Musica {
   id: string;
   titulo: string;
   artista_original: string | null;
+}
+
+interface MusicaWithSetlists extends Musica {
+  setlists: { id: string; nome: string }[];
 }
 
 interface ParsedMusic {
@@ -33,17 +45,24 @@ interface MusicRepertoireProps {
 }
 
 export default function MusicRepertoire({ artistaId }: MusicRepertoireProps) {
-  const [musicas, setMusicas] = useState<Musica[]>([]);
+  const [musicas, setMusicas] = useState<MusicaWithSetlists[]>([]);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openImportDialog, setOpenImportDialog] = useState(false);
+  const [editingMusica, setEditingMusica] = useState<Musica | null>(null);
   const [novaMusica, setNovaMusica] = useState({
+    titulo: "",
+    artista_original: "",
+  });
+  const [editMusica, setEditMusica] = useState({
     titulo: "",
     artista_original: "",
   });
   const [importText, setImportText] = useState("");
   const [parsedMusics, setParsedMusics] = useState<ParsedMusic[]>([]);
   const [importing, setImporting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -51,18 +70,44 @@ export default function MusicRepertoire({ artistaId }: MusicRepertoireProps) {
   }, [artistaId]);
 
   const loadMusicas = async () => {
-    const { data, error } = await supabase
+    // Fetch musicas
+    const { data: musicasData, error: musicasError } = await supabase
       .from("musicas_repertorio")
       .select("*")
       .eq("artista_id", artistaId)
       .order("titulo", { ascending: true });
 
-    if (error) {
-      console.error("Erro ao carregar músicas:", error);
+    if (musicasError) {
+      console.error("Erro ao carregar músicas:", musicasError);
       toast.error("Erro ao carregar repertório");
-    } else {
-      setMusicas(data || []);
+      setLoading(false);
+      return;
     }
+
+    // Fetch setlist associations for each music
+    const { data: setlistMusicasData } = await supabase
+      .from("setlist_musicas")
+      .select("musica_id, setlist_id, setlists(id, nome)")
+      .in("musica_id", musicasData?.map(m => m.id) || []);
+
+    // Create a map of musica_id -> setlists
+    const musicaSetlistsMap = new Map<string, { id: string; nome: string }[]>();
+    setlistMusicasData?.forEach(sm => {
+      const setlist = sm.setlists as unknown as { id: string; nome: string };
+      if (setlist) {
+        const existing = musicaSetlistsMap.get(sm.musica_id) || [];
+        existing.push(setlist);
+        musicaSetlistsMap.set(sm.musica_id, existing);
+      }
+    });
+
+    // Merge musicas with their setlists
+    const musicasWithSetlists: MusicaWithSetlists[] = (musicasData || []).map(m => ({
+      ...m,
+      setlists: musicaSetlistsMap.get(m.id) || [],
+    }));
+
+    setMusicas(musicasWithSetlists);
     setLoading(false);
   };
 
@@ -89,6 +134,42 @@ export default function MusicRepertoire({ artistaId }: MusicRepertoireProps) {
       setOpenDialog(false);
       loadMusicas();
     }
+  };
+
+  const handleEditMusica = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingMusica || !editMusica.titulo.trim()) {
+      toast.error("Digite o título da música");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("musicas_repertorio")
+      .update({
+        titulo: editMusica.titulo.trim(),
+        artista_original: editMusica.artista_original.trim() || null,
+      })
+      .eq("id", editingMusica.id);
+
+    if (error) {
+      console.error("Erro ao editar música:", error);
+      toast.error("Erro ao editar música");
+    } else {
+      toast.success("Música atualizada!");
+      setOpenEditDialog(false);
+      setEditingMusica(null);
+      loadMusicas();
+    }
+  };
+
+  const openEditMode = (musica: Musica) => {
+    setEditingMusica(musica);
+    setEditMusica({
+      titulo: musica.titulo,
+      artista_original: musica.artista_original || "",
+    });
+    setOpenEditDialog(true);
   };
 
   const handleDeleteMusica = async (id: string) => {
@@ -217,6 +298,15 @@ export default function MusicRepertoire({ artistaId }: MusicRepertoireProps) {
   const removeFromParsed = (index: number) => {
     setParsedMusics(prev => prev.filter((_, i) => i !== index));
   };
+
+  // Filter musicas based on search term
+  const filteredMusicas = musicas.filter(m => {
+    const term = searchTerm.toLowerCase();
+    return (
+      m.titulo.toLowerCase().includes(term) ||
+      (m.artista_original && m.artista_original.toLowerCase().includes(term))
+    );
+  });
 
   if (loading) {
     return <div className="text-center text-muted-foreground">Carregando...</div>;
@@ -418,41 +508,142 @@ export default function MusicRepertoire({ artistaId }: MusicRepertoireProps) {
         </div>
       </div>
 
+      {/* Search input */}
+      {musicas.length > 0 && (
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por título ou artista..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
+          {searchTerm && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+              {filteredMusicas.length} de {musicas.length}
+            </div>
+          )}
+        </div>
+      )}
+
       {musicas.length === 0 ? (
         <div className="text-center py-6 sm:py-8 text-muted-foreground">
           <Music className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 opacity-50" />
           <p className="text-sm sm:text-base">Nenhuma música no repertório</p>
           <p className="text-xs sm:text-sm">Adicione músicas ou importe uma lista</p>
         </div>
+      ) : filteredMusicas.length === 0 ? (
+        <div className="text-center py-6 text-muted-foreground">
+          <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">Nenhuma música encontrada</p>
+          <p className="text-xs">Tente outro termo de busca</p>
+        </div>
       ) : (
         <ScrollArea className="h-[50vh] sm:h-[400px] -mx-4 sm:mx-0 px-4 sm:px-0 sm:pr-4">
           <div className="space-y-1.5 sm:space-y-2">
-            {musicas.map((musica) => (
+            {filteredMusicas.map((musica) => (
               <div
                 key={musica.id}
                 className="flex items-center justify-between p-2.5 sm:p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group"
               >
                 <div className="flex-1 min-w-0 pr-2">
-                  <p className="font-medium text-sm sm:text-base truncate">{musica.titulo}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-sm sm:text-base truncate">{musica.titulo}</p>
+                    {/* Setlist indicator */}
+                    {musica.setlists.length > 0 && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge 
+                              variant="secondary" 
+                              className="text-[10px] px-1.5 py-0 h-5 shrink-0 cursor-help"
+                            >
+                              <ListMusic className="h-3 w-3 mr-0.5" />
+                              {musica.setlists.length}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs font-medium mb-1">Em {musica.setlists.length} setlist(s):</p>
+                            <ul className="text-xs">
+                              {musica.setlists.map(s => (
+                                <li key={s.id}>• {s.nome}</li>
+                              ))}
+                            </ul>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
                   {musica.artista_original && (
                     <p className="text-xs sm:text-sm text-muted-foreground truncate">
                       {musica.artista_original}
                     </p>
                   )}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDeleteMusica(musica.id)}
-                  className="text-destructive hover:text-destructive h-8 w-8 sm:h-9 sm:w-9 shrink-0 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => openEditMode(musica)}
+                    className="h-8 w-8 sm:h-9 sm:w-9 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDeleteMusica(musica.id)}
+                    className="text-destructive hover:text-destructive h-8 w-8 sm:h-9 sm:w-9 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
         </ScrollArea>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={openEditDialog} onOpenChange={setOpenEditDialog}>
+        <DialogContent className="max-w-[95vw] sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar Música</DialogTitle>
+            <DialogDescription>Altere o título ou artista da música</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditMusica} className="space-y-4">
+            <div>
+              <Label htmlFor="edit-titulo">Título da Música *</Label>
+              <Input
+                id="edit-titulo"
+                value={editMusica.titulo}
+                onChange={(e) =>
+                  setEditMusica({ ...editMusica, titulo: e.target.value })
+                }
+                placeholder="Ex: Evidências"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-artista">Artista Original</Label>
+              <Input
+                id="edit-artista"
+                value={editMusica.artista_original}
+                onChange={(e) =>
+                  setEditMusica({
+                    ...editMusica,
+                    artista_original: e.target.value,
+                  })
+                }
+                placeholder="Ex: Chitãozinho & Xororó"
+              />
+            </div>
+            <Button type="submit" className="w-full">
+              Salvar Alterações
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
