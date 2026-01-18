@@ -214,3 +214,30 @@ export function useRestoreGorjetas() {
     },
   });
 }
+
+export function useArchiveGorjetas() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ gorjetaIds }: { gorjetaIds: string[] }) => {
+      const { error } = await supabase
+        .from("gorjetas")
+        .update({
+          arquivado: true,
+          arquivado_at: new Date().toISOString(),
+        })
+        .in("id", gorjetaIds);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["artist-gorjetas"] });
+      queryClient.invalidateQueries({ queryKey: ["archived-gorjetas"] });
+      queryClient.invalidateQueries({ queryKey: ["artist-stats"] });
+      toast.success("Gorjeta(s) arquivada(s) com sucesso!");
+    },
+    onError: () => {
+      toast.error("Erro ao arquivar gorjeta(s)");
+    },
+  });
+}

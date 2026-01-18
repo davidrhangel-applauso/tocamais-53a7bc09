@@ -4,11 +4,23 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, Calendar, Filter, Search, Music, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DollarSign, Calendar, Filter, Search, Music, TrendingUp, Archive, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ClearOldGorjetasDialog } from "./ClearOldGorjetasDialog";
-
+import { useArchiveGorjetas } from "@/hooks/useArtistGorjetas";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 interface Gorjeta {
   id: string;
   valor: number;
@@ -35,6 +47,7 @@ const PaymentHistory = ({ gorjetas, artistId }: PaymentHistoryProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"date" | "value">("date");
+  const archiveGorjetas = useArchiveGorjetas();
 
   // Filtrar e ordenar gorjetas
   const filteredGorjetas = gorjetas
@@ -138,20 +151,62 @@ const PaymentHistory = ({ gorjetas, artistId }: PaymentHistoryProps) => {
       {/* Filtros e Busca - Mobile Optimized */}
       <Card>
         <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <div>
               <CardTitle className="text-base sm:text-xl">Histórico</CardTitle>
               <CardDescription className="text-xs sm:text-sm">Suas gorjetas recebidas</CardDescription>
             </div>
-            {artistId && gorjetas.length > 0 && (
-              <ClearOldGorjetasDialog
-                artistId={artistId}
-                counts={{
-                  aprovadas: gorjetas.filter(g => g.status_pagamento === "approved").length,
-                  pendentes: gorjetas.filter(g => g.status_pagamento === "pending").length,
-                }}
-              />
-            )}
+            <div className="flex items-center gap-2">
+              {artistId && filteredGorjetas.length > 0 && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-1.5 text-xs"
+                      disabled={archiveGorjetas.isPending}
+                    >
+                      {archiveGorjetas.isPending ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Archive className="h-3.5 w-3.5" />
+                      )}
+                      <span className="hidden sm:inline">Arquivar Todos</span>
+                      <span>({filteredGorjetas.length})</span>
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Arquivar todas as gorjetas?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Isso irá arquivar {filteredGorjetas.length} gorjeta(s) da lista atual. 
+                        Você pode restaurá-las depois na seção de arquivados.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => {
+                          const allIds = filteredGorjetas.map(g => g.id);
+                          archiveGorjetas.mutate({ gorjetaIds: allIds });
+                        }}
+                      >
+                        Arquivar Todos
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+              {artistId && gorjetas.length > 0 && (
+                <ClearOldGorjetasDialog
+                  artistId={artistId}
+                  counts={{
+                    aprovadas: gorjetas.filter(g => g.status_pagamento === "approved").length,
+                    pendentes: gorjetas.filter(g => g.status_pagamento === "pending").length,
+                  }}
+                />
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-3 sm:p-6 pt-0 space-y-3 sm:space-y-4">
@@ -206,7 +261,7 @@ const PaymentHistory = ({ gorjetas, artistId }: PaymentHistoryProps) => {
                 const isPro = gorjeta.taxa_plataforma === 0;
 
                 return (
-                  <Card key={gorjeta.id} className="hover:bg-muted/50 transition-colors">
+                  <Card key={gorjeta.id} className="hover:bg-muted/50 transition-colors group">
                     <CardContent className="p-3 sm:p-4">
                       {/* Mobile Layout */}
                       <div className="flex items-start gap-3">
@@ -225,9 +280,27 @@ const PaymentHistory = ({ gorjetas, artistId }: PaymentHistoryProps) => {
                               <span className="sm:hidden">{getStatusBadge(gorjeta.status_pagamento, true)}</span>
                               <span className="hidden sm:inline">{getStatusBadge(gorjeta.status_pagamento)}</span>
                             </div>
-                            <p className="text-base sm:text-lg font-bold text-green-500 shrink-0">
-                              R$ {gorjeta.valor_liquido_artista.toFixed(2)}
-                            </p>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <p className="text-base sm:text-lg font-bold text-green-500">
+                                R$ {gorjeta.valor_liquido_artista.toFixed(2)}
+                              </p>
+                              {artistId && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => archiveGorjetas.mutate({ gorjetaIds: [gorjeta.id] })}
+                                  disabled={archiveGorjetas.isPending}
+                                  title="Arquivar gorjeta"
+                                >
+                                  {archiveGorjetas.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Archive className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                                  )}
+                                </Button>
+                              )}
+                            </div>
                           </div>
                           
                           {/* Date & Details */}
