@@ -10,6 +10,8 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ClearOldGorjetasDialog } from "./ClearOldGorjetasDialog";
 import { useArchiveGorjetas } from "@/hooks/useArtistGorjetas";
+import { SwipeablePedidoCard } from "./SwipeablePedidoCard";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,6 +50,7 @@ const PaymentHistory = ({ gorjetas, artistId }: PaymentHistoryProps) => {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"date" | "value">("date");
   const archiveGorjetas = useArchiveGorjetas();
+  const isMobile = useIsMobile();
 
   // Filtrar e ordenar gorjetas
   const filteredGorjetas = gorjetas
@@ -260,8 +263,8 @@ const PaymentHistory = ({ gorjetas, artistId }: PaymentHistoryProps) => {
                 const photoUrl = gorjeta.profiles?.foto_url;
                 const isPro = gorjeta.taxa_plataforma === 0;
 
-                return (
-                  <Card key={gorjeta.id} className="hover:bg-muted/50 transition-colors group">
+                const gorjetaCard = (
+                  <Card className="hover:bg-muted/50 transition-colors group">
                     <CardContent className="p-3 sm:p-4">
                       {/* Mobile Layout */}
                       <div className="flex items-start gap-3">
@@ -284,7 +287,7 @@ const PaymentHistory = ({ gorjetas, artistId }: PaymentHistoryProps) => {
                               <p className="text-base sm:text-lg font-bold text-green-500">
                                 R$ {gorjeta.valor_liquido_artista.toFixed(2)}
                               </p>
-                              {artistId && (
+                              {artistId && !isMobile && (
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -340,6 +343,21 @@ const PaymentHistory = ({ gorjetas, artistId }: PaymentHistoryProps) => {
                     </CardContent>
                   </Card>
                 );
+
+                // Use swipeable card on mobile for archiving
+                if (isMobile && artistId) {
+                  return (
+                    <SwipeablePedidoCard
+                      key={gorjeta.id}
+                      onSwipeLeft={() => archiveGorjetas.mutate({ gorjetaIds: [gorjeta.id] })}
+                      disabled={archiveGorjetas.isPending}
+                    >
+                      {gorjetaCard}
+                    </SwipeablePedidoCard>
+                  );
+                }
+
+                return <div key={gorjeta.id}>{gorjetaCard}</div>;
               })
             )}
           </div>
