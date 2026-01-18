@@ -192,16 +192,24 @@ export function TwoStepPixPaymentDialog({
 
     setCreatingPedido(true);
     try {
-      const { data, error } = await supabase.from("pedidos").insert({
+      // For RLS to work: if user is not authenticated (clienteId is null), 
+      // we must NOT include cliente_id in the insert to match the anonymous policy
+      const insertData: any = {
         artista_id: artistaId,
-        cliente_id: clienteId,
         cliente_nome: clienteNome.trim(),
         session_id: sessionId,
         musica: pedidoMusica.trim(),
         mensagem: pedidoMensagem.trim() || null,
         status: "aguardando_pix",
         valor: null,
-      }).select('id').single();
+      };
+      
+      // Only include cliente_id if user is authenticated
+      if (clienteId) {
+        insertData.cliente_id = clienteId;
+      }
+      
+      const { data, error } = await supabase.from("pedidos").insert(insertData).select('id').single();
 
       if (error) throw error;
 
