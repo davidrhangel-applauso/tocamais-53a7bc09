@@ -187,9 +187,13 @@ export function TwoStepPixPaymentDialog({
 
     setCreatingPedido(true);
     try {
-      // For RLS to work: if user is not authenticated (clienteId is null), 
-      // we must NOT include cliente_id in the insert to match the anonymous policy
+      // IMPORTANT: anonymous users do NOT have a SELECT policy on pedidos by default.
+      // Using `.select()` after insert makes PostgREST try to read the inserted row,
+      // which can fail with RLS. So we generate the id client-side and insert without returning.
+      const newPedidoId = crypto.randomUUID();
+
       const insertData: any = {
+        id: newPedidoId,
         artista_id: artistaId,
         cliente_nome: clienteNome.trim(),
         session_id: sessionId,
@@ -198,17 +202,16 @@ export function TwoStepPixPaymentDialog({
         status: "aguardando_pix",
         valor: null,
       };
-      
+
       // Only include cliente_id if user is authenticated
       if (clienteId) {
         insertData.cliente_id = clienteId;
       }
-      
-      const { data, error } = await supabase.from("pedidos").insert(insertData).select('id').single();
 
+      const { error } = await supabase.from("pedidos").insert(insertData);
       if (error) throw error;
 
-      setPedidoId(data.id);
+      setPedidoId(newPedidoId);
       toast.success("Pedido enviado! Agora envie uma gorjeta 🎵");
       setStep('pagamento');
     } catch (error: any) {
