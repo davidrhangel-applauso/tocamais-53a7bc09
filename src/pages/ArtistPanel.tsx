@@ -158,7 +158,10 @@ const ArtistPanel = () => {
   const pedidosAceitos = pedidos.filter((p) => p.status === "aceito");
   const pedidosRecusados = pedidos.filter((p) => p.status === "recusado");
   const pedidosConcluidos = pedidos.filter((p) => p.status === "concluido");
-  const pedidosAguardandoPixConfirmacao = pedidos.filter((p) => p.status === "aguardando_confirmacao_pix");
+  // Include both statuses: "aguardando_confirmacao_pix" (client confirmed sending) and "aguardando_pix" (client hasn't confirmed yet)
+  const pedidosAguardandoPixConfirmacao = pedidos.filter((p) => 
+    p.status === "aguardando_confirmacao_pix" || p.status === "aguardando_pix"
+  );
 
   const currentTab = searchParams.get("tab") || "pendentes";
 
@@ -410,8 +413,8 @@ const ArtistPanel = () => {
                 <Card className="border-amber-500/30 bg-amber-500/5">
                   <CardContent className="p-4">
                     <p className="text-sm text-muted-foreground">
-                      <strong className="text-amber-600 dark:text-amber-400">💡 PIX Próprio:</strong> Esses clientes afirmam ter feito um PIX direto para você. 
-                      Verifique seu extrato bancário e confirme os recebimentos.
+                      <strong className="text-amber-600 dark:text-amber-400">💡 PIX Próprio:</strong> Esses clientes afirmam ter feito (ou vão fazer) um PIX direto para você. 
+                      Verifique seu extrato bancário e confirme os recebimentos. Se não houver valor informado, pergunte ao cliente quanto ele enviou.
                     </p>
                   </CardContent>
                 </Card>
@@ -432,9 +435,13 @@ const ArtistPanel = () => {
                                 {new Date(pedido.created_at).toLocaleString("pt-BR")}
                               </p>
                             </div>
-                            {pedido.valor && (
+                            {pedido.valor && pedido.valor > 0 ? (
                               <Badge className="bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30">
                                 R$ {pedido.valor.toFixed(2)}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-amber-600 border-amber-500/30">
+                                Valor não informado
                               </Badge>
                             )}
                           </div>
@@ -447,16 +454,29 @@ const ArtistPanel = () => {
                               "{pedido.mensagem}"
                             </p>
                           )}
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              onClick={() => confirmPixPayment.mutate({ pedido })}
-                              disabled={confirmPixPayment.isPending}
-                              className="flex-1 sm:flex-none"
-                            >
-                              <Check className="w-4 h-4 mr-1" />
-                              Confirmar Recebimento
-                            </Button>
+                          <div className="flex gap-2 flex-wrap">
+                            {pedido.valor && pedido.valor > 0 ? (
+                              <Button
+                                size="sm"
+                                onClick={() => confirmPixPayment.mutate({ pedido })}
+                                disabled={confirmPixPayment.isPending}
+                                className="flex-1 sm:flex-none"
+                              >
+                                <Check className="w-4 h-4 mr-1" />
+                                Confirmar R$ {pedido.valor.toFixed(2)}
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => handleUpdatePedidoStatus(pedido.id, "pendente")}
+                                disabled={updatePedidoStatus.isPending}
+                                className="flex-1 sm:flex-none"
+                              >
+                                <Check className="w-4 h-4 mr-1" />
+                                Marcar como Pendente
+                              </Button>
+                            )}
                             <Button
                               size="sm"
                               variant="outline"
