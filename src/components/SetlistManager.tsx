@@ -5,11 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ListMusic, Plus, Pencil, Trash2, Music, Check, Radio } from "lucide-react";
+import { ListMusic, Plus, Pencil, Trash2, Music, Check, Radio, Copy, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { SetlistMusicSelector } from "./SetlistMusicSelector";
 
@@ -67,6 +66,13 @@ export function SetlistManager({ artistaId }: SetlistManagerProps) {
           };
         })
       );
+
+      // Sort: active setlist first, then by created_at
+      setlistsWithCounts.sort((a, b) => {
+        if (a.ativa && !b.ativa) return -1;
+        if (!a.ativa && b.ativa) return 1;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
 
       setSetlists(setlistsWithCounts);
     } catch (error) {
@@ -166,6 +172,53 @@ export function SetlistManager({ artistaId }: SetlistManagerProps) {
     } catch (error: any) {
       console.error("Erro ao ativar/desativar setlist:", error);
       toast.error("Erro ao alterar status da setlist");
+    }
+  };
+
+  const handleDuplicateSetlist = async (setlist: SetlistWithCount) => {
+    setSaving(true);
+    try {
+      // Create new setlist
+      const { data: newSetlist, error: insertError } = await supabase
+        .from("setlists")
+        .insert({
+          artista_id: artistaId,
+          nome: `${setlist.nome} (cópia)`,
+          descricao: setlist.descricao,
+          ativa: false, // New copy is inactive
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // Copy musics
+      const { data: musicasData } = await supabase
+        .from("setlist_musicas")
+        .select("musica_id, ordem")
+        .eq("setlist_id", setlist.id);
+
+      if (musicasData && musicasData.length > 0) {
+        const newMusicasData = musicasData.map(m => ({
+          setlist_id: newSetlist.id,
+          musica_id: m.musica_id,
+          ordem: m.ordem,
+        }));
+
+        const { error: musicasError } = await supabase
+          .from("setlist_musicas")
+          .insert(newMusicasData);
+
+        if (musicasError) throw musicasError;
+      }
+
+      toast.success("Setlist duplicada!");
+      loadSetlists();
+    } catch (error: any) {
+      console.error("Erro ao duplicar setlist:", error);
+      toast.error("Erro ao duplicar setlist");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -279,29 +332,35 @@ export function SetlistManager({ artistaId }: SetlistManagerProps) {
           {setlists.map((setlist) => (
             <Card 
               key={setlist.id} 
-              className={`transition-colors ${setlist.ativa ? 'border-primary bg-primary/5' : ''}`}
+              className={`transition-all ${setlist.ativa 
+                ? 'border-primary bg-primary/5 shadow-md shadow-primary/10' 
+                : 'hover:border-border/80'}`}
             >
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  {/* Active toggle */}
-                  <div className="flex flex-col items-center gap-1">
-                    <Switch
-                      checked={setlist.ativa}
-                      onCheckedChange={() => handleToggleActive(setlist)}
-                      className="data-[state=checked]:bg-primary"
-                    />
-                    <span className="text-[10px] text-muted-foreground">
-                      {setlist.ativa ? "Ativa" : "Inativa"}
-                    </span>
-                  </div>
+                  {/* Quick activate button */}
+                  <Button
+                    variant={setlist.ativa ? "default" : "outline"}
+                    size="icon"
+                    className={`h-10 w-10 shrink-0 ${setlist.ativa 
+                      ? 'bg-primary hover:bg-primary/90' 
+                      : 'hover:border-primary hover:text-primary'}`}
+                    onClick={() => handleToggleActive(setlist)}
+                  >
+                    {setlist.ativa ? (
+                      <Check className="h-5 w-5" />
+                    ) : (
+                      <Zap className="h-5 w-5" />
+                    )}
+                  </Button>
 
                   {/* Setlist info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="font-medium truncate">{setlist.nome}</h3>
                       {setlist.ativa && (
-                        <Badge className="bg-primary/20 text-primary border-0 text-xs">
-                          <Check className="h-3 w-3 mr-1" />
+                        <Badge className="bg-primary/20 text-primary border-0 text-xs shrink-0">
+                          <Radio className="h-3 w-3 mr-1 animate-pulse" />
                           Ativa
                         </Badge>
                       )}
@@ -318,13 +377,23 @@ export function SetlistManager({ artistaId }: SetlistManagerProps) {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 shrink-0">
                     <SetlistMusicSelector
                       setlistId={setlist.id}
                       setlistName={setlist.nome}
                       artistaId={artistaId}
                       onUpdate={loadSetlists}
                     />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDuplicateSetlist(setlist)}
+                      disabled={saving}
+                      className="h-8 w-8"
+                      title="Duplicar setlist"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
