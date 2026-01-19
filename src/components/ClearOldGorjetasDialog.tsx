@@ -90,9 +90,10 @@ export function ClearOldGorjetasDialog({ artistId, counts }: ClearOldGorjetasDia
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button variant="outline" size="sm" className="gap-1.5">
           <Archive className="h-4 w-4" />
           <span className="hidden sm:inline">Arquivar Gorjetas</span>
+          <span className="sm:hidden text-xs">Arquivo</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
