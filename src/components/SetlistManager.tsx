@@ -4,11 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ListMusic, Plus, Pencil, Trash2, Music, Check, Radio, Copy, Zap } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ListMusic, Plus, Pencil, Trash2, Music, Check, Radio, Copy, Zap, MoreVertical } from "lucide-react";
 import { toast } from "sonner";
 import { SetlistMusicSelector } from "./SetlistMusicSelector";
 
@@ -242,24 +242,24 @@ export function SetlistManager({ artistaId }: SetlistManagerProps) {
     <div className="space-y-4">
       {/* Header with active setlist indicator */}
       <Card className="border-primary/20">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ListMusic className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg">Minhas Setlists</CardTitle>
+        <CardHeader className="p-4 sm:p-6 pb-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <ListMusic className="h-5 w-5 text-primary shrink-0" />
+              <CardTitle className="text-base sm:text-lg truncate">Minhas Setlists</CardTitle>
             </div>
             <Dialog open={openCreateDialog} onOpenChange={setOpenCreateDialog}>
               <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nova Setlist
+                <Button size="sm" className="shrink-0">
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Nova Setlist</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-[95vw] sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>Criar Setlist</DialogTitle>
                   <DialogDescription>
-                    Crie uma nova setlist para organizar seu repertório por ocasião.
+                    Crie uma nova setlist para organizar seu repertório.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -278,7 +278,7 @@ export function SetlistManager({ artistaId }: SetlistManagerProps) {
                       id="descricao"
                       value={formData.descricao}
                       onChange={(e) => setFormData(f => ({ ...f, descricao: e.target.value }))}
-                      placeholder="Ex: Músicas para bares e baladas"
+                      placeholder="Ex: Músicas para bares"
                     />
                   </div>
                   <Button onClick={handleCreateSetlist} disabled={saving} className="w-full">
@@ -288,29 +288,31 @@ export function SetlistManager({ artistaId }: SetlistManagerProps) {
               </DialogContent>
             </Dialog>
           </div>
-          <CardDescription>
-            Organize seu repertório em diferentes listas para cada ocasião
+          <CardDescription className="text-xs sm:text-sm">
+            Organize seu repertório em listas para cada ocasião
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 sm:px-6 pb-4">
           {/* Active setlist indicator */}
           {activeSetlist ? (
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
-              <Radio className="h-5 w-5 text-primary animate-pulse" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">Setlist ativa: <span className="text-primary">{activeSetlist.nome}</span></p>
-                <p className="text-xs text-muted-foreground">
-                  Clientes verão apenas as {activeSetlist.musicas_count} músicas desta setlist
+            <div className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg bg-primary/10 border border-primary/20">
+              <Radio className="h-4 w-4 sm:h-5 sm:w-5 text-primary animate-pulse shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm font-medium truncate">
+                  Ativa: <span className="text-primary">{activeSetlist.nome}</span>
+                </p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
+                  {activeSetlist.musicas_count} músicas visíveis
                 </p>
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
-              <Music className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Repertório completo</p>
-                <p className="text-xs text-muted-foreground">
-                  Clientes verão todas as músicas do seu repertório
+            <div className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg bg-muted/50 border">
+              <Music className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-medium">Repertório completo</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
+                  Todas as músicas visíveis
                 </p>
               </div>
             </div>
@@ -320,15 +322,15 @@ export function SetlistManager({ artistaId }: SetlistManagerProps) {
 
       {/* List of setlists */}
       {setlists.length === 0 ? (
-        <Card className="p-8">
+        <Card className="p-6 sm:p-8">
           <div className="text-center text-muted-foreground">
-            <ListMusic className="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <p className="font-medium">Nenhuma setlist criada</p>
-            <p className="text-sm">Crie setlists para organizar seu repertório por ocasião</p>
+            <ListMusic className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 opacity-50" />
+            <p className="font-medium text-sm sm:text-base">Nenhuma setlist criada</p>
+            <p className="text-xs sm:text-sm">Crie setlists para organizar seu repertório</p>
           </div>
         </Card>
       ) : (
-        <div className="grid gap-3">
+        <div className="space-y-2 sm:space-y-3">
           {setlists.map((setlist) => (
             <Card 
               key={setlist.id} 
@@ -336,48 +338,48 @@ export function SetlistManager({ artistaId }: SetlistManagerProps) {
                 ? 'border-primary bg-primary/5 shadow-md shadow-primary/10' 
                 : 'hover:border-border/80'}`}
             >
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center gap-2 sm:gap-3">
                   {/* Quick activate button */}
                   <Button
                     variant={setlist.ativa ? "default" : "outline"}
                     size="icon"
-                    className={`h-10 w-10 shrink-0 ${setlist.ativa 
+                    className={`h-9 w-9 sm:h-10 sm:w-10 shrink-0 ${setlist.ativa 
                       ? 'bg-primary hover:bg-primary/90' 
                       : 'hover:border-primary hover:text-primary'}`}
                     onClick={() => handleToggleActive(setlist)}
                   >
                     {setlist.ativa ? (
-                      <Check className="h-5 w-5" />
+                      <Check className="h-4 w-4 sm:h-5 sm:w-5" />
                     ) : (
-                      <Zap className="h-5 w-5" />
+                      <Zap className="h-4 w-4 sm:h-5 sm:w-5" />
                     )}
                   </Button>
 
                   {/* Setlist info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium truncate">{setlist.nome}</h3>
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <h3 className="font-medium text-sm sm:text-base truncate">{setlist.nome}</h3>
                       {setlist.ativa && (
-                        <Badge className="bg-primary/20 text-primary border-0 text-xs shrink-0">
-                          <Radio className="h-3 w-3 mr-1 animate-pulse" />
-                          Ativa
+                        <Badge className="bg-primary/20 text-primary border-0 text-[10px] sm:text-xs shrink-0 px-1.5 sm:px-2">
+                          <Radio className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1 animate-pulse" />
+                          <span className="hidden xs:inline">Ativa</span>
                         </Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>{setlist.musicas_count} músicas</span>
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
+                      <span className="shrink-0">{setlist.musicas_count} músicas</span>
                       {setlist.descricao && (
                         <>
-                          <span>•</span>
-                          <span className="truncate">{setlist.descricao}</span>
+                          <span className="hidden sm:inline">•</span>
+                          <span className="hidden sm:block truncate">{setlist.descricao}</span>
                         </>
                       )}
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-1 shrink-0">
+                  {/* Desktop actions */}
+                  <div className="hidden sm:flex items-center gap-1 shrink-0">
                     <SetlistMusicSelector
                       setlistId={setlist.id}
                       setlistName={setlist.nome}
@@ -432,6 +434,43 @@ export function SetlistManager({ artistaId }: SetlistManagerProps) {
                       </AlertDialogContent>
                     </AlertDialog>
                   </div>
+
+                  {/* Mobile actions dropdown */}
+                  <div className="sm:hidden shrink-0">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem asChild>
+                          <SetlistMusicSelector
+                            setlistId={setlist.id}
+                            setlistName={setlist.nome}
+                            artistaId={artistaId}
+                            onUpdate={loadSetlists}
+                            asTrigger
+                          />
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDuplicateSetlist(setlist)} disabled={saving}>
+                          <Copy className="h-4 w-4 mr-2" />
+                          Duplicar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openEditMode(setlist)}>
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteSetlist(setlist.id)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Remover
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -441,7 +480,7 @@ export function SetlistManager({ artistaId }: SetlistManagerProps) {
 
       {/* Edit Dialog */}
       <Dialog open={openEditDialog} onOpenChange={setOpenEditDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Editar Setlist</DialogTitle>
             <DialogDescription>
@@ -464,11 +503,11 @@ export function SetlistManager({ artistaId }: SetlistManagerProps) {
                 id="edit-descricao"
                 value={formData.descricao}
                 onChange={(e) => setFormData(f => ({ ...f, descricao: e.target.value }))}
-                placeholder="Ex: Músicas para bares e baladas"
+                placeholder="Ex: Músicas para bares"
               />
             </div>
             <Button onClick={handleUpdateSetlist} disabled={saving} className="w-full">
-              {saving ? "Salvando..." : "Salvar Alterações"}
+              {saving ? "Salvando..." : "Salvar"}
             </Button>
           </div>
         </DialogContent>
