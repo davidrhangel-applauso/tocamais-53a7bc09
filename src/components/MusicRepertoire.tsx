@@ -650,7 +650,7 @@ export default function MusicRepertoire({ artistaId }: MusicRepertoireProps) {
           <p className="text-xs">Tente outro termo de busca</p>
         </div>
       ) : (
-        <div className="max-h-[50vh] sm:max-h-[400px] overflow-y-auto -mx-4 sm:mx-0 px-4 sm:px-0 sm:pr-4 overscroll-contain">
+        <div className="max-h-[50vh] sm:max-h-[400px] overflow-y-auto -mx-4 sm:mx-0 px-4 sm:px-0 sm:pr-4 overscroll-contain touch-pan-y">
           <div className="space-y-1.5 sm:space-y-2">
             {filteredMusicas.map((musica) => (
               <div
