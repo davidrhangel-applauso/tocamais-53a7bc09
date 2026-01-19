@@ -51,7 +51,7 @@ export default function MusicRepertoire({ artistaId }: MusicRepertoireProps) {
   const [openDialog, setOpenDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openImportDialog, setOpenImportDialog] = useState(false);
-  const [editingMusica, setEditingMusica] = useState<Musica | null>(null);
+  const [editingMusica, setEditingMusica] = useState<MusicaWithSetlists | null>(null);
   const [novaMusica, setNovaMusica] = useState({
     titulo: "",
     artista_original: "",
@@ -60,6 +60,7 @@ export default function MusicRepertoire({ artistaId }: MusicRepertoireProps) {
     titulo: "",
     artista_original: "",
   });
+  const [editSelectedSetlists, setEditSelectedSetlists] = useState<string[]>([]);
   const [importText, setImportText] = useState("");
   const [parsedMusics, setParsedMusics] = useState<ParsedMusic[]>([]);
   const [importing, setImporting] = useState(false);
@@ -184,6 +185,7 @@ export default function MusicRepertoire({ artistaId }: MusicRepertoireProps) {
       return;
     }
 
+    // Update music info
     const { error } = await supabase
       .from("musicas_repertorio")
       .update({
@@ -195,20 +197,47 @@ export default function MusicRepertoire({ artistaId }: MusicRepertoireProps) {
     if (error) {
       console.error("Erro ao editar música:", error);
       toast.error("Erro ao editar música");
-    } else {
-      toast.success("Música atualizada!");
-      setOpenEditDialog(false);
-      setEditingMusica(null);
-      loadMusicas();
+      return;
     }
+
+    // Handle setlist changes
+    const currentSetlistIds = editingMusica.setlists.map(s => s.id);
+    const setlistsToAdd = editSelectedSetlists.filter(id => !currentSetlistIds.includes(id));
+    const setlistsToRemove = currentSetlistIds.filter(id => !editSelectedSetlists.includes(id));
+
+    // Add to new setlists
+    if (setlistsToAdd.length > 0) {
+      const toInsert = setlistsToAdd.map(setlistId => ({
+        setlist_id: setlistId,
+        musica_id: editingMusica.id,
+        ordem: 0,
+      }));
+      await supabase.from("setlist_musicas").insert(toInsert);
+    }
+
+    // Remove from setlists
+    if (setlistsToRemove.length > 0) {
+      await supabase
+        .from("setlist_musicas")
+        .delete()
+        .eq("musica_id", editingMusica.id)
+        .in("setlist_id", setlistsToRemove);
+    }
+
+    toast.success("Música atualizada!");
+    setOpenEditDialog(false);
+    setEditingMusica(null);
+    setEditSelectedSetlists([]);
+    loadMusicas();
   };
 
-  const openEditMode = (musica: Musica) => {
+  const openEditMode = (musica: MusicaWithSetlists) => {
     setEditingMusica(musica);
     setEditMusica({
       titulo: musica.titulo,
       artista_original: musica.artista_original || "",
     });
+    setEditSelectedSetlists(musica.setlists.map(s => s.id));
     setOpenEditDialog(true);
   };
 
@@ -720,6 +749,39 @@ export default function MusicRepertoire({ artistaId }: MusicRepertoireProps) {
                 placeholder="Ex: Chitãozinho & Xororó"
               />
             </div>
+            
+            {/* Setlist selection for edit */}
+            {artistSetlists.length > 0 && (
+              <div>
+                <Label className="mb-2 block">Setlists</Label>
+                <ScrollArea className="max-h-32 border rounded-md p-3">
+                  <div className="space-y-2">
+                    {artistSetlists.map((setlist) => (
+                      <div key={setlist.id} className="flex items-center gap-2">
+                        <Checkbox 
+                          id={`edit-setlist-${setlist.id}`}
+                          checked={editSelectedSetlists.includes(setlist.id)}
+                          onCheckedChange={(checked) => {
+                            setEditSelectedSetlists(prev => 
+                              checked 
+                                ? [...prev, setlist.id]
+                                : prev.filter(id => id !== setlist.id)
+                            );
+                          }}
+                        />
+                        <label 
+                          htmlFor={`edit-setlist-${setlist.id}`}
+                          className="text-sm cursor-pointer"
+                        >
+                          {setlist.nome}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+            
             <Button type="submit" className="w-full">
               Salvar Alterações
             </Button>
