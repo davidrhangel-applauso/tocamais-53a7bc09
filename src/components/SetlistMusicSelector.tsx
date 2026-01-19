@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Music, Search, ListMusic, ChevronUp, ChevronDown, GripVertical } from "lucide-react";
@@ -166,8 +165,8 @@ export function SetlistMusicSelector({ setlistId, setlistName, artistaId, onUpda
     .filter((m): m is Musica => m !== undefined);
 
   const dialogContent = (
-    <>
-      <DialogHeader>
+    <div className="flex flex-col h-full max-h-[calc(85vh-2rem)] overflow-hidden">
+      <DialogHeader className="shrink-0 pb-4">
         <DialogTitle className="flex items-center gap-2">
           <Music className="h-5 w-5 text-primary" />
           Músicas da Setlist
@@ -188,9 +187,9 @@ export function SetlistMusicSelector({ setlistId, setlistName, artistaId, onUpda
           <p className="text-sm">Adicione músicas no repertório primeiro</p>
         </div>
       ) : (
-        <>
-          {/* Search */}
-          <div className="relative">
+        <div className="flex flex-col flex-1 min-h-0 gap-3">
+          {/* Search - fixed */}
+          <div className="relative shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar música..."
@@ -200,8 +199,8 @@ export function SetlistMusicSelector({ setlistId, setlistName, artistaId, onUpda
             />
           </div>
 
-          {/* Select all / Deselect all */}
-          <div className="flex items-center justify-between text-sm">
+          {/* Select all / Deselect all - fixed */}
+          <div className="flex items-center justify-between text-sm shrink-0">
             <span className="text-muted-foreground">
               {selectedMusicIds.length} de {musicas.length} selecionadas
             </span>
@@ -215,8 +214,9 @@ export function SetlistMusicSelector({ setlistId, setlistName, artistaId, onUpda
             </div>
           </div>
 
-          {/* Music list for selection */}
-          <ScrollArea className="flex-1 -mx-6 px-6 max-h-[30vh]">
+          {/* Scrollable content area */}
+          <div className="flex-1 min-h-0 overflow-y-auto pr-2 space-y-4">
+            {/* Music list for selection */}
             <div className="space-y-1">
               {filteredMusicas.map((musica) => (
                 <label
@@ -243,16 +243,14 @@ export function SetlistMusicSelector({ setlistId, setlistName, artistaId, onUpda
                 </p>
               )}
             </div>
-          </ScrollArea>
 
-          {/* Reorder selected musicas */}
-          {selectedMusicas.length > 0 && (
-            <div className="border-t pt-3">
-              <p className="text-sm font-medium mb-2 flex items-center gap-2">
-                <GripVertical className="h-4 w-4 text-muted-foreground" />
-                Ordem das músicas ({selectedMusicas.length})
-              </p>
-              <ScrollArea className="max-h-[20vh] -mx-6 px-6">
+            {/* Reorder selected musicas */}
+            {selectedMusicas.length > 0 && (
+              <div className="border-t pt-3">
+                <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                  <GripVertical className="h-4 w-4 text-muted-foreground" />
+                  Ordem das músicas ({selectedMusicas.length})
+                </p>
                 <div className="space-y-1">
                   {selectedMusicas.map((musica, index) => (
                     <div
@@ -293,17 +291,17 @@ export function SetlistMusicSelector({ setlistId, setlistName, artistaId, onUpda
                     </div>
                   ))}
                 </div>
-              </ScrollArea>
-            </div>
-          )}
+              </div>
+            )}
+          </div>
 
-          {/* Save button */}
-          <Button onClick={handleSave} disabled={saving} className="w-full">
+          {/* Save button - fixed at bottom */}
+          <Button onClick={handleSave} disabled={saving} className="w-full shrink-0">
             {saving ? "Salvando..." : `Salvar (${selectedMusicIds.length} músicas)`}
           </Button>
-        </>
+        </div>
       )}
-    </>
+    </div>
   );
 
   // If asTrigger is true, render as a menu item with separate dialog
@@ -318,7 +316,7 @@ export function SetlistMusicSelector({ setlistId, setlistName, artistaId, onUpda
           Gerenciar músicas
         </button>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] flex flex-col">
+          <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[85vh] sm:max-h-[90vh] flex flex-col overflow-hidden p-4 sm:p-6">
             {dialogContent}
           </DialogContent>
         </Dialog>
@@ -333,7 +331,7 @@ export function SetlistMusicSelector({ setlistId, setlistName, artistaId, onUpda
           <ListMusic className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[85vh] sm:max-h-[90vh] flex flex-col overflow-hidden p-4 sm:p-6">
         {dialogContent}
       </DialogContent>
     </Dialog>
