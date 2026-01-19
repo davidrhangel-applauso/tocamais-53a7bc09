@@ -14,16 +14,42 @@ export function PullToRefresh({ onRefresh, children, className }: PullToRefreshP
   const [pullDistance, setPullDistance] = useState(0);
   const startY = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollableChildRef = useRef<HTMLElement | null>(null);
 
   const THRESHOLD = 80;
   const MAX_PULL = 120;
 
+  // Verifica se o elemento ou um ancestral tem scroll próprio
+  const findScrollableParent = useCallback((element: HTMLElement | null): HTMLElement | null => {
+    while (element && element !== containerRef.current) {
+      const style = window.getComputedStyle(element);
+      const overflowY = style.overflowY;
+      
+      if ((overflowY === 'auto' || overflowY === 'scroll') && element.scrollHeight > element.clientHeight) {
+        return element;
+      }
+      element = element.parentElement;
+    }
+    return null;
+  }, []);
+
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const target = e.target as HTMLElement;
+    const scrollableChild = findScrollableParent(target);
+    
+    // Se o toque está em um elemento scrollável que NÃO está no topo, não ativar pull
+    if (scrollableChild && scrollableChild.scrollTop > 0) {
+      setIsPulling(false);
+      scrollableChildRef.current = null;
+      return;
+    }
+    
     if (containerRef.current?.scrollTop === 0) {
       startY.current = e.touches[0].clientY;
       setIsPulling(true);
+      scrollableChildRef.current = scrollableChild;
     }
-  }, []);
+  }, [findScrollableParent]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isPulling || isRefreshing) return;
@@ -31,10 +57,20 @@ export function PullToRefresh({ onRefresh, children, className }: PullToRefreshP
     const currentY = e.touches[0].clientY;
     const diff = currentY - startY.current;
 
+    // Se há um elemento scrollável filho que agora tem scroll, cancelar o pull
+    if (scrollableChildRef.current && scrollableChildRef.current.scrollTop > 0) {
+      setIsPulling(false);
+      setPullDistance(0);
+      return;
+    }
+
     if (diff > 0 && containerRef.current?.scrollTop === 0) {
-      e.preventDefault();
-      const distance = Math.min(diff * 0.5, MAX_PULL);
-      setPullDistance(distance);
+      // Só previne o default se não há elemento scrollável ou ele está no topo
+      if (!scrollableChildRef.current || scrollableChildRef.current.scrollTop === 0) {
+        e.preventDefault();
+        const distance = Math.min(diff * 0.5, MAX_PULL);
+        setPullDistance(distance);
+      }
     }
   }, [isPulling, isRefreshing]);
 
