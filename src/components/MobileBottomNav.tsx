@@ -1,5 +1,5 @@
 import { useSearchParams } from "react-router-dom";
-import { Clock, CheckCircle, DollarSign, Music, History, Check, X } from "lucide-react";
+import { Clock, CheckCircle, DollarSign, Music, List } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -35,6 +35,7 @@ export function MobileBottomNav({
     { value: "aceitos", icon: CheckCircle, label: "Aceitos", badge: aceitos },
     { value: "gorjetas", icon: DollarSign, label: "Gorjetas", badge: gorjetas > 0 ? gorjetas : undefined },
     { value: "repertorio", icon: Music, label: "Repertório" },
+    { value: "setlists", icon: List, label: "Setlists" },
   ];
 
   // Add PIX tab if there are pending confirmations

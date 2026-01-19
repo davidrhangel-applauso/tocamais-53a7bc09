@@ -168,7 +168,7 @@ const ArtistPanel = () => {
 
   // Tab order for swipe navigation
   const tabOrder = useMemo(() => {
-    const tabs = ["pendentes", "aceitos", "gorjetas", "repertorio"];
+    const tabs = ["pendentes", "aceitos", "gorjetas", "repertorio", "setlists"];
     // Add PIX tab if there are pending confirmations
     if (pedidosAguardandoPixConfirmacao.length > 0) {
       tabs.splice(2, 0, "aguardando_pix");
