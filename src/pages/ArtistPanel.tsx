@@ -388,18 +388,6 @@ const ArtistPanel = () => {
             )}
           </div>
 
-          {/* Mobile: Clear old orders button inline */}
-          {isMobile && (pedidosConcluidos.length > 0 || pedidosRecusados.length > 0) && artistId && (
-            <div className="flex justify-end">
-              <ClearOldOrdersDialog 
-                artistId={artistId} 
-                counts={{
-                  concluidos: pedidosConcluidos.length,
-                  recusados: pedidosRecusados.length,
-                }}
-              />
-            </div>
-          )}
 
           {/* Aguardando Confirmação PIX - Only for PRO artists with own PIX */}
           <TabsContent value="aguardando_pix" className="space-y-4">
@@ -830,6 +818,18 @@ const ArtistPanel = () => {
 
           {/* Gorjetas */}
           <TabsContent value="gorjetas" className="space-y-4">
+            {/* Botão de arquivar gorjetas - somente mobile */}
+            {isMobile && artistId && gorjetas.length > 0 && (
+              <div className="flex justify-end">
+                <ClearOldGorjetasDialog
+                  artistId={artistId}
+                  counts={{
+                    aprovadas: gorjetas.filter(g => g.status_pagamento === "approved").length,
+                    pendentes: gorjetas.filter(g => g.status_pagamento !== "approved").length,
+                  }}
+                />
+              </div>
+            )}
             {gorjetasLoading ? (
               <SkeletonPedidoList count={3} />
             ) : gorjetas.length === 0 ? (
