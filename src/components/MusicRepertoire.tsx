@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Music, Plus, Trash2, Upload, FileText, X, Search, Pencil, ListMusic } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -63,11 +64,23 @@ export default function MusicRepertoire({ artistaId }: MusicRepertoireProps) {
   const [parsedMusics, setParsedMusics] = useState<ParsedMusic[]>([]);
   const [importing, setImporting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [artistSetlists, setArtistSetlists] = useState<{ id: string; nome: string }[]>([]);
+  const [selectedSetlists, setSelectedSetlists] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadMusicas();
+    loadSetlists();
   }, [artistaId]);
+
+  const loadSetlists = async () => {
+    const { data } = await supabase
+      .from("setlists")
+      .select("id, nome")
+      .eq("artista_id", artistaId)
+      .order("nome");
+    setArtistSetlists(data || []);
+  };
 
   const loadMusicas = async () => {
     // Fetch musicas
@@ -119,21 +132,48 @@ export default function MusicRepertoire({ artistaId }: MusicRepertoireProps) {
       return;
     }
 
-    const { error } = await supabase.from("musicas_repertorio").insert({
-      artista_id: artistaId,
-      titulo: novaMusica.titulo.trim(),
-      artista_original: novaMusica.artista_original.trim() || null,
-    });
+    const { data: musicaData, error } = await supabase
+      .from("musicas_repertorio")
+      .insert({
+        artista_id: artistaId,
+        titulo: novaMusica.titulo.trim(),
+        artista_original: novaMusica.artista_original.trim() || null,
+      })
+      .select()
+      .single();
 
     if (error) {
       console.error("Erro ao adicionar música:", error);
       toast.error("Erro ao adicionar música");
+      return;
+    }
+
+    // Add to selected setlists
+    if (selectedSetlists.length > 0 && musicaData) {
+      const setlistMusicasToInsert = selectedSetlists.map((setlistId) => ({
+        setlist_id: setlistId,
+        musica_id: musicaData.id,
+        ordem: 0,
+      }));
+
+      const { error: setlistError } = await supabase
+        .from("setlist_musicas")
+        .insert(setlistMusicasToInsert);
+
+      if (setlistError) {
+        console.error("Erro ao adicionar em setlists:", setlistError);
+        toast.warning("Música adicionada, mas houve erro ao incluir nas setlists");
+      } else {
+        toast.success(`Música adicionada em ${selectedSetlists.length} setlist(s)!`);
+      }
     } else {
       toast.success("Música adicionada!");
-      setNovaMusica({ titulo: "", artista_original: "" });
-      setOpenDialog(false);
-      loadMusicas();
     }
+
+    setNovaMusica({ titulo: "", artista_original: "" });
+    setSelectedSetlists([]);
+    setOpenDialog(false);
+    loadMusicas();
   };
 
   const handleEditMusica = async (e: React.FormEvent) => {
@@ -461,7 +501,16 @@ export default function MusicRepertoire({ artistaId }: MusicRepertoireProps) {
           </Dialog>
           
           {/* Add Single Button */}
-          <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+          <Dialog 
+            open={openDialog} 
+            onOpenChange={(open) => {
+              setOpenDialog(open);
+              if (!open) {
+                setNovaMusica({ titulo: "", artista_original: "" });
+                setSelectedSetlists([]);
+              }
+            }}
+          >
             <DialogTrigger asChild>
               <Button size="sm" className="flex-1 sm:flex-none">
                 <Plus className="h-4 w-4 mr-2" />
@@ -499,6 +548,39 @@ export default function MusicRepertoire({ artistaId }: MusicRepertoireProps) {
                     placeholder="Ex: Chitãozinho & Xororó"
                   />
                 </div>
+                
+                {/* Setlist selection */}
+                {artistSetlists.length > 0 && (
+                  <div>
+                    <Label className="mb-2 block">Adicionar em Setlists (opcional)</Label>
+                    <ScrollArea className="max-h-32 border rounded-md p-3">
+                      <div className="space-y-2">
+                        {artistSetlists.map((setlist) => (
+                          <div key={setlist.id} className="flex items-center gap-2">
+                            <Checkbox 
+                              id={`setlist-${setlist.id}`}
+                              checked={selectedSetlists.includes(setlist.id)}
+                              onCheckedChange={(checked) => {
+                                setSelectedSetlists(prev => 
+                                  checked 
+                                    ? [...prev, setlist.id]
+                                    : prev.filter(id => id !== setlist.id)
+                                );
+                              }}
+                            />
+                            <label 
+                              htmlFor={`setlist-${setlist.id}`}
+                              className="text-sm cursor-pointer"
+                            >
+                              {setlist.nome}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                )}
+                
                 <Button type="submit" className="w-full">
                   Adicionar
                 </Button>
