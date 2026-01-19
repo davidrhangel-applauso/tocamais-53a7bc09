@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ListMusic, Plus, Pencil, Trash2, Music, Check, Radio, Copy, Zap, MoreVertical } from "lucide-react";
+import { ListMusic, Plus, Pencil, Trash2, Music, Check, Radio, Copy, Zap, MoreVertical, Library } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { SetlistMusicSelector } from "./SetlistMusicSelector";
 
@@ -175,6 +176,27 @@ export function SetlistManager({ artistaId }: SetlistManagerProps) {
     }
   };
 
+  const handleActivateFullRepertoire = async () => {
+    // Se já está ativo (nenhuma setlist ativa), não faz nada
+    if (!activeSetlist) return;
+    
+    try {
+      // Desativar todas as setlists do artista
+      const { error } = await supabase
+        .from("setlists")
+        .update({ ativa: false })
+        .eq("artista_id", artistaId);
+
+      if (error) throw error;
+
+      toast.success("Repertório completo ativado!");
+      loadSetlists();
+    } catch (error) {
+      console.error("Erro ao ativar repertório completo:", error);
+      toast.error("Erro ao ativar repertório completo");
+    }
+  };
+
   const handleDuplicateSetlist = async (setlist: SetlistWithCount) => {
     setSaving(true);
     try {
@@ -292,31 +314,45 @@ export function SetlistManager({ artistaId }: SetlistManagerProps) {
             Organize seu repertório em listas para cada ocasião
           </CardDescription>
         </CardHeader>
-        <CardContent className="px-4 sm:px-6 pb-4">
-          {/* Active setlist indicator */}
-          {activeSetlist ? (
-            <div className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg bg-primary/10 border border-primary/20">
-              <Radio className="h-4 w-4 sm:h-5 sm:w-5 text-primary animate-pulse shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs sm:text-sm font-medium truncate">
-                  Ativa: <span className="text-primary">{activeSetlist.nome}</span>
-                </p>
-                <p className="text-[10px] sm:text-xs text-muted-foreground">
-                  {activeSetlist.musicas_count} músicas visíveis
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg bg-muted/50 border">
-              <Music className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
-              <div className="min-w-0">
+        <CardContent className="px-4 sm:px-6 pb-4 space-y-3">
+          {/* Repertório Completo - sempre visível, clicável */}
+          <div 
+            onClick={handleActivateFullRepertoire}
+            className={`flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg cursor-pointer transition-all
+              ${!activeSetlist 
+                ? 'bg-primary/10 border border-primary/20' 
+                : 'bg-muted/30 border border-transparent hover:bg-muted/50 hover:border-border'}`}
+          >
+            <Button
+              variant={!activeSetlist ? "default" : "outline"}
+              size="icon"
+              className={`h-9 w-9 shrink-0 pointer-events-none ${!activeSetlist 
+                ? 'bg-primary hover:bg-primary/90' 
+                : 'hover:border-primary hover:text-primary'}`}
+            >
+              {!activeSetlist ? (
+                <Check className="h-4 w-4" />
+              ) : (
+                <Library className="h-4 w-4" />
+              )}
+            </Button>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
                 <p className="text-xs sm:text-sm font-medium">Repertório completo</p>
-                <p className="text-[10px] sm:text-xs text-muted-foreground">
-                  Todas as músicas visíveis
-                </p>
+                {!activeSetlist && (
+                  <Badge className="bg-primary/20 text-primary border-0 text-[10px] shrink-0 px-1.5">
+                    <Radio className="h-2.5 w-2.5 mr-0.5 animate-pulse" />
+                    Ativo
+                  </Badge>
+                )}
               </div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">
+                Todas as músicas do repertório
+              </p>
             </div>
-          )}
+          </div>
+
+          {setlists.length > 0 && <Separator />}
         </CardContent>
       </Card>
 
