@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Music, Heart, Check, X, CheckCheck, Menu } from "lucide-react";
+import { Music, Heart, Check, X, CheckCheck, Menu, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import PaymentHistory from "@/components/PaymentHistory";
 import NotificationBell from "@/components/NotificationBell";
@@ -32,6 +32,7 @@ import { SwipeablePedidoCard } from "@/components/SwipeablePedidoCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
 import { ArtistCheckinManager } from "@/components/ArtistCheckinManager";
+import { useArtistCheckin, useArtistEstabelecimentoPedidos } from "@/hooks/useEstabelecimento";
 
 const ArtistPanel = () => {
   const navigate = useNavigate();
@@ -56,6 +57,17 @@ const ArtistPanel = () => {
   const deletePedido = useDeletePedido();
   const archivePedido = useArchivePedido();
   const isMobile = useIsMobile();
+  
+  // Hook para check-in e pedidos do estabelecimento
+  const { activeCheckin } = useArtistCheckin(artistId);
+  const { 
+    pedidos: pedidosLocal, 
+    pedidosPendentes: pedidosLocalPendentes,
+    pedidosAceitos: pedidosLocalAceitos,
+    pedidosConcluidos: pedidosLocalConcluidos,
+    updatePedidoStatus: updateLocalPedidoStatus,
+    loading: localLoading 
+  } = useArtistEstabelecimentoPedidos(activeCheckin?.checkin_id || null);
 
   // Pull-to-refresh handler
   const handleRefresh = useCallback(async () => {
@@ -175,8 +187,12 @@ const ArtistPanel = () => {
     if (pedidosAguardandoPixConfirmacao.length > 0) {
       tabs.splice(2, 0, "aguardando_pix");
     }
+    // Add "Pedidos do Local" tab if artist has active check-in
+    if (activeCheckin) {
+      tabs.unshift("pedidos_local");
+    }
     return tabs;
-  }, [pedidosAguardandoPixConfirmacao.length]);
+  }, [pedidosAguardandoPixConfirmacao.length, activeCheckin]);
 
   // Swipe navigation handlers
   const navigateToNextTab = useCallback(() => {
@@ -351,6 +367,11 @@ const ArtistPanel = () => {
           <div className="hidden sm:flex sm:flex-row sm:items-center justify-between gap-4">
             <div className="overflow-x-auto">
               <TabsList className="inline-flex w-auto h-auto gap-1 p-1">
+                {activeCheckin && (
+                  <TabsTrigger value="pedidos_local" className="text-sm px-3 py-2 bg-green-500/10 border-green-500/30 whitespace-nowrap">
+                    🏢 Local ({pedidosLocalPendentes.length})
+                  </TabsTrigger>
+                )}
                 {pedidosAguardandoPixConfirmacao.length > 0 && (
                   <TabsTrigger value="aguardando_pix" className="text-sm px-3 py-2 bg-amber-500/10 border-amber-500/30 whitespace-nowrap">
                     💰 PIX ({pedidosAguardandoPixConfirmacao.length})
@@ -395,6 +416,184 @@ const ArtistPanel = () => {
             )}
           </div>
 
+          {/* Pedidos do Local - Visible only when artist has active check-in */}
+          {activeCheckin && (
+            <TabsContent value="pedidos_local" className="space-y-4">
+              <Card className="border-green-500/30 bg-green-500/5">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <Building2 className="w-5 h-5 text-green-600" />
+                    <div>
+                      <p className="font-medium text-green-700 dark:text-green-400">
+                        Tocando em: {activeCheckin.estabelecimento_nome}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Pedidos feitos pelos clientes do estabelecimento (sem gorjeta)
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {localLoading ? (
+                <SkeletonPedidoList count={3} />
+              ) : pedidosLocal.length === 0 ? (
+                <Card>
+                  <CardContent className="p-12 text-center text-muted-foreground">
+                    <Building2 className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                    <p className="font-medium mb-2">Nenhum pedido do local ainda</p>
+                    <p className="text-sm">
+                      Clientes podem fazer pedidos escaneando o QR Code do estabelecimento
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  {/* Pedidos Pendentes do Local */}
+                  {pedidosLocalPendentes.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                        Pendentes ({pedidosLocalPendentes.length})
+                      </h3>
+                      {pedidosLocalPendentes.map((pedido) => (
+                        <Card key={pedido.id} className="border-primary/20">
+                          <CardContent className="p-4 sm:p-6">
+                            <div className="flex items-start gap-3">
+                              <Avatar className="w-10 h-10 shrink-0">
+                                <AvatarFallback>{(pedido.cliente_nome || "A")[0]}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold truncate">{pedido.cliente_nome || "Cliente Anônimo"}</p>
+                                <p className="text-xs text-muted-foreground mb-2">
+                                  {new Date(pedido.created_at).toLocaleString("pt-BR")}
+                                </p>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Music className="w-4 h-4 text-primary shrink-0" />
+                                  <p className="font-medium truncate">{pedido.musica}</p>
+                                </div>
+                                {pedido.mensagem && (
+                                  <p className="text-sm text-muted-foreground italic mb-3 line-clamp-2">
+                                    "{pedido.mensagem}"
+                                  </p>
+                                )}
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={async () => {
+                                      const result = await updateLocalPedidoStatus(pedido.id, "aceito");
+                                      if (result.success) toast.success("Pedido aceito!");
+                                      else toast.error(result.error || "Erro ao aceitar");
+                                    }}
+                                    className="flex-1 sm:flex-none"
+                                  >
+                                    <Check className="w-4 h-4 mr-1" />
+                                    Aceitar
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={async () => {
+                                      const result = await updateLocalPedidoStatus(pedido.id, "recusado");
+                                      if (result.success) toast.success("Pedido recusado");
+                                      else toast.error(result.error || "Erro ao recusar");
+                                    }}
+                                    className="flex-1 sm:flex-none"
+                                  >
+                                    <X className="w-4 h-4 mr-1" />
+                                    Recusar
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Pedidos Aceitos do Local */}
+                  {pedidosLocalAceitos.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                        Aceitos ({pedidosLocalAceitos.length})
+                      </h3>
+                      {pedidosLocalAceitos.map((pedido) => (
+                        <Card key={pedido.id} className="border-green-500/20">
+                          <CardContent className="p-4 sm:p-6">
+                            <div className="flex items-start gap-3">
+                              <Avatar className="w-10 h-10 shrink-0">
+                                <AvatarFallback>{(pedido.cliente_nome || "A")[0]}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold truncate">{pedido.cliente_nome || "Cliente Anônimo"}</p>
+                                <p className="text-xs text-muted-foreground mb-2">
+                                  {new Date(pedido.created_at).toLocaleString("pt-BR")}
+                                </p>
+                                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                  <Music className="w-4 h-4 text-green-600 shrink-0" />
+                                  <p className="font-medium truncate">{pedido.musica}</p>
+                                  <Badge variant="default">Aceito</Badge>
+                                </div>
+                                {pedido.mensagem && (
+                                  <p className="text-sm text-muted-foreground italic mb-3 line-clamp-2">
+                                    "{pedido.mensagem}"
+                                  </p>
+                                )}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={async () => {
+                                    const result = await updateLocalPedidoStatus(pedido.id, "concluido");
+                                    if (result.success) toast.success("Pedido concluído!");
+                                    else toast.error(result.error || "Erro ao concluir");
+                                  }}
+                                  className="w-full sm:w-auto"
+                                >
+                                  <CheckCheck className="w-4 h-4 mr-1" />
+                                  Marcar como Tocado
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Pedidos Concluídos do Local */}
+                  {pedidosLocalConcluidos.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                        Tocados ({pedidosLocalConcluidos.length})
+                      </h3>
+                      {pedidosLocalConcluidos.map((pedido) => (
+                        <Card key={pedido.id} className="opacity-60">
+                          <CardContent className="p-4 sm:p-6">
+                            <div className="flex items-start gap-3">
+                              <Avatar className="w-10 h-10 shrink-0">
+                                <AvatarFallback>{(pedido.cliente_nome || "A")[0]}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold truncate">{pedido.cliente_nome || "Cliente Anônimo"}</p>
+                                <p className="text-xs text-muted-foreground mb-2">
+                                  {new Date(pedido.created_at).toLocaleString("pt-BR")}
+                                </p>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <Music className="w-4 h-4 text-green-600 shrink-0" />
+                                  <p className="font-medium truncate">{pedido.musica}</p>
+                                  <Badge className="bg-green-600 text-xs">✓ Tocado</Badge>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </TabsContent>
+          )}
 
           {/* Aguardando Confirmação PIX - Only for PRO artists with own PIX */}
           <TabsContent value="aguardando_pix" className="space-y-4">
