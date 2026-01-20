@@ -15,13 +15,14 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Building2, MapPin, Search, LogIn, LogOut, Clock } from "lucide-react";
-import { useArtistCheckin } from "@/hooks/useEstabelecimento";
+import { Building2, MapPin, Search, LogIn, LogOut, Clock, Music } from "lucide-react";
+import { useArtistCheckin, useArtistEstabelecimentoPedidos } from "@/hooks/useEstabelecimento";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface ArtistCheckinManagerProps {
   artistaId: string;
+  onPedidosCount?: (count: number) => void;
 }
 
 interface Estabelecimento {
@@ -32,13 +33,21 @@ interface Estabelecimento {
   tipo_estabelecimento: string | null;
 }
 
-export const ArtistCheckinManager = ({ artistaId }: ArtistCheckinManagerProps) => {
+export const ArtistCheckinManager = ({ artistaId, onPedidosCount }: ArtistCheckinManagerProps) => {
   const { activeCheckin, loading, doCheckin, doCheckout, refetch } = useArtistCheckin(artistaId);
+  const { pedidosPendentes } = useArtistEstabelecimentoPedidos(activeCheckin?.checkin_id || null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [estabelecimentos, setEstabelecimentos] = useState<Estabelecimento[]>([]);
   const [searching, setSearching] = useState(false);
   const [checkingIn, setCheckingIn] = useState(false);
+
+  // Notify parent about pending pedidos count
+  useEffect(() => {
+    if (onPedidosCount) {
+      onPedidosCount(pedidosPendentes.length);
+    }
+  }, [pedidosPendentes.length, onPedidosCount]);
 
   useEffect(() => {
     const searchEstabelecimentos = async () => {
@@ -108,20 +117,33 @@ export const ArtistCheckinManager = ({ artistaId }: ArtistCheckinManagerProps) =
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">{activeCheckin.estabelecimento_nome}</p>
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                Desde {format(new Date(activeCheckin.inicio), "HH:mm", { locale: ptBR })}
-                {' • '}
-                {formatDistanceToNow(new Date(activeCheckin.inicio), { locale: ptBR })}
-              </p>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">{activeCheckin.estabelecimento_nome}</p>
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  Desde {format(new Date(activeCheckin.inicio), "HH:mm", { locale: ptBR })}
+                  {' • '}
+                  {formatDistanceToNow(new Date(activeCheckin.inicio), { locale: ptBR })}
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleCheckout}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Sair
+              </Button>
             </div>
-            <Button variant="outline" size="sm" onClick={handleCheckout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Sair
-            </Button>
+            {pedidosPendentes.length > 0 && (
+              <div className="flex items-center gap-2 p-2 bg-primary/10 rounded-lg animate-pulse">
+                <Music className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-primary">
+                  {pedidosPendentes.length} {pedidosPendentes.length === 1 ? 'pedido pendente' : 'pedidos pendentes'}
+                </span>
+                <Badge variant="default" className="ml-auto">
+                  Ver na aba "Pedidos do Local"
+                </Badge>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

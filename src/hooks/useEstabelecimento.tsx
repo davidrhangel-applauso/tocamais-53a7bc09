@@ -261,3 +261,97 @@ export const useArtistCheckin = (artistaId: string | null) => {
     refetch: fetchActiveCheckin,
   };
 };
+
+// Hook para artista buscar pedidos do estabelecimento onde está com check-in ativo
+export const useArtistEstabelecimentoPedidos = (checkinId: string | null) => {
+  const [pedidos, setPedidos] = useState<PedidoEstabelecimento[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchPedidos = useCallback(async () => {
+    if (!checkinId) {
+      setPedidos([]);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('pedidos_estabelecimento')
+        .select('*')
+        .eq('checkin_id', checkinId)
+        .eq('arquivado', false)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPedidos(data || []);
+    } catch (error) {
+      console.error('Error fetching estabelecimento pedidos:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [checkinId]);
+
+  const updatePedidoStatus = async (pedidoId: string, status: string) => {
+    try {
+      const { error } = await supabase
+        .from('pedidos_estabelecimento')
+        .update({ status })
+        .eq('id', pedidoId);
+
+      if (error) throw error;
+      
+      // Update local state
+      setPedidos(prev => prev.map(p => 
+        p.id === pedidoId ? { ...p, status } : p
+      ));
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error updating pedido status:', error);
+      return { error: error.message };
+    }
+  };
+
+  useEffect(() => {
+    fetchPedidos();
+  }, [fetchPedidos]);
+
+  // Subscribe to realtime updates
+  useEffect(() => {
+    if (!checkinId) return;
+
+    const channel = supabase
+      .channel(`pedidos_artista_${checkinId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'pedidos_estabelecimento',
+          filter: `checkin_id=eq.${checkinId}`,
+        },
+        () => {
+          fetchPedidos();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [checkinId, fetchPedidos]);
+
+  const pedidosPendentes = pedidos.filter(p => p.status === 'pendente');
+  const pedidosAceitos = pedidos.filter(p => p.status === 'aceito');
+  const pedidosConcluidos = pedidos.filter(p => p.status === 'concluido');
+
+  return {
+    pedidos,
+    pedidosPendentes,
+    pedidosAceitos,
+    pedidosConcluidos,
+    loading,
+    updatePedidoStatus,
+    refetch: fetchPedidos,
+  };
+};
