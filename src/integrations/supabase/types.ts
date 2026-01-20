@@ -402,6 +402,7 @@ export type Database = {
           bio: string | null
           cidade: string | null
           created_at: string | null
+          endereco: string | null
           estilo_musical: Database["public"]["Enums"]["music_style"] | null
           foto_capa_url: string | null
           foto_url: string | null
@@ -415,7 +416,9 @@ export type Database = {
           plano: Database["public"]["Enums"]["subscription_plan"]
           spotify: string | null
           status_destaque: boolean | null
+          telefone: string | null
           tipo: Database["public"]["Enums"]["user_type"]
+          tipo_estabelecimento: string | null
           updated_at: string | null
           youtube: string | null
         }
@@ -424,6 +427,7 @@ export type Database = {
           bio?: string | null
           cidade?: string | null
           created_at?: string | null
+          endereco?: string | null
           estilo_musical?: Database["public"]["Enums"]["music_style"] | null
           foto_capa_url?: string | null
           foto_url?: string | null
@@ -437,7 +441,9 @@ export type Database = {
           plano?: Database["public"]["Enums"]["subscription_plan"]
           spotify?: string | null
           status_destaque?: boolean | null
+          telefone?: string | null
           tipo: Database["public"]["Enums"]["user_type"]
+          tipo_estabelecimento?: string | null
           updated_at?: string | null
           youtube?: string | null
         }
@@ -446,6 +452,7 @@ export type Database = {
           bio?: string | null
           cidade?: string | null
           created_at?: string | null
+          endereco?: string | null
           estilo_musical?: Database["public"]["Enums"]["music_style"] | null
           foto_capa_url?: string | null
           foto_url?: string | null
@@ -459,7 +466,9 @@ export type Database = {
           plano?: Database["public"]["Enums"]["subscription_plan"]
           spotify?: string | null
           status_destaque?: boolean | null
+          telefone?: string | null
           tipo?: Database["public"]["Enums"]["user_type"]
+          tipo_estabelecimento?: string | null
           updated_at?: string | null
           youtube?: string | null
         }
@@ -702,7 +711,7 @@ export type Database = {
         | "funk"
         | "outros"
       subscription_plan: "free" | "pro"
-      user_type: "artista" | "cliente"
+      user_type: "artista" | "cliente" | "estabelecimento"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -845,7 +854,7 @@ export const Constants = {
         "outros",
       ],
       subscription_plan: ["free", "pro"],
-      user_type: ["artista", "cliente"],
+      user_type: ["artista", "cliente", "estabelecimento"],
     },
   },
 } as const
