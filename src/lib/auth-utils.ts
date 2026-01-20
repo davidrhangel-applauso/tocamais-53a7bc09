@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface Profile {
   id: string;
-  tipo: "artista" | "cliente";
+  tipo: "artista" | "cliente" | "estabelecimento";
 }
 
 /**
