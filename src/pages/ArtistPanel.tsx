@@ -418,7 +418,8 @@ const ArtistPanel = () => {
 
           {/* Pedidos do Local - Visible only when artist has active check-in */}
           {activeCheckin && (
-            <TabsContent value="pedidos_local" className="space-y-4">
+            <TabsContent value="pedidos_local" className="mt-4">
+              <div className="max-h-[60vh] sm:max-h-none overflow-y-auto overscroll-contain touch-pan-y space-y-4">
               <Card className="border-green-500/30 bg-green-500/5">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
@@ -592,6 +593,7 @@ const ArtistPanel = () => {
                   )}
                 </>
               )}
+              </div>
             </TabsContent>
           )}
 

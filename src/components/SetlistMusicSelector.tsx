@@ -215,7 +215,7 @@ export function SetlistMusicSelector({ setlistId, setlistName, artistaId, onUpda
           </div>
 
           {/* Scrollable content area */}
-          <div className="flex-1 min-h-0 overflow-y-auto pr-2 space-y-4">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y pr-2 space-y-4">
             {/* Music list for selection */}
             <div className="space-y-1">
               {filteredMusicas.map((musica) => (

@@ -366,7 +366,7 @@ export function SetlistManager({ artistaId }: SetlistManagerProps) {
           </div>
         </Card>
       ) : (
-        <div className="space-y-2 sm:space-y-3">
+        <div className="max-h-[50vh] sm:max-h-none overflow-y-auto overscroll-contain touch-pan-y space-y-2 sm:space-y-3">
           {setlists.map((setlist) => (
             <Card 
               key={setlist.id} 
