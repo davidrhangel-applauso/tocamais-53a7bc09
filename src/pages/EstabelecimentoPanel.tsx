@@ -432,7 +432,7 @@ const EstabelecimentoPanel = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ProfileQRCode artistId={user?.id || ''} artistName={profile?.nome || ''} />
+                <ProfileQRCode artistId={user?.id || ''} artistName={profile?.nome || ''} profileType="estabelecimento" />
                 <p className="text-center text-sm text-muted-foreground mt-4">
                   {profileUrl}
                 </p>

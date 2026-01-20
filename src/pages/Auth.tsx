@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Music, Check, X } from "lucide-react";
+import { Music, Check, X, Building2 } from "lucide-react";
 import { waitForProfile } from "@/lib/auth-utils";
 import { z } from "zod";
 import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicator";
@@ -196,10 +196,19 @@ const Auth = () => {
 
           <Button 
             variant="outline" 
-            className="w-full mb-4"
+            className="w-full mb-2"
             onClick={() => navigate("/buscar")}
           >
             Sou Cliente - Buscar Artista
+          </Button>
+
+          <Button 
+            variant="ghost" 
+            className="w-full mb-4 text-muted-foreground"
+            onClick={() => navigate("/auth-estabelecimento")}
+          >
+            <Building2 className="w-4 h-4 mr-2" />
+            Sou Estabelecimento
           </Button>
 
           <Tabs defaultValue="signin" className="w-full">

@@ -8,16 +8,19 @@ import { toast } from "sonner";
 interface ProfileQRCodeProps {
   artistId: string;
   artistName: string;
+  profileType?: "artista" | "estabelecimento";
 }
 
 const PRODUCTION_URL = "https://tocamais.app";
 
-const ProfileQRCode = ({ artistId, artistName }: ProfileQRCodeProps) => {
+const ProfileQRCode = ({ artistId, artistName, profileType = "artista" }: ProfileQRCodeProps) => {
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const profileUrl = `${PRODUCTION_URL}/artista/${artistId}`;
+  const profileUrl = profileType === "estabelecimento" 
+    ? `${PRODUCTION_URL}/local/${artistId}`
+    : `${PRODUCTION_URL}/artista/${artistId}`;
 
   useEffect(() => {
     generateQRCode();

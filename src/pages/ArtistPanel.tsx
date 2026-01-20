@@ -31,6 +31,7 @@ import { ClearOldGorjetasDialog } from "@/components/ClearOldGorjetasDialog";
 import { SwipeablePedidoCard } from "@/components/SwipeablePedidoCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
+import { ArtistCheckinManager } from "@/components/ArtistCheckinManager";
 
 const ArtistPanel = () => {
   const navigate = useNavigate();
@@ -277,6 +278,11 @@ const ArtistPanel = () => {
               </p>
             </CardContent>
           </Card>
+
+          {/* Check-in Manager */}
+          <div className="mt-4">
+            <ArtistCheckinManager artistaId={artistId || ''} />
+          </div>
         </div>
 
         {/* Stats Cards */}

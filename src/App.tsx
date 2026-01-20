@@ -6,11 +6,14 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
+import AuthEstabelecimento from "./pages/AuthEstabelecimento";
 import ResetPassword from "./pages/ResetPassword";
 import Home from "./pages/Home";
 import SearchArtists from "./pages/SearchArtists";
 import ArtistProfile from "./pages/ArtistProfile";
 import ArtistPanel from "./pages/ArtistPanel";
+import EstabelecimentoProfile from "./pages/EstabelecimentoProfile";
+import EstabelecimentoPanel from "./pages/EstabelecimentoPanel";
 import Analytics from "./pages/Analytics";
 import Messages from "./pages/Messages";
 import Conversations from "./pages/Conversations";
@@ -31,11 +34,14 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/auth-estabelecimento" element={<AuthEstabelecimento />} />
             <Route path="/redefinir-senha" element={<ResetPassword />} />
             <Route path="/home" element={<Home />} />
             <Route path="/buscar" element={<SearchArtists />} />
             <Route path="/artista/:id" element={<ArtistProfile />} />
+            <Route path="/local/:id" element={<EstabelecimentoProfile />} />
             <Route path="/painel" element={<ArtistPanel />} />
+            <Route path="/painel-local" element={<EstabelecimentoPanel />} />
             <Route path="/relatorios" element={<Analytics />} />
             <Route path="/conversas" element={<Conversations />} />
             <Route path="/mensagens" element={<Messages />} />

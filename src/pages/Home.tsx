@@ -31,7 +31,7 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [authLoading, setAuthLoading] = useState(true);
   const [userId, setUserId] = useState<string | undefined>();
-  const [userType, setUserType] = useState<"artista" | "cliente">("cliente");
+  const [userType, setUserType] = useState<"artista" | "cliente" | "estabelecimento">("cliente");
   const [profileExists, setProfileExists] = useState(false);
   
   const isPreviewMode = searchParams.get('preview') === 'true';
@@ -72,6 +72,12 @@ const Home = () => {
       // Redirect artists to their panel (unless in preview mode)
       if (profile.tipo === "artista" && !isPreviewMode) {
         navigate("/painel", { replace: true });
+        return;
+      }
+
+      // Redirect estabelecimentos to their panel
+      if (profile.tipo === "estabelecimento") {
+        navigate("/painel-local", { replace: true });
         return;
       }
       
