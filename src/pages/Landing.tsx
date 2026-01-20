@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Music, Heart, Star, Users, HelpCircle } from "lucide-react";
+import { Music, Heart, Star, Users, HelpCircle, Building2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,7 +25,13 @@ const Landing = () => {
       
       // Only redirect if profile exists
       if (profile?.tipo) {
-        navigate(profile.tipo === "artista" ? "/painel" : "/home", { replace: true });
+        if (profile.tipo === "artista") {
+          navigate("/painel", { replace: true });
+        } else if (profile.tipo === "estabelecimento") {
+          navigate("/painel-local", { replace: true });
+        } else {
+          navigate("/home", { replace: true });
+        }
       } else {
         console.error("User exists but profile not found");
         // Sign out user if profile doesn't exist
@@ -103,6 +109,18 @@ const Landing = () => {
               onClick={() => navigate("/buscar")}
             >
               Sou Cliente
+            </Button>
+          </div>
+
+          {/* Secondary CTA for establishments */}
+          <div className="mt-6 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+            <Button
+              variant="ghost"
+              className="text-white/80 hover:text-white hover:bg-white/10 gap-2"
+              onClick={() => navigate("/auth-estabelecimento")}
+            >
+              <Building2 className="h-4 w-4" />
+              Sou Estabelecimento (Bar/Restaurante)
             </Button>
           </div>
           
