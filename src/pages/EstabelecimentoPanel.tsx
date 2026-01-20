@@ -263,7 +263,8 @@ const EstabelecimentoPanel = () => {
             <TabsTrigger value="qrcode">QR Code</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="pedidos" className="space-y-3 mt-4">
+          <TabsContent value="pedidos" className="mt-4">
+            <div className="max-h-[50vh] overflow-y-auto overscroll-contain touch-pan-y space-y-3">
             {pedidos.length === 0 ? (
               <Card>
                 <CardContent className="pt-6 text-center text-muted-foreground">
@@ -337,9 +338,11 @@ const EstabelecimentoPanel = () => {
                 </Card>
               ))
             )}
+            </div>
           </TabsContent>
 
-          <TabsContent value="avaliacoes" className="space-y-3 mt-4">
+          <TabsContent value="avaliacoes" className="mt-4">
+            <div className="max-h-[50vh] overflow-y-auto overscroll-contain touch-pan-y space-y-3">
             {avaliacoes.length === 0 ? (
               <Card>
                 <CardContent className="pt-6 text-center text-muted-foreground">
@@ -383,9 +386,11 @@ const EstabelecimentoPanel = () => {
                 </Card>
               ))
             )}
+            </div>
           </TabsContent>
 
-          <TabsContent value="historico" className="space-y-3 mt-4">
+          <TabsContent value="historico" className="mt-4">
+            <div className="max-h-[50vh] overflow-y-auto overscroll-contain touch-pan-y space-y-3">
             {historico.length === 0 ? (
               <Card>
                 <CardContent className="pt-6 text-center text-muted-foreground">
@@ -418,6 +423,7 @@ const EstabelecimentoPanel = () => {
                 </Card>
               ))
             )}
+            </div>
           </TabsContent>
 
           <TabsContent value="qrcode" className="mt-4">
