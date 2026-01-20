@@ -20,7 +20,7 @@ import MusicRepertoire from "@/components/MusicRepertoire";
 import { SetlistManager } from "@/components/SetlistManager";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useArtistPedidos, useUpdatePedidoStatus, useBulkUpdatePedidos, useConfirmPixPayment, useDeletePedido, useArchivePedido, Pedido } from "@/hooks/useArtistPedidos";
-import { useArtistGorjetas, Gorjeta } from "@/hooks/useArtistGorjetas";
+import { useArtistGorjetas, useArchivedGorjetas, Gorjeta } from "@/hooks/useArtistGorjetas";
 import { useArtistStats } from "@/hooks/useArtistStats";
 import { SkeletonStatsGrid, SkeletonPedidoList } from "@/components/ui/skeleton-card";
 import { PullToRefresh } from "@/components/ui/pull-to-refresh";
@@ -47,6 +47,7 @@ const ArtistPanel = () => {
   const queryClient = useQueryClient();
   const { data: pedidos = [], isLoading: pedidosLoading } = useArtistPedidos(artistId);
   const { data: gorjetas = [], isLoading: gorjetasLoading } = useArtistGorjetas(artistId);
+  const { data: archivedGorjetas = [] } = useArchivedGorjetas(artistId);
   const { data: stats, isLoading: statsLoading } = useArtistStats(artistId);
   const updatePedidoStatus = useUpdatePedidoStatus();
   const bulkUpdatePedidos = useBulkUpdatePedidos();
@@ -819,7 +820,7 @@ const ArtistPanel = () => {
           {/* Gorjetas */}
           <TabsContent value="gorjetas" className="space-y-4">
             {/* Botão de arquivar gorjetas - somente mobile */}
-            {isMobile && artistId && gorjetas.length > 0 && (
+            {isMobile && artistId && (gorjetas.length > 0 || archivedGorjetas.length > 0) && (
               <div className="flex justify-end">
                 <ClearOldGorjetasDialog
                   artistId={artistId}
