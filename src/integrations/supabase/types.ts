@@ -145,6 +145,125 @@ export type Database = {
           },
         ]
       }
+      avaliacoes_artistas: {
+        Row: {
+          artista_id: string | null
+          artista_nome: string | null
+          checkin_id: string
+          cliente_id: string | null
+          cliente_nome: string | null
+          comentario: string | null
+          created_at: string | null
+          estabelecimento_id: string
+          id: string
+          nota: number
+          session_id: string
+        }
+        Insert: {
+          artista_id?: string | null
+          artista_nome?: string | null
+          checkin_id: string
+          cliente_id?: string | null
+          cliente_nome?: string | null
+          comentario?: string | null
+          created_at?: string | null
+          estabelecimento_id: string
+          id?: string
+          nota: number
+          session_id: string
+        }
+        Update: {
+          artista_id?: string | null
+          artista_nome?: string | null
+          checkin_id?: string
+          cliente_id?: string | null
+          cliente_nome?: string | null
+          comentario?: string | null
+          created_at?: string | null
+          estabelecimento_id?: string
+          id?: string
+          nota?: number
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacoes_artistas_artista_id_fkey"
+            columns: ["artista_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_artistas_checkin_id_fkey"
+            columns: ["checkin_id"]
+            isOneToOne: false
+            referencedRelation: "estabelecimento_checkins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_artistas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_artistas_estabelecimento_id_fkey"
+            columns: ["estabelecimento_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      estabelecimento_checkins: {
+        Row: {
+          artista_id: string | null
+          artista_nome: string | null
+          ativo: boolean | null
+          created_at: string | null
+          estabelecimento_id: string
+          fim: string | null
+          id: string
+          inicio: string
+        }
+        Insert: {
+          artista_id?: string | null
+          artista_nome?: string | null
+          ativo?: boolean | null
+          created_at?: string | null
+          estabelecimento_id: string
+          fim?: string | null
+          id?: string
+          inicio?: string
+        }
+        Update: {
+          artista_id?: string | null
+          artista_nome?: string | null
+          ativo?: boolean | null
+          created_at?: string | null
+          estabelecimento_id?: string
+          fim?: string | null
+          id?: string
+          inicio?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estabelecimento_checkins_artista_id_fkey"
+            columns: ["artista_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estabelecimento_checkins_estabelecimento_id_fkey"
+            columns: ["estabelecimento_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gorjetas: {
         Row: {
           arquivado: boolean
@@ -390,6 +509,73 @@ export type Database = {
           {
             foreignKeyName: "pedidos_cliente_id_fkey"
             columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pedidos_estabelecimento: {
+        Row: {
+          arquivado: boolean | null
+          arquivado_at: string | null
+          checkin_id: string | null
+          cliente_id: string | null
+          cliente_nome: string | null
+          created_at: string | null
+          estabelecimento_id: string
+          id: string
+          mensagem: string | null
+          musica: string
+          session_id: string
+          status: string | null
+        }
+        Insert: {
+          arquivado?: boolean | null
+          arquivado_at?: string | null
+          checkin_id?: string | null
+          cliente_id?: string | null
+          cliente_nome?: string | null
+          created_at?: string | null
+          estabelecimento_id: string
+          id?: string
+          mensagem?: string | null
+          musica: string
+          session_id: string
+          status?: string | null
+        }
+        Update: {
+          arquivado?: boolean | null
+          arquivado_at?: string | null
+          checkin_id?: string | null
+          cliente_id?: string | null
+          cliente_nome?: string | null
+          created_at?: string | null
+          estabelecimento_id?: string
+          id?: string
+          mensagem?: string | null
+          musica?: string
+          session_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_estabelecimento_checkin_id_fkey"
+            columns: ["checkin_id"]
+            isOneToOne: false
+            referencedRelation: "estabelecimento_checkins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_estabelecimento_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_estabelecimento_estabelecimento_id_fkey"
+            columns: ["estabelecimento_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -647,6 +833,15 @@ export type Database = {
         }
         Returns: string
       }
+      get_artist_active_checkin: {
+        Args: { artist_id: string }
+        Returns: {
+          checkin_id: string
+          estabelecimento_id: string
+          estabelecimento_nome: string
+          inicio: string
+        }[]
+      }
       get_artist_mercadopago_seller_id: {
         Args: { p_artist_id: string }
         Returns: string
@@ -659,6 +854,16 @@ export type Database = {
         }[]
       }
       get_artist_platform_fee: { Args: { artist_id: string }; Returns: number }
+      get_estabelecimento_active_checkin: {
+        Args: { estab_id: string }
+        Returns: {
+          artista_foto: string
+          artista_id: string
+          artista_nome: string
+          checkin_id: string
+          inicio: string
+        }[]
+      }
       get_gorjeta_by_session: {
         Args: { p_session_id: string }
         Returns: {
@@ -684,6 +889,10 @@ export type Database = {
           nome: string
         }[]
       }
+      has_active_checkin: {
+        Args: { artist_id: string; estabelecimento_id: string }
+        Returns: boolean
+      }
       has_mercadopago_linked: { Args: { artist_id: string }; Returns: boolean }
       has_role: {
         Args: {
@@ -695,6 +904,7 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_artist_pro: { Args: { artist_id: string }; Returns: boolean }
       is_client: { Args: { user_id: string }; Returns: boolean }
+      is_estabelecimento: { Args: { user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
