@@ -406,8 +406,8 @@ const ArtistProfile = () => {
                   </p>
                 )}
 
-                {/* Social Links - compact on mobile */}
-                {canViewSensitiveData ? (
+                {/* Social Links - sempre visíveis */}
+                {(artist.instagram || artist.youtube || artist.spotify) && (
                   <div className="flex gap-2 justify-center mb-4">
                     {artist.instagram && (
                       <Button variant="outline" size="icon" className="h-9 w-9" asChild>
@@ -430,11 +430,6 @@ const ArtistProfile = () => {
                         </a>
                       </Button>
                     )}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded-lg mb-4">
-                    <Lock className="w-3 h-3" />
-                    <p>Links visíveis após interação</p>
                   </div>
                 )}
 
@@ -502,8 +497,8 @@ const ArtistProfile = () => {
                     <p className="text-foreground mb-4 leading-relaxed">{artist.bio}</p>
                   )}
 
-                  {/* Social Links */}
-                  {canViewSensitiveData ? (
+                  {/* Social Links - sempre visíveis */}
+                  {(artist.instagram || artist.youtube || artist.spotify) && (
                     <div className="flex gap-3 flex-wrap">
                       {artist.instagram && (
                         <Button variant="outline" size="sm" asChild>
@@ -529,11 +524,6 @@ const ArtistProfile = () => {
                           </a>
                         </Button>
                       )}
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                      <Lock className="w-4 h-4" />
-                      <p>Links de redes sociais visíveis após interação com o artista</p>
                     </div>
                   )}
                 </div>
