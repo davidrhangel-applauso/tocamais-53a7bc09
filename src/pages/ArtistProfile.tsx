@@ -822,60 +822,15 @@ const ArtistProfile = () => {
                   !musicaCustomizada ? (
                     <div className="space-y-2">
                       <Label>Escolha uma música do repertório *</Label>
-                      <Popover open={openMusicCombobox} onOpenChange={setOpenMusicCombobox}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={openMusicCombobox}
-                            className="w-full justify-between font-normal"
-                          >
-                            {musica ? musica : "Selecione uma música..."}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                          <Command
-                            shouldFilter={true}
-                            filter={(value, search) => {
-                              const normalize = (str: string) =>
-                                str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                              return normalize(value).includes(normalize(search)) ? 1 : 0;
-                            }}
-                          >
-                            <CommandInput placeholder="Buscar música..." />
-                            <CommandList>
-                              <CommandEmpty>Nenhuma música encontrada.</CommandEmpty>
-                              <CommandGroup>
-                                {musicas.map((m) => (
-                                  <CommandItem
-                                    key={m.id}
-                                    value={`${m.titulo} ${m.artista_original || ''}`}
-                                    onSelect={() => {
-                                      setMusica(m.titulo);
-                                      setOpenMusicCombobox(false);
-                                    }}
-                                  >
-                                    <Check
-                                      className={`mr-2 h-4 w-4 ${
-                                        musica === m.titulo ? "opacity-100" : "opacity-0"
-                                      }`}
-                                    />
-                                    <div className="flex flex-col">
-                                      <span>{m.titulo}</span>
-                                      {m.artista_original && (
-                                        <span className="text-xs text-muted-foreground">
-                                          {m.artista_original}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
+                      <MusicCombobox
+                        open={openMusicCombobox}
+                        onOpenChange={setOpenMusicCombobox}
+                        items={musicas}
+                        selectedTitle={musica}
+                        onSelectTitle={setMusica}
+                        triggerPlaceholder="Selecione uma música..."
+                        searchPlaceholder="Buscar música..."
+                      />
                       <Button
                         type="button"
                         variant="link"
