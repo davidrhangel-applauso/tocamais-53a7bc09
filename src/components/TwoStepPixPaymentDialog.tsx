@@ -5,9 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Copy, Check, QrCode, Clock, Loader2, ArrowLeft, ArrowRight, CheckCircle2, Music, ChevronsUpDown } from "lucide-react";
+import { MusicCombobox } from "@/components/MusicCombobox";
+import { Copy, Check, QrCode, Clock, Loader2, ArrowLeft, ArrowRight, CheckCircle2, Music } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { generatePixPayload, generatePixQRCodeDataUrl } from "@/lib/pix-qr-generator";
@@ -304,58 +303,13 @@ export function TwoStepPixPaymentDialog({
                 !musicaCustomizada ? (
                   <div className="space-y-2">
                     <Label htmlFor="pedidoMusica-select">Escolha uma música (opcional)</Label>
-                    <Popover open={openMusicCombobox} onOpenChange={setOpenMusicCombobox}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={openMusicCombobox}
-                          className="w-full justify-between font-normal"
-                        >
-                          {pedidoMusica ? pedidoMusica : "Selecione uma música..."}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                        <Command
-                          shouldFilter={true}
-                          filter={(value, search) => {
-                            const normalize = (str: string) =>
-                              str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                            return normalize(value).includes(normalize(search)) ? 1 : 0;
-                          }}
-                        >
-                          <CommandInput placeholder="Buscar música..." />
-                          <CommandList>
-                            <CommandEmpty>Nenhuma música encontrada.</CommandEmpty>
-                            <CommandGroup>
-                              {musicas.map((m) => (
-                                <CommandItem
-                                  key={m.id}
-                                  value={`${m.titulo} ${m.artista_original || ''}`}
-                                  onSelect={() => {
-                                    setPedidoMusica(m.titulo);
-                                    setOpenMusicCombobox(false);
-                                  }}
-                                >
-                                  <Check
-                                    className={`mr-2 h-4 w-4 ${pedidoMusica === m.titulo ? "opacity-100" : "opacity-0"}`}
-                                  />
-                                  <div className="flex flex-col">
-                                    <span>{m.titulo}</span>
-                                    {m.artista_original && (
-                                      <span className="text-xs text-muted-foreground">
-                                        {m.artista_original}
-                                      </span>
-                                    )}
-                                  </div>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                    <MusicCombobox
+                      open={openMusicCombobox}
+                      onOpenChange={setOpenMusicCombobox}
+                      items={musicas}
+                      selectedTitle={pedidoMusica}
+                      onSelectTitle={setPedidoMusica}
+                    />
                     <Button
                       type="button"
                       variant="link"

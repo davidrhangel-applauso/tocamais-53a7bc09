@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { MusicCombobox } from "@/components/MusicCombobox";
 import { ArrowLeft, Music, Heart, Instagram, Youtube, Music2, ExternalLink, Lock, DollarSign, ListMusic, Check, ChevronsUpDown } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
@@ -674,58 +675,13 @@ const ArtistProfile = () => {
                         !musicaGorjetaCustomizada ? (
                           <div>
                             <Label>Escolha uma música do repertório</Label>
-                            <Popover open={openMusicGorjetaCombobox} onOpenChange={setOpenMusicGorjetaCombobox}>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  role="combobox"
-                                  aria-expanded={openMusicGorjetaCombobox}
-                                  className="w-full justify-between font-normal"
-                                >
-                                  {pedidoMusica ? pedidoMusica : "Selecione uma música..."}
-                                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                <Command
-                                  shouldFilter={true}
-                                  filter={(value, search) => {
-                                    const normalize = (str: string) =>
-                                      str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                                    return normalize(value).includes(normalize(search)) ? 1 : 0;
-                                  }}
-                                >
-                                  <CommandInput placeholder="Buscar música..." />
-                                  <CommandList>
-                                    <CommandEmpty>Nenhuma música encontrada.</CommandEmpty>
-                                    <CommandGroup>
-                                      {musicas.map((m) => (
-                                        <CommandItem
-                                          key={m.id}
-                                          value={`${m.titulo} ${m.artista_original || ''}`}
-                                          onSelect={() => {
-                                            setPedidoMusica(m.titulo);
-                                            setOpenMusicGorjetaCombobox(false);
-                                          }}
-                                        >
-                                          <Check
-                                            className={`mr-2 h-4 w-4 ${pedidoMusica === m.titulo ? "opacity-100" : "opacity-0"}`}
-                                          />
-                                          <div className="flex flex-col">
-                                            <span>{m.titulo}</span>
-                                            {m.artista_original && (
-                                              <span className="text-xs text-muted-foreground">
-                                                {m.artista_original}
-                                              </span>
-                                            )}
-                                          </div>
-                                        </CommandItem>
-                                      ))}
-                                    </CommandGroup>
-                                  </CommandList>
-                                </Command>
-                              </PopoverContent>
-                            </Popover>
+                             <MusicCombobox
+                               open={openMusicGorjetaCombobox}
+                               onOpenChange={setOpenMusicGorjetaCombobox}
+                               items={musicas}
+                               selectedTitle={pedidoMusica}
+                               onSelectTitle={setPedidoMusica}
+                             />
                             <Button
                               type="button"
                               variant="link"
