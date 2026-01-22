@@ -309,6 +309,7 @@ export function TwoStepPixPaymentDialog({
                       items={musicas}
                       selectedTitle={pedidoMusica}
                       onSelectTitle={setPedidoMusica}
+                      forceDrawer
                     />
                     <Button
                       type="button"

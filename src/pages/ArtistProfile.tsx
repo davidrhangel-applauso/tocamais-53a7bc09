@@ -681,6 +681,7 @@ const ArtistProfile = () => {
                                items={musicas}
                                selectedTitle={pedidoMusica}
                                onSelectTitle={setPedidoMusica}
+                               forceDrawer
                              />
                             <Button
                               type="button"
@@ -830,6 +831,7 @@ const ArtistProfile = () => {
                         onSelectTitle={setMusica}
                         triggerPlaceholder="Selecione uma música..."
                         searchPlaceholder="Buscar música..."
+                        forceDrawer
                       />
                       <Button
                         type="button"

@@ -21,6 +21,8 @@ type Props = {
   triggerPlaceholder?: string;
   searchPlaceholder?: string;
   className?: string;
+  /** Force Drawer (bottom sheet) even on desktop - useful inside Dialogs */
+  forceDrawer?: boolean;
 };
 
 /**
@@ -36,8 +38,10 @@ export function MusicCombobox({
   triggerPlaceholder = "Selecione uma música...",
   searchPlaceholder = "Buscar música...",
   className,
+  forceDrawer = false,
 }: Props) {
   const isMobile = useIsMobile();
+  const useDrawer = isMobile || forceDrawer;
 
   const trigger = (
     <Button
@@ -87,7 +91,7 @@ export function MusicCombobox({
     </Command>
   );
 
-  if (isMobile) {
+  if (useDrawer) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerTrigger asChild>{trigger}</DrawerTrigger>
