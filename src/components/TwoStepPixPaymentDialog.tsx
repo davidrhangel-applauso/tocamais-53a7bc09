@@ -528,26 +528,6 @@ export function TwoStepPixPaymentDialog({
                     </div>
                   )}
 
-                  {/* PIX Key */}
-                  <div className="space-y-2">
-                    <Label className="text-sm text-muted-foreground">
-                      Chave PIX ({pixTipoChaveLabels[pixTipoChave] || pixTipoChave})
-                    </Label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={pixChave}
-                        readOnly
-                        className="font-mono text-xs"
-                      />
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={handleCopyPixKey}
-                      >
-                        {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                      </Button>
-                    </div>
-                  </div>
                 </>
               )}
 
