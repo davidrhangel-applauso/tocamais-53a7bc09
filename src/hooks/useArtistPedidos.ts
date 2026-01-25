@@ -204,8 +204,8 @@ export function useConfirmPixPayment() {
 
       console.log("[useConfirmPixPayment] Creating gorjeta with valor:", valorToUse);
 
-      // 1. Create gorjeta with status approved (PRO artists: 0% fee)
-      const { error: gorjetaError } = await supabase
+      // 1. Create gorjeta with status approved (PRO artists: 0% fee) and return the created record
+      const { data: gorjetaData, error: gorjetaError } = await supabase
         .from("gorjetas")
         .insert({
           artista_id: freshPedido.artista_id,
@@ -218,14 +218,19 @@ export function useConfirmPixPayment() {
           status_pagamento: 'approved',
           pedido_musica: freshPedido.musica,
           pedido_mensagem: freshPedido.mensagem,
-        });
+        })
+        .select('id, valor')
+        .single();
 
       if (gorjetaError) {
         console.error("[useConfirmPixPayment] Error creating gorjeta:", gorjetaError);
         throw gorjetaError;
       }
 
-      console.log("[useConfirmPixPayment] Gorjeta created successfully");
+      console.log("[useConfirmPixPayment] Gorjeta created successfully:", {
+        gorjetaId: gorjetaData?.id,
+        valor: gorjetaData?.valor,
+      });
 
       // 2. Update pedido status to pendente
       const { error: pedidoError } = await supabase
@@ -239,9 +244,18 @@ export function useConfirmPixPayment() {
       }
 
       console.log("[useConfirmPixPayment] Pedido updated to pendente");
+
+      // Return the gorjeta info for success toast
+      return {
+        gorjetaId: gorjetaData?.id,
+        valor: gorjetaData?.valor,
+      };
     },
-    onSuccess: () => {
-      toast.success("PIX confirmado! Gorjeta registrada ✅");
+    onSuccess: (result) => {
+      const valorFormatado = result?.valor 
+        ? `R$ ${Number(result.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+        : '';
+      toast.success(`PIX confirmado! Gorjeta registrada ${valorFormatado} ✅`);
     },
     onError: (error: any) => {
       console.error("[useConfirmPixPayment] Mutation error:", error);
