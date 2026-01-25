@@ -822,6 +822,15 @@ export type Database = {
         Args: { profile_id: string }
         Returns: boolean
       }
+      confirm_direct_pix_payment: {
+        Args: {
+          p_cliente_id?: string
+          p_pedido_id: string
+          p_session_id: string
+          p_valor: number
+        }
+        Returns: Json
+      }
       criar_notificacao: {
         Args: {
           p_data?: Json

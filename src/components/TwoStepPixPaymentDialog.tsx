@@ -222,7 +222,7 @@ export function TwoStepPixPaymentDialog({
     }
   };
 
-  // Step 2: Confirm PIX payment was made
+  // Step 2: Confirm PIX payment was made using secure RPC function
   const handleConfirmPixPayment = async () => {
     const valor = parseCurrencyToNumber(valorGorjeta);
     if (!valorGorjeta || valor < 1) {
@@ -237,20 +237,32 @@ export function TwoStepPixPaymentDialog({
 
     setConfirmingPix(true);
     try {
-      // Update pedido with valor and new status
-      const { error: pedidoError } = await supabase
-        .from("pedidos")
-        .update({
-          status: "aguardando_confirmacao_pix",
-          valor: valor,
-        })
-        .eq("id", pedidoId);
+      // Use secure RPC function to update pedido with valor and new status
+      const { data, error } = await supabase.rpc("confirm_direct_pix_payment", {
+        p_pedido_id: pedidoId,
+        p_valor: valor,
+        p_session_id: sessionId,
+        p_cliente_id: clienteId,
+      });
 
-      if (pedidoError) throw pedidoError;
+      if (error) throw error;
+
+      // Check if the function returned an error (data is a jsonb object)
+      const result = data as { success: boolean; error?: string; pedido_id?: string; valor?: number } | null;
+      if (result && !result.success) {
+        throw new Error(result.error || "Erro ao confirmar PIX");
+      }
+
+      console.log("[TwoStepPixPaymentDialog] PIX confirmed via RPC:", {
+        pedidoId,
+        valor,
+        response: result,
+      });
 
       toast.success("PIX registrado! O artista irá confirmar o recebimento.");
       onOpenChange(false);
     } catch (error: any) {
+      console.error("[TwoStepPixPaymentDialog] Error confirming PIX:", error);
       toast.error("Erro ao confirmar PIX: " + error.message);
     } finally {
       setConfirmingPix(false);
