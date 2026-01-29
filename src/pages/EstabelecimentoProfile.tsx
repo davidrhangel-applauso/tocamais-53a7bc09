@@ -14,7 +14,7 @@ import { Building2, MapPin, Music, User, Send, Star, ArrowLeft } from "lucide-re
 import { useSessionId } from "@/hooks/useSessionId";
 import { useEstabelecimento } from "@/hooks/useEstabelecimento";
 import { RatingDialog } from "@/components/RatingDialog";
-
+import { ArtistRepertoireDisplay } from "@/components/ArtistRepertoireDisplay";
 const EstabelecimentoProfile = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -239,6 +239,15 @@ const EstabelecimentoProfile = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Artist Repertoire - shows when artist is checked in */}
+        {activeCheckin?.artista_id && (
+          <ArtistRepertoireDisplay
+            artistaId={activeCheckin.artista_id}
+            onSelectMusica={(m) => setMusica(m.titulo)}
+            selectedMusica={musica}
+          />
+        )}
 
         {/* Request form */}
         <Card>
