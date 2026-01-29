@@ -1,82 +1,123 @@
 
-<contexto-e-diagnostico>
-Você disse que:
-- o PIX chega e o pedido chega,
-- mas ao “Confirmar que recebi o PIX” o valor não entra no dashboard,
-- e você confirmou agora que “a gorjeta não aparece no histórico”.
 
-Pelo código atual, isso acontece quando os pedidos de PIX direto (principalmente no fluxo “2 etapas”) ficam com <code>valor = null</code> e/ou não conseguem ser atualizados para <code>aguardando_confirmacao_pix</code> com o valor. Sem <code>pedido.valor</code>, o Painel do artista não chama a criação de <code>gorjeta</code> (ele só marca como pendente), então nada entra no histórico e, por consequência, nada soma no dashboard.
+# Plano: Corrigir Duplicação de Pedidos no Fluxo PIX Direto
 
-A causa raiz mais provável é: o passo 2 do <code>TwoStepPixPaymentDialog</code> tenta fazer <code>update</code> em <code>pedidos</code> para setar <code>valor</code> e status, mas a política de acesso do backend não permite update de pedidos por cliente/sessão (só o artista pode atualizar). Resultado: o pedido fica sem valor, e quando o artista confirma, não vira gorjeta.
-</contexto-e-diagnostico>
+## Diagnóstico Confirmado ✅
 
-<objetivo>
-1) Garantir que, no PIX direto (2 etapas), o cliente consiga registrar o valor no pedido (de forma segura) antes do artista confirmar.
-2) Garantir que, ao confirmar no painel, a gorjeta seja criada e apareça no Histórico, somando no dashboard.
-</objetivo>
+O trigger `criar_pedido_de_gorjeta` está criando um pedido duplicado quando o artista confirma um PIX.
 
-<plano-de-implementacao>
-<passo-1-validar-com-dados-do-backend>
-Vou checar no backend (ambiente de teste/Preview) os pedidos recentes em status <code>aguardando_pix</code>/<code>aguardando_confirmacao_pix</code> e confirmar se eles estão ficando com <code>valor</code> nulo/zero quando deveriam ter valor.
-Isso confirma o diagnóstico com dados reais.
-</passo-1-validar-com-dados-do-backend>
+**Evidência nos dados:**
+- Pedido original: `d08c92d6` criado às 04:00:25
+- Pedido duplicado: `d49a0b4c` criado às 04:01:12 (mesmo momento da gorjeta)
+- Ambos têm mesma música, cliente, session_id e valor
 
-<passo-2-corrigir-a-forma-de-gravar-valor-do-cliente-no-pedido>
-Em vez de fazer <code>supabase.from("pedidos").update(...)</code> direto no front (que depende de permissões), vamos criar um método seguro no backend para “confirmar PIX do cliente” e gravar o valor:
+## Causa Raiz
 
-Opção recomendada (mais segura):
-- Criar uma função no banco (SECURITY DEFINER) do tipo <code>confirm_direct_pix_payment</code> que:
-  - recebe <code>pedido_id</code>, <code>valor</code>, <code>session_id</code> (e opcionalmente <code>cliente_id</code>)
-  - valida:
-    - pedido existe
-    - pedido está em <code>aguardando_pix</code>
-    - <code>session_id</code> confere com o pedido (ou <code>cliente_id</code> confere para usuário logado)
-    - <code>valor &gt;= 1</code>
-  - faz update apenas de <code>valor</code> e <code>status</code> para <code>aguardando_confirmacao_pix</code>
-  - retorna sucesso/erro.
-- O frontend (TwoStepPixPaymentDialog) passa a chamar <code>supabase.rpc("confirm_direct_pix_payment", ...)</code> no clique “Já fiz o PIX”.
+O trigger foi criado para o fluxo **Mercado Pago**, onde:
+1. Cliente paga via MP → gorjeta criada primeiro
+2. Trigger cria pedido automaticamente
 
-Por que isso resolve:
-- Não depende de abrir UPDATE geral em <code>pedidos</code> para qualquer cliente/sessão.
-- Mantém segurança (evita que um cliente malicioso altere outros campos do pedido).
-</passo-2-corrigir-a-forma-de-gravar-valor-do-cliente-no-pedido>
+Mas no fluxo **PIX direto**:
+1. Cliente cria pedido primeiro
+2. Artista confirma → gorjeta criada
+3. **Trigger cria OUTRO pedido (duplicado!)**
 
-<passo-3-garantir-que-o-painel-crie-a-gorjeta-sempre-que-houver-valor>
-No painel do artista:
-- Manter o fluxo atual de confirmação, mas vou ajustar para usar SEMPRE o valor “fresco” do banco (isso já existe) e, se por algum motivo o pedido estiver sem valor, exibir uma ação clara para o artista (ex.: “Definir valor manualmente antes de confirmar”), em vez de apenas “Marcar como pendente”.
+## Solução Proposta
 
-Resultado:
-- Quando houver valor, a gorjeta será criada e aparecerá no histórico, somando em “Total” e no “Recebido”.
-</passo-3-garantir-que-o-painel-crie-a-gorjeta-sempre-que-houver-valor>
+Modificar a função `criar_pedido_de_gorjeta` para verificar se já existe um pedido com o mesmo `session_id` e `artista_id` antes de criar um novo.
 
-<passo-4-observabilidade-para-parar-o-loop-de-incerteza>
-Para ter certeza absoluta que ficou correto, vou adicionar logs e feedbacks mínimos:
-- No fluxo do cliente: log/Toast com o <code>pedidoId</code> e valor gravado ao confirmar.
-- No fluxo do artista: após confirmar, retornar o ID da gorjeta criada (fazendo o insert com <code>.select()</code> quando possível) e logar/mostrar “Gorjeta registrada: R$ X,XX”.
+## Alterações Técnicas
 
-Assim conseguimos provar que:
-- o pedido recebeu o valor,
-- a gorjeta foi criada,
-- e o dashboard vai somar (porque ele soma a partir da tabela de gorjetas aprovadas).
-</passo-4-observabilidade-para-parar-o-loop-de-incerteza>
-</plano-de-implementacao>
+### 1. Migração SQL - Atualizar a função do trigger
 
-<arquivos-que-devem-ser-alterados>
-- Backend (migração): criar função SQL <code>confirm_direct_pix_payment</code> (e permissões necessárias para RPC).
-- <code>src/components/TwoStepPixPaymentDialog.tsx</code>: trocar <code>update</code> direto por <code>rpc("confirm_direct_pix_payment")</code>.
-- <code>src/pages/ArtistPanel.tsx</code> (opcional/melhoria): UX quando o valor está ausente + reforço no pós-confirmação.
-- <code>src/hooks/useArtistPedidos.ts</code> (pequeno ajuste): idealmente retornar a gorjeta criada (insert com select) e logar o ID, para facilitar debug e garantir atualização de UI.
-</arquivos-que-devem-ser-alterados>
+```sql
+CREATE OR REPLACE FUNCTION public.criar_pedido_de_gorjeta()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = 'public'
+AS $$
+DECLARE
+  v_pedido_exists boolean;
+BEGIN
+  -- Se a gorjeta foi aprovada e tem pedido de música, verificar se precisa criar pedido
+  IF NEW.status_pagamento = 'approved' 
+     AND (OLD.status_pagamento IS NULL OR OLD.status_pagamento != 'approved')
+     AND NEW.pedido_musica IS NOT NULL 
+     AND NEW.pedido_musica != '' THEN
+    
+    -- Verificar se já existe um pedido para esta sessão/artista
+    SELECT EXISTS (
+      SELECT 1 FROM pedidos 
+      WHERE session_id = NEW.session_id 
+      AND artista_id = NEW.artista_id
+      AND (
+        musica = NEW.pedido_musica 
+        OR created_at >= NEW.created_at - INTERVAL '10 minutes'
+      )
+    ) INTO v_pedido_exists;
+    
+    -- Só criar se não existir
+    IF NOT v_pedido_exists THEN
+      INSERT INTO pedidos (
+        artista_id,
+        cliente_id,
+        cliente_nome,
+        session_id,
+        musica,
+        mensagem,
+        status,
+        valor
+      ) VALUES (
+        NEW.artista_id,
+        NEW.cliente_id,
+        NEW.cliente_nome,
+        NEW.session_id,
+        NEW.pedido_musica,
+        NEW.pedido_mensagem,
+        'pendente',
+        NEW.valor
+      );
+    END IF;
+    
+  END IF;
+  
+  RETURN NEW;
+END;
+$$;
+```
 
-<criterios-de-aceite>
-1) Cliente faz fluxo PIX 2 etapas, informa valor, clica “Já fiz o PIX” e o pedido fica com status “aguardando_confirmacao_pix” e valor preenchido.
-2) Artista abre /painel → aba PIX → clica “Confirmar R$ X,XX”.
-3) Imediatamente:
-   - aparece nova gorjeta no Histórico,
-   - os cards do topo somam (Total/Recebido),
-   - o pedido sai da fila de confirmação.
-</criterios-de-aceite>
+### 2. Limpeza dos Pedidos Duplicados (opcional)
 
-<riscos-e-cuidados>
-- Não vou liberar UPDATE amplo em <code>pedidos</code> para clientes/sessão (isso abriria brecha para alterar música/mensagem/status). A solução via função do banco permite controlar exatamente o que pode mudar.
-</riscos-e-cuidados>
+Posso criar um script para identificar e remover os pedidos duplicados existentes:
+
+```sql
+-- Identificar duplicados (mesmo session_id, artista_id, musica, criados em menos de 5 minutos de diferença)
+SELECT p1.id, p1.musica, p1.created_at, p2.id as duplicate_id, p2.created_at as dup_created_at
+FROM pedidos p1
+JOIN pedidos p2 ON p1.session_id = p2.session_id 
+  AND p1.artista_id = p2.artista_id 
+  AND p1.musica = p2.musica
+  AND p1.id < p2.id
+  AND p2.created_at - p1.created_at < INTERVAL '5 minutes';
+```
+
+## Critérios de Aceite
+
+1. ✅ Gorjeta continua sendo registrada corretamente
+2. ✅ No fluxo PIX direto, apenas 1 pedido aparece na lista
+3. ✅ No fluxo Mercado Pago (sem pedido prévio), o trigger ainda cria o pedido automaticamente
+4. ✅ Dashboard soma corretamente os valores
+
+## Arquivos a Alterar
+
+| Arquivo | Alteração |
+|---------|-----------|
+| Nova migração SQL | Atualizar função `criar_pedido_de_gorjeta` com verificação de duplicidade |
+
+## Riscos Mitigados
+
+- A verificação usa `session_id` + `artista_id` + (música OU tempo) para ser precisa
+- Fluxo Mercado Pago continua funcionando (não tem pedido prévio)
+- Pedidos antigos podem ser limpos manualmente se necessário
+
