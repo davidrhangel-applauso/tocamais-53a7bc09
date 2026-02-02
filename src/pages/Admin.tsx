@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdmin } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
@@ -10,12 +10,17 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Search, Trash2, Shield, ArrowLeft, Users, Music, RefreshCw, Eye, BarChart3, Crown } from "lucide-react";
+import { Search, Trash2, Eye, RefreshCw, Menu } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { AdminPaymentStats } from "@/components/AdminPaymentStats";
 import { AdminSubscriptions } from "@/components/AdminSubscriptions";
+import { AdminSidebar } from "@/components/AdminSidebar";
+import { AdminDashboard } from "@/components/AdminDashboard";
+import { AdminEstabelecimentos } from "@/components/AdminEstabelecimentos";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import NotificationBell from "@/components/NotificationBell";
+
 type MusicStyle = Database["public"]["Enums"]["music_style"];
 type SubscriptionPlan = Database["public"]["Enums"]["subscription_plan"];
 
@@ -32,13 +37,18 @@ interface Artist {
 
 export default function Admin() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const [artists, setArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [planFilter, setPlanFilter] = useState<string>("all");
-  const [artistToDelete, setArtistToDelete] = useState<Artist | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [adminName, setAdminName] = useState("");
+  const [adminPhoto, setAdminPhoto] = useState<string | undefined>();
+  const [adminId, setAdminId] = useState<string | undefined>();
+
+  const currentTab = searchParams.get("tab") || "dashboard";
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
@@ -49,9 +59,29 @@ export default function Admin() {
 
   useEffect(() => {
     if (isAdmin) {
-      fetchArtists();
+      fetchAdminInfo();
+      if (currentTab === "artists") {
+        fetchArtists();
+      }
     }
-  }, [isAdmin]);
+  }, [isAdmin, currentTab]);
+
+  const fetchAdminInfo = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setAdminId(user.id);
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("nome, foto_url")
+        .eq("id", user.id)
+        .single();
+      
+      if (profile) {
+        setAdminName(profile.nome);
+        setAdminPhoto(profile.foto_url || undefined);
+      }
+    }
+  };
 
   const fetchArtists = async () => {
     setLoading(true);
@@ -92,7 +122,6 @@ export default function Admin() {
       
       toast.success(`Artista "${artist.nome}" excluído com sucesso`);
       setArtists(artists.filter(a => a.id !== artist.id));
-      setArtistToDelete(null);
     } catch (error) {
       console.error("Error deleting artist:", error);
       toast.error("Erro ao excluir artista");
@@ -157,80 +186,13 @@ export default function Admin() {
     return null;
   }
 
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/home")}>
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Shield className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">Painel Administrativo</h1>
-                <p className="text-muted-foreground">Gerenciar artistas e finanças da plataforma</p>
-              </div>
-            </div>
-          </div>
-          <Button onClick={fetchArtists} variant="outline" className="gap-2">
-            <RefreshCw className="w-4 h-4" />
-            Atualizar
-          </Button>
-        </div>
-
-        {/* Main Tabs */}
-        <Tabs defaultValue="artists" className="space-y-6">
-          <TabsList className="grid w-full max-w-lg grid-cols-3">
-            <TabsTrigger value="artists" className="gap-2">
-              <Users className="w-4 h-4" />
-              Artistas
-            </TabsTrigger>
-            <TabsTrigger value="assinaturas" className="gap-2">
-              <Crown className="w-4 h-4" />
-              Assinaturas
-            </TabsTrigger>
-            <TabsTrigger value="financeiro" className="gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Financeiro
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="artists" className="space-y-6">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription>Total de Artistas</CardDescription>
-                  <CardTitle className="text-3xl flex items-center gap-2">
-                    <Users className="w-6 h-6 text-primary" />
-                    {artists.length}
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription>Artistas PRO</CardDescription>
-                  <CardTitle className="text-3xl flex items-center gap-2">
-                    <Music className="w-6 h-6 text-yellow-500" />
-                    {artists.filter(a => a.plano === "pro").length}
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription>Ao Vivo Agora</CardDescription>
-                  <CardTitle className="text-3xl flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-live animate-pulse" />
-                    {artists.filter(a => a.ativo_ao_vivo).length}
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-            </div>
-
+  const renderContent = () => {
+    switch (currentTab) {
+      case "dashboard":
+        return <AdminDashboard />;
+      case "artists":
+        return (
+          <div className="space-y-6">
             {/* Filters */}
             <Card>
               <CardContent className="pt-6">
@@ -254,6 +216,10 @@ export default function Admin() {
                       <SelectItem value="pro">PRO</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Button onClick={fetchArtists} variant="outline" className="gap-2">
+                    <RefreshCw className="w-4 h-4" />
+                    Atualizar
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -345,7 +311,6 @@ export default function Admin() {
                                       variant="ghost"
                                       size="icon"
                                       className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                      onClick={() => setArtistToDelete(artist)}
                                     >
                                       <Trash2 className="w-4 h-4" />
                                     </Button>
@@ -381,17 +346,55 @@ export default function Admin() {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
+        );
+      case "estabelecimentos":
+        return <AdminEstabelecimentos />;
+      case "assinaturas":
+        return <AdminSubscriptions />;
+      case "financeiro":
+        return <AdminPaymentStats />;
+      default:
+        return <AdminDashboard />;
+    }
+  };
 
-          <TabsContent value="assinaturas">
-            <AdminSubscriptions />
-          </TabsContent>
+  const getPageTitle = () => {
+    switch (currentTab) {
+      case "dashboard": return "Dashboard";
+      case "artists": return "Artistas";
+      case "estabelecimentos": return "Estabelecimentos";
+      case "assinaturas": return "Assinaturas";
+      case "financeiro": return "Financeiro";
+      default: return "Dashboard";
+    }
+  };
 
-          <TabsContent value="financeiro">
-            <AdminPaymentStats />
-          </TabsContent>
-        </Tabs>
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-background via-background to-primary/5">
+        <AdminSidebar adminName={adminName} adminPhoto={adminPhoto} />
+
+        <div className="flex-1 flex flex-col">
+          {/* Header */}
+          <header className="border-b border-border/40 bg-background/80 backdrop-blur-sm sticky top-0 z-40 h-14 sm:h-16 flex items-center px-3 sm:px-6">
+            <SidebarTrigger className="mr-2 sm:mr-4">
+              <Menu className="w-5 h-5" />
+            </SidebarTrigger>
+            <div className="flex-1">
+              <h1 className="text-lg sm:text-xl font-bold">{getPageTitle()}</h1>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <NotificationBell userId={adminId} />
+            </div>
+          </header>
+
+          {/* Main Content */}
+          <main className="flex-1 p-4 sm:p-6 overflow-auto">
+            {renderContent()}
+          </main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }

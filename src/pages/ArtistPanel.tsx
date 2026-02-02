@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdmin } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -81,9 +82,20 @@ const ArtistPanel = () => {
   // Check subscription status
   const { isPro } = useSubscription(artistId);
 
+  // Check if user is admin and redirect
+  const { isAdmin, loading: adminLoading } = useAdmin();
+
   useEffect(() => {
-    checkAuth();
-  }, []);
+    // Wait for admin check to complete before redirecting
+    if (!adminLoading && isAdmin) {
+      navigate("/admin");
+      return;
+    }
+    
+    if (!adminLoading) {
+      checkAuth();
+    }
+  }, [adminLoading, isAdmin]);
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
