@@ -898,6 +898,13 @@ export type Database = {
           nome: string
         }[]
       }
+      get_user_emails_for_admin: {
+        Args: { user_ids: string[] }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
       has_active_checkin: {
         Args: { artist_id: string; estabelecimento_id: string }
         Returns: boolean
