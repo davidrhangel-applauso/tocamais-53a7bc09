@@ -1,80 +1,115 @@
 
 
-## Plano: Criar um Painel Dedicado para Administradores
+## Plano: Adicionar Coluna de Email no Painel Admin
 
 ### Objetivo
-Criar uma experiência de painel diferenciada para usuários administradores, mostrando apenas informações relevantes e pertinentes para a gestao da plataforma, ao inves de mostrar o painel de artistas.
+Exibir o email de cada usuario (artistas e estabelecimentos) nas tabelas do painel administrativo, usando uma funcao segura do banco de dados que apenas administradores podem acessar.
 
 ### Situacao Atual
-- A rota `/painel` sempre mostra o **ArtistPanel** (painel de artistas)
-- O admin consegue acessar `/admin` para gerenciar a plataforma
-- Quando um admin acessa `/painel`, ele ve o painel de artista (que nao faz sentido)
-- Existe um link "Admin" na sidebar visivel apenas para admins
+- As tabelas de artistas e estabelecimentos no painel admin mostram dados do `profiles`
+- Emails dos usuarios estao na tabela `auth.users`, que e protegida e nao acessivel diretamente pelo cliente
+- Nao existe funcao para buscar emails de forma segura
 
 ### Solucao Proposta
-Redirecionar automaticamente usuarios admin da rota `/painel` para `/admin`, e reorganizar o painel administrativo para ser a "home" do admin com um layout mais intuitivo.
+Criar uma funcao PostgreSQL com `SECURITY DEFINER` que permite apenas administradores consultarem emails dos usuarios, e integrar essa informacao nas tabelas do painel admin.
 
 ### Mudancas Tecnicas
 
-**1. Modificar `src/pages/ArtistPanel.tsx`**
-   - Adicionar verificacao de admin no `checkAuth`
-   - Se o usuario for admin, redirecionar para `/admin` automaticamente
-   - Isso garante que admins nunca vejam o painel de artistas
+**1. Criar Funcao SQL `get_user_emails_for_admin`**
+   - Funcao com `SECURITY DEFINER` que consulta `auth.users`
+   - Recebe um array de UUIDs e retorna os emails correspondentes
+   - Verifica se o solicitante e admin antes de retornar dados
+   - Se nao for admin, retorna vazio (seguranca)
 
-**2. Reorganizar `src/pages/Admin.tsx`**
-   - Criar um dashboard inicial com metricas resumidas
-   - Cards de acesso rapido:
-     - Assinaturas pendentes (alerta visual se houver)
-     - Total de artistas e estabelecimentos
-     - Volume financeiro do periodo
-     - Artistas ao vivo no momento
-   - Manter as abas existentes (Artistas, Assinaturas, Financeiro)
-   - Adicionar aba "Estabelecimentos" para gerenciar locais cadastrados
-   - Melhorar a navegacao com um header mais limpo
+```sql
+CREATE OR REPLACE FUNCTION public.get_user_emails_for_admin(user_ids uuid[])
+RETURNS TABLE(user_id uuid, email text)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- Apenas admins podem acessar emails
+  IF NOT public.is_admin(auth.uid()) THEN
+    RETURN;
+  END IF;
+  
+  RETURN QUERY
+  SELECT au.id, au.email::text
+  FROM auth.users au
+  WHERE au.id = ANY(user_ids);
+END;
+$$;
+```
 
-**3. Criar `src/components/AdminSidebar.tsx`**
-   - Sidebar dedicada para admins (similar ao AppSidebar dos artistas)
-   - Links rapidos: Dashboard, Artistas, Estabelecimentos, Assinaturas, Financeiro
-   - Acoes rapidas: Ver logs, Configuracoes
+**2. Atualizar `src/components/AdminEstabelecimentos.tsx`**
+   - Adicionar estado para armazenar emails: `emailMap`
+   - Apos buscar estabelecimentos, chamar a funcao RPC para buscar emails
+   - Adicionar coluna "Email" na tabela
+   - Exibir email ao lado do nome do estabelecimento
 
-**4. Adicionar secao de Estabelecimentos ao Admin**
-   - Listar todos os estabelecimentos cadastrados
-   - Visualizar estatisticas de cada local
-   - Opcao de editar/excluir
+**3. Atualizar `src/pages/Admin.tsx`**
+   - Na secao de artistas, adicionar mesma logica de busca de emails
+   - Adicionar coluna "Email" na tabela de artistas
+   - Exibir email junto com o nome do artista
 
-### Layout do Dashboard Admin
+### Layout Proposto das Tabelas
+
+**Tabela de Artistas:**
+```text
+| Artista          | Email                  | Cidade | Estilo | Plano | Status | Acoes |
+|------------------|------------------------|--------|--------|-------|--------|-------|
+| [Avatar] Nome    | artista@email.com      | SP     | Rock   | PRO   | Online | [...]  |
+| ID: abc-123      |                        |        |        |       |        |       |
+```
+
+**Tabela de Estabelecimentos:**
+```text
+| Estabelecimento  | Email                  | Cidade | Tipo       | Endereco | Acoes |
+|------------------|------------------------|--------|------------|----------|-------|
+| [Avatar] Nome    | local@email.com        | RJ     | Bar        | Rua X    | [...]  |
+| ID: xyz-789      |                        |        |            |          |       |
+```
+
+### Fluxo de Dados
 
 ```text
-+--------------------------------------------------+
-| [Logo] Painel Administrativo      [Notificacoes] |
-+--------------------------------------------------+
-|        |                                         |
-| MENU   |  [Card: Assinaturas Pendentes: 3]       |
-|        |  [Card: Total Artistas: 15]             |
-| - Dash |  [Card: Total Estabelecimentos: 2]      |
-| - Art. |  [Card: Receita do Mes: R$ 500]         |
-| - Est. |                                         |
-| - Ass. |  +------------------------------------+ |
-| - Fin. |  | TABELA: Ultimas atividades        | |
-|        |  +------------------------------------+ |
-| ----   |                                         |
-| Sair   |                                         |
-+--------------------------------------------------+
+1. Admin abre aba "Artistas" ou "Estabelecimentos"
+          |
+          v
+2. Componente busca profiles da tabela `profiles`
+          |
+          v
+3. Apos receber IDs, chama `supabase.rpc('get_user_emails_for_admin', { user_ids: [...] })`
+          |
+          v
+4. Funcao SQL verifica se chamador e admin via `is_admin(auth.uid())`
+          |
+          v
+5. Se admin: retorna emails | Se nao: retorna vazio
+          |
+          v
+6. Frontend monta mapa id -> email e exibe na tabela
 ```
 
 ### Arquivos a Modificar/Criar
 
 | Arquivo | Acao | Descricao |
 |---------|------|-----------|
-| `src/pages/ArtistPanel.tsx` | Editar | Adicionar redirect para admin |
-| `src/pages/Admin.tsx` | Editar | Reorganizar com dashboard inicial |
-| `src/components/AdminSidebar.tsx` | Criar | Sidebar dedicada para admin |
-| `src/components/AdminDashboard.tsx` | Criar | Cards e metricas resumidas |
-| `src/components/AdminEstabelecimentos.tsx` | Criar | Gerenciamento de estabelecimentos |
+| Migracao SQL | Criar | Funcao `get_user_emails_for_admin` |
+| `src/components/AdminEstabelecimentos.tsx` | Editar | Adicionar coluna email e busca via RPC |
+| `src/pages/Admin.tsx` | Editar | Adicionar coluna email na tabela de artistas |
+
+### Seguranca
+- Funcao usa `SECURITY DEFINER` para acessar `auth.users`
+- Verificacao de admin obrigatoria antes de retornar dados
+- Se usuario nao for admin, funcao retorna resultado vazio
+- Emails sao sensiveis mas admins precisam deste acesso para suporte
 
 ### Beneficios
-- Admin tem experiencia dedicada e focada
-- Acesso rapido as funcoes mais usadas (aprovar assinaturas)
-- Visao geral da plataforma em um unico lugar
-- Separacao clara entre perfil de artista e admin
+- Admin visualiza emails para contato/suporte direto
+- Busca de usuarios por email facilitada
+- Dados protegidos - apenas admins tem acesso
+- Arquitetura segura usando funcao SECURITY DEFINER
 
