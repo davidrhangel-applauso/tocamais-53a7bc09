@@ -35,6 +35,10 @@ interface Artist {
   created_at: string | null;
 }
 
+interface EmailMap {
+  [key: string]: string;
+}
+
 export default function Admin() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -47,6 +51,7 @@ export default function Admin() {
   const [adminName, setAdminName] = useState("");
   const [adminPhoto, setAdminPhoto] = useState<string | undefined>();
   const [adminId, setAdminId] = useState<string | undefined>();
+  const [artistEmails, setArtistEmails] = useState<EmailMap>({});
 
   const currentTab = searchParams.get("tab") || "dashboard";
 
@@ -94,6 +99,21 @@ export default function Admin() {
 
       if (error) throw error;
       setArtists(data || []);
+      
+      // Fetch emails for all artists
+      if (data && data.length > 0) {
+        const userIds = data.map(a => a.id);
+        const { data: emailsData, error: emailsError } = await supabase
+          .rpc('get_user_emails_for_admin', { user_ids: userIds });
+        
+        if (!emailsError && emailsData) {
+          const emailMap: EmailMap = {};
+          emailsData.forEach((item: { user_id: string; email: string }) => {
+            emailMap[item.user_id] = item.email;
+          });
+          setArtistEmails(emailMap);
+        }
+      }
     } catch (error) {
       console.error("Error fetching artists:", error);
       toast.error("Erro ao carregar artistas");
@@ -245,6 +265,7 @@ export default function Admin() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>Artista</TableHead>
+                          <TableHead>Email</TableHead>
                           <TableHead>Cidade</TableHead>
                           <TableHead>Estilo</TableHead>
                           <TableHead>Plano</TableHead>
@@ -268,6 +289,11 @@ export default function Admin() {
                                   </p>
                                 </div>
                               </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-sm text-muted-foreground">
+                                {artistEmails[artist.id] || "-"}
+                              </span>
                             </TableCell>
                             <TableCell>{artist.cidade || "-"}</TableCell>
                             <TableCell>{formatMusicStyle(artist.estilo_musical)}</TableCell>

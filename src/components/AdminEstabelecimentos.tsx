@@ -21,12 +21,17 @@ interface Estabelecimento {
   created_at: string | null;
 }
 
+interface EmailMap {
+  [key: string]: string;
+}
+
 export function AdminEstabelecimentos() {
   const navigate = useNavigate();
   const [estabelecimentos, setEstabelecimentos] = useState<Estabelecimento[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [emailMap, setEmailMap] = useState<EmailMap>({});
 
   useEffect(() => {
     fetchEstabelecimentos();
@@ -43,6 +48,21 @@ export function AdminEstabelecimentos() {
 
       if (error) throw error;
       setEstabelecimentos(data || []);
+      
+      // Fetch emails for all estabelecimentos
+      if (data && data.length > 0) {
+        const userIds = data.map(e => e.id);
+        const { data: emailsData, error: emailsError } = await supabase
+          .rpc('get_user_emails_for_admin', { user_ids: userIds });
+        
+        if (!emailsError && emailsData) {
+          const emails: EmailMap = {};
+          emailsData.forEach((item: { user_id: string; email: string }) => {
+            emails[item.user_id] = item.email;
+          });
+          setEmailMap(emails);
+        }
+      }
     } catch (error) {
       console.error("Error fetching estabelecimentos:", error);
       toast.error("Erro ao carregar estabelecimentos");
@@ -76,11 +96,13 @@ export function AdminEstabelecimentos() {
     }
   };
 
-  const filteredEstabelecimentos = estabelecimentos.filter(est =>
-    est.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (est.cidade?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (est.endereco?.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredEstabelecimentos = estabelecimentos.filter(est => {
+    const email = emailMap[est.id] || "";
+    return est.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (est.cidade?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (est.endereco?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      email.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const formatTipoEstabelecimento = (tipo: string | null) => {
     if (!tipo) return "-";
@@ -151,6 +173,7 @@ export function AdminEstabelecimentos() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Estabelecimento</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead>Cidade</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Endereço</TableHead>
@@ -173,6 +196,11 @@ export function AdminEstabelecimentos() {
                             </p>
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-muted-foreground">
+                          {emailMap[est.id] || "-"}
+                        </span>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
