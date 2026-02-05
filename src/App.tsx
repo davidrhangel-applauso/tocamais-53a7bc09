@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import Landing from "./pages/Landing";
+import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AuthEstabelecimento from "./pages/AuthEstabelecimento";
 import ResetPassword from "./pages/ResetPassword";
@@ -20,6 +21,7 @@ import Conversations from "./pages/Conversations";
 import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
 import Instructions from "./pages/Instructions";
+import ProSales from "./pages/ProSales";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,7 +34,9 @@ const App = () => (
         <Sonner />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
-            <Route path="/" element={<Landing />} />
+            <Route path="/" element={<Index />} />
+            <Route path="/landing" element={<Landing />} />
+            <Route path="/pro" element={<ProSales />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth-estabelecimento" element={<AuthEstabelecimento />} />
             <Route path="/redefinir-senha" element={<ResetPassword />} />
