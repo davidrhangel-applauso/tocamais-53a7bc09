@@ -73,17 +73,17 @@ export function LandingHero({ onArtistClick, onClientClick }: LandingHeroProps) 
         </div>
 
         {/* Trust badges */}
-        <div className="mt-10 sm:mt-12 flex flex-wrap justify-center gap-6 text-white/60 text-sm animate-fade-in" style={{ animationDelay: '0.6s' }}>
-          <div className="flex items-center gap-2">
-            <span className="text-green-400">✓</span>
+        <div className="mt-10 sm:mt-12 flex flex-col items-center gap-3 animate-fade-in" style={{ animationDelay: '0.6s' }}>
+          <div className="flex items-center gap-3 text-base sm:text-lg text-white/90 font-medium">
+            <span className="text-green-400 text-xl">✓</span>
             Cadastro gratuito
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-green-400">✓</span>
+          <div className="flex items-center gap-3 text-base sm:text-lg text-white/90 font-medium">
+            <span className="text-green-400 text-xl">✓</span>
             Sem mensalidade obrigatória
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-green-400">✓</span>
+          <div className="flex items-center gap-3 text-base sm:text-lg text-white/90 font-medium">
+            <span className="text-green-400 text-xl">✓</span>
             Pagamento via PIX
           </div>
         </div>
