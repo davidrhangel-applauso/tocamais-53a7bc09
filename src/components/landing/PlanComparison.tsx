@@ -39,16 +39,16 @@ export function PlanComparison({ onProClick, onFreeClick }: PlanComparisonProps)
           </p>
         </div>
 
-        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xl">
+        <div className="bg-card border border-border rounded-2xl shadow-xl relative overflow-visible">
           {/* Header */}
-          <div className="grid grid-cols-3">
+          <div className="grid grid-cols-3 rounded-t-2xl overflow-hidden">
             <div className="p-4 sm:p-6 bg-muted/30"></div>
             <div className="p-4 sm:p-6 text-center border-l border-border bg-muted/30">
               <p className="font-bold text-lg sm:text-xl">Free</p>
               <p className="text-muted-foreground text-sm">R$ 0</p>
             </div>
-            <div className="p-4 sm:p-6 text-center border-l border-primary/50 bg-gradient-to-br from-primary/10 to-accent/10 relative">
-              <Badge className="absolute -top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-green-500 text-white border-0">
+            <div className="p-4 sm:p-6 text-center border-l border-primary/50 bg-gradient-to-br from-primary/10 to-accent/10 relative pt-8 sm:pt-8">
+              <Badge className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-green-500 text-white border-0 z-10">
                 Recomendado
               </Badge>
               <div className="flex items-center justify-center gap-2">
