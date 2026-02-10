@@ -70,15 +70,6 @@ export function LandingHero({ onArtistClick, onClientClick }: LandingHeroProps) 
             Cadastrar como Artista
             <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 border-2 border-white/50 bg-white/10 backdrop-blur-md hover:bg-white/20 hover:border-white transition-all duration-300 hover:scale-105 font-semibold text-white shadow-xl w-full sm:w-auto"
-            onClick={onClientClick}
-          >
-            <Search className="mr-2 w-5 h-5" />
-            Sou Cliente
-          </Button>
         </div>
 
         {/* Trust badges */}
