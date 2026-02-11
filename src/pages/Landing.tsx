@@ -14,6 +14,8 @@ import { LandingFAQ } from "@/components/landing/LandingFAQ";
 import { FinalCTA } from "@/components/landing/FinalCTA";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import { StickyMobileCTA } from "@/components/sales/StickyMobileCTA";
+import { StickyHeaderCTA } from "@/components/landing/StickyHeaderCTA";
+import { MetricsSection } from "@/components/landing/MetricsSection";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -65,11 +67,17 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Sticky Header */}
+      <StickyHeaderCTA onArtistClick={handleArtistClick} />
+
       {/* Hero Section */}
       <LandingHero 
         onArtistClick={handleArtistClick} 
         onClientClick={handleClientClick} 
       />
+
+      {/* Metrics Section */}
+      <MetricsSection />
 
       {/* How It Works */}
       <HowItWorks onCTAClick={handleArtistClick} />
