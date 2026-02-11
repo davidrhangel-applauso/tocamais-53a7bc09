@@ -10,8 +10,6 @@ import { PlanComparison } from "@/components/landing/PlanComparison";
 import { SavingsCalculator } from "@/components/sales/SavingsCalculator";
 import { Testimonials } from "@/components/landing/Testimonials";
 import { PricingCards } from "@/components/landing/PricingCards";
-import { ForClients } from "@/components/landing/ForClients";
-import { ForEstablishments } from "@/components/landing/ForEstablishments";
 import { LandingFAQ } from "@/components/landing/LandingFAQ";
 import { FinalCTA } from "@/components/landing/FinalCTA";
 import { LandingFooter } from "@/components/landing/LandingFooter";
@@ -94,11 +92,6 @@ const Landing = () => {
       {/* Pricing Cards */}
       <PricingCards onSelectPlan={handleSelectPlan} />
 
-      {/* For Clients */}
-      <ForClients />
-
-      {/* For Establishments */}
-      <ForEstablishments />
 
       {/* FAQ */}
       <LandingFAQ />
