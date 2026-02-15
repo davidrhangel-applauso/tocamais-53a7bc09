@@ -17,7 +17,7 @@ const faqs = [
   },
   {
     question: "Como recebo as gorjetas?",
-    answer: "No plano Free, as gorjetas são processadas via Mercado Pago e creditadas na sua conta. No plano PRO, você pode configurar seu PIX e receber instantaneamente na sua conta bancária.",
+    answer: "No plano Free, as gorjetas são processadas via pagamento seguro e creditadas na plataforma. No plano PRO, você pode configurar seu PIX e receber instantaneamente na sua conta bancária.",
   },
   {
     question: "Preciso de equipamento especial?",
