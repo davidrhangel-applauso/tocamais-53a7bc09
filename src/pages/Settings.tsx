@@ -15,7 +15,7 @@ import { Constants, type Database } from "@/integrations/supabase/types";
 import { AvatarUpload } from "@/components/AvatarUpload";
 import { CoverPhotoUpload } from "@/components/CoverPhotoUpload";
 import { PixQRCodeUpload } from "@/components/PixQRCodeUpload";
-import { MercadoPagoLink } from "@/components/MercadoPagoLink";
+
 import { SubscriptionCard } from "@/components/SubscriptionCard";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PaymentFAQ } from "@/components/PaymentFAQ";
@@ -374,7 +374,7 @@ const Settings = () => {
                 {(!pixInfo.pix_chave || !profile.pix_qr_code_url) && (
                   <div className="p-3 bg-muted/50 border border-border/50 rounded-lg">
                     <p className="text-sm text-muted-foreground">
-                      💡 Preencha a chave PIX e o QR code para ativar o pagamento direto. Caso contrário, você pode usar o Mercado Pago abaixo.
+                      💡 Preencha a chave PIX e o QR code para ativar o pagamento direto.
                     </p>
                   </div>
                 )}
@@ -388,12 +388,6 @@ const Settings = () => {
               </div>
             )}
 
-            {/* Payment Settings - Only for FREE artists */}
-            {profile.tipo === "artista" && !isPro && (
-              <div className="space-y-4">
-                <MercadoPagoLink userId={profile.id} isPro={isPro} />
-              </div>
-            )}
 
             {/* Payment FAQ - Only for artists */}
             {profile.tipo === "artista" && (
