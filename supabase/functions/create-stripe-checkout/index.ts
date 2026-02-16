@@ -149,7 +149,7 @@ serve(async (req: Request) => {
     const amountInCents = Math.round(valor * 100);
 
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
-      payment_method_types: ['card'],
+      payment_method_types: ['card', 'pix'],
       mode: 'payment',
       line_items: [
         {
