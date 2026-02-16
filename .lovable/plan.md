@@ -1,50 +1,48 @@
 
 
-## Corrigir clique nas notificacoes de gorjeta
+## Corrigir Notificacoes + Esclarecer Fluxo de Gorjetas
 
-### Problema
-Dois problemas combinados:
-1. O `DropdownMenuItem` do Radix interfere com o `onClick` — o evento `onSelect` fecha o dropdown antes do click ser processado corretamente
-2. Quando o usuario ja esta na rota `/painel`, o `navigate("/painel")` do React Router nao faz nada (mesma rota)
+### 1. Corrigir clique nas notificacoes
 
-### Solucao
+**Problema:** O `e.preventDefault()` no `onSelect` impede o dropdown de fechar, e a combinacao com o comportamento do Radix UI bloqueia a navegacao.
+
+**Solucao:** Usar um estado controlado para o dropdown (`open`/`onOpenChange`) e fechar o dropdown programaticamente antes de navegar.
 
 **Arquivo: `src/components/NotificationBell.tsx`**
-- Adicionar `onSelect` no `DropdownMenuItem` para garantir que a acao execute antes do dropdown fechar
-- Usar `window.location` ou forcar re-render quando o link aponta para a rota atual
+- Adicionar estado `open` para controlar o dropdown
+- No `onSelect`, fechar o dropdown e depois executar a navegacao com um pequeno delay
 
-**Arquivo: `src/hooks/useNotifications.tsx`**
-- Ajustar `handleNotificationClick` para lidar com o caso de navegacao para a mesma rota
-- Se o link for a rota atual, forcar um scroll to top ou dispatch de evento para destacar a gorjeta relevante
+```typescript
+const [open, setOpen] = useState(false);
+
+// No DropdownMenu:
+<DropdownMenu open={open} onOpenChange={setOpen}>
+
+// No DropdownMenuItem:
+onSelect={(e) => {
+  e.preventDefault();
+  setOpen(false);
+  setTimeout(() => handleNotificationClick(notification), 100);
+}}
+```
+
+### 2. Fluxo de recebimento de gorjetas pelos artistas
+
+**Situacao atual:** Com a migracao para Stripe, todo o dinheiro das gorjetas e depositado na conta Stripe da plataforma (a sua). Nao ha mecanismo automatico para transferir os valores aos artistas.
+
+**Opcoes disponiveis:**
+
+- **Opcao A - Transferencia Manual:** Voce visualiza as gorjetas no painel admin e faz transferencias manuais (PIX/bancaria) para os artistas. Simples, mas trabalhoso.
+
+- **Opcao B - Stripe Connect (recomendado para escala):** Cada artista cria uma conta Stripe conectada. O Stripe automaticamente divide o pagamento: a taxa da plataforma (20% para Free, 0% para Pro) fica com voce e o restante vai direto para o artista. Requer que cada artista faca um onboarding no Stripe.
+
+Neste plano, vou implementar apenas a **correcao das notificacoes**. A questao do fluxo de pagamento para artistas e uma decisao de negocio que precisa ser discutida separadamente.
 
 ### Detalhes tecnicos
 
-No `NotificationBell.tsx`, trocar o `onClick` por `onSelect` no `DropdownMenuItem`:
-```typescript
-<DropdownMenuItem
-  onSelect={(e) => {
-    e.preventDefault();
-    handleNotificationClick(notification);
-  }}
->
-```
+**Arquivo modificado:** `src/components/NotificationBell.tsx`
+- Importar `useState` do React
+- Adicionar estado controlado `open` para o `DropdownMenu`
+- No `onSelect` do `DropdownMenuItem`: fechar dropdown, depois navegar com delay
 
-No `useNotifications.tsx`, ajustar a navegacao para funcionar mesmo na mesma rota:
-```typescript
-const handleNotificationClick = (notification: Notification) => {
-  markAsRead(notification.id);
-  if (notification.link) {
-    if (window.location.pathname === notification.link) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      navigate(notification.link);
-    }
-  }
-};
-```
-
-Isso garante que:
-- O clique funciona corretamente dentro do dropdown
-- Se o usuario ja esta na pagina, faz scroll pro topo
-- A notificacao e marcada como lida em todos os casos
-
+Nenhuma alteracao no hook `useNotifications.tsx` e necessaria - a logica de same-route scroll ja esta correta.
