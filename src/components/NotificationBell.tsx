@@ -85,7 +85,10 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
                 className={`flex flex-col items-start gap-2 p-4 cursor-pointer ${
                   !notification.lida ? "bg-primary/5" : ""
                 }`}
-                onClick={() => handleNotificationClick(notification)}
+                onSelect={(e) => {
+                  e.preventDefault();
+                  handleNotificationClick(notification);
+                }}
               >
                 <div className="flex items-start gap-3 w-full">
                   <div className="mt-1">{getNotificationIcon(notification.tipo)}</div>
