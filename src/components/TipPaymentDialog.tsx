@@ -72,14 +72,30 @@ export const TipPaymentDialog = ({
       });
       
       setPixDialogOpen(true);
-      onOpenChange(false); // Fechar o diálogo de método de pagamento
-    } catch (error) {
+      onOpenChange(false);
+    } catch (error: any) {
       console.error('Error creating Pix payment:', error);
-      toast({
-        title: "Erro ao gerar Pix",
-        description: error instanceof Error ? error.message : "Tente novamente",
-        variant: "destructive",
-      });
+      
+      // Check for FREE_LIMIT_REACHED error
+      const errorBody = error?.context?.body;
+      let errorData: any = null;
+      if (errorBody) {
+        try { errorData = JSON.parse(typeof errorBody === 'string' ? errorBody : JSON.stringify(errorBody)); } catch {}
+      }
+      
+      if (errorData?.error === 'FREE_LIMIT_REACHED') {
+        toast({
+          title: "Limite atingido",
+          description: "Este artista atingiu o limite de gorjetas do plano gratuito. Ele foi notificado para ativar o plano PRO.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro ao gerar Pix",
+          description: error instanceof Error ? error.message : "Tente novamente",
+          variant: "destructive",
+        });
+      }
     } finally {
       setProcessing(false);
     }

@@ -851,6 +851,10 @@ export type Database = {
           inicio: string
         }[]
       }
+      get_artist_approved_total: {
+        Args: { artist_id: string }
+        Returns: number
+      }
       get_artist_mercadopago_seller_id: {
         Args: { p_artist_id: string }
         Returns: string

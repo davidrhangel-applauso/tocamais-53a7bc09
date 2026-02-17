@@ -285,6 +285,39 @@ serve(async (req: Request) => {
     const taxaPercentual = isPro ? 0 : 0.20;
 
     const valorBruto = valor;
+    const valorLiquidoPreview = Number((valorBruto * (1 - taxaPercentual)).toFixed(2));
+
+    // Free tier limit check (R$ 10.00 net)
+    const FREE_TIP_LIMIT = 10;
+    if (!isPro) {
+      const { data: totalData, error: totalError } = await supabase
+        .rpc('get_artist_approved_total', { artist_id: artista_id });
+
+      if (totalError) {
+        console.error('[INTERNAL] Error checking free limit:', totalError);
+        return new Response(
+          JSON.stringify({ error: ERROR_MESSAGES.INTERNAL_ERROR }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        );
+      }
+
+      const currentTotal = Number(totalData) || 0;
+      if (currentTotal + valorLiquidoPreview > FREE_TIP_LIMIT) {
+        // Send notification to artist
+        await supabase.rpc('criar_notificacao', {
+          p_usuario_id: artista_id,
+          p_tipo: 'limite_free_atingido',
+          p_titulo: 'Limite de gorjetas atingido!',
+          p_mensagem: 'Você atingiu o limite de R$ 10 em gorjetas gratuitas! Assine o PRO para continuar recebendo.',
+          p_link: '/pro-sales',
+        });
+
+        return new Response(
+          JSON.stringify({ error: 'FREE_LIMIT_REACHED', message: 'Este artista atingiu o limite de gorjetas do plano gratuito.' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+        );
+      }
+    }
     const taxaPlataforma = Number((valorBruto * taxaPercentual).toFixed(2));
     const valorLiquidoArtista = Number((valorBruto * (1 - taxaPercentual)).toFixed(2));
     const valorTotal = valorBruto;
