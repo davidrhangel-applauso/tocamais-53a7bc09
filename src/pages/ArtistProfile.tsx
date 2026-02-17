@@ -75,6 +75,12 @@ const tipSchema = z.object({
     .trim()
     .min(1, "Por favor, digite seu nome")
     .max(100, "Nome deve ter no máximo 100 caracteres"),
+  clienteCpf: z.string()
+    .trim()
+    .min(1, "CPF é obrigatório")
+    .refine((cpf) => validarCPF(cpf), {
+      message: "CPF inválido"
+    }),
   pedidoMusica: z.string()
     .trim()
     .max(200, "Nome da música deve ter no máximo 200 caracteres")
@@ -295,9 +301,11 @@ const ArtistProfile = () => {
   };
 
   const handleOpenTipDialog = () => {
+    // Validate form before opening dialog
     const validationResult = tipSchema.safeParse({ 
       valor: valorGorjeta,
       clienteNome: clienteNomeGorjeta,
+      clienteCpf: clienteCpfGorjeta,
       pedidoMusica: pedidoMusica || "",
       pedidoMensagem: pedidoMensagem || ""
     });
@@ -591,7 +599,7 @@ const ArtistProfile = () => {
                   </>
                 ) : (
                   <>
-                    {/* Regular flow with Stripe */}
+                    {/* Regular flow with Mercado Pago */}
                     <div>
                       <Label htmlFor="clienteNomeGorjeta">Seu nome *</Label>
                       <Input
@@ -600,6 +608,19 @@ const ArtistProfile = () => {
                         value={clienteNomeGorjeta}
                         onChange={(e) => setClienteNomeGorjeta(e.target.value)}
                       />
+                    </div>
+                    <div>
+                      <Label htmlFor="clienteCpfGorjeta">CPF *</Label>
+                      <Input
+                        id="clienteCpfGorjeta"
+                        placeholder="000.000.000-00"
+                        value={clienteCpfGorjeta}
+                        onChange={(e) => setClienteCpfGorjeta(formatarCPF(e.target.value))}
+                        maxLength={14}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Necessário para melhor pontuação no Mercado Pago
+                      </p>
                     </div>
                     <div>
                       <Label htmlFor="valor">Valor (R$) *</Label>
@@ -758,7 +779,7 @@ const ArtistProfile = () => {
                     <Button
                       className="w-full"
                       onClick={handleOpenTipDialog}
-                      disabled={!valorGorjeta || parseFloat(valorGorjeta) <= 0 || !clienteNomeGorjeta.trim()}
+                      disabled={!valorGorjeta || parseFloat(valorGorjeta) <= 0 || !clienteNomeGorjeta.trim() || !clienteCpfGorjeta.trim()}
                     >
                       Continuar para Pagamento
                     </Button>
@@ -887,7 +908,7 @@ const ArtistProfile = () => {
         </Card>
       </main>
 
-      {/* Tip Payment Dialog (Stripe) */}
+      {/* Tip Payment Dialog (Mercado Pago) */}
       <TipPaymentDialog
         open={tipDialogOpen}
         onOpenChange={setTipDialogOpen}
@@ -895,6 +916,7 @@ const ArtistProfile = () => {
         artistaId={id || ""}
         clienteId={currentUserId}
         clienteNome={clienteNomeGorjeta}
+        clienteCpf={limparCPF(clienteCpfGorjeta)}
         sessionId={sessionId}
         pedidoMusica={pedidoMusica || null}
         pedidoMensagem={pedidoMensagem || null}

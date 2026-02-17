@@ -13,37 +13,48 @@ const faqItems = [
     answer: `A plataforma cobra uma taxa sobre cada gorjeta recebida:
 
 • **Artistas Free:** Taxa de 20% (você recebe 80% da gorjeta)
-• **Artistas Pro (a partir de R$19,90/mês):** Taxa de 0% (você recebe 100% da gorjeta)
+• **Artistas Pro (R$39,90/mês):** Taxa de 0% (você recebe 100% da gorjeta)
 
-Os pagamentos são processados de forma segura via gateway de pagamento.`
+Além disso, o Mercado Pago cobra uma pequena taxa de processamento (~1%) que é descontada automaticamente do seu recebimento.`
+  },
+  {
+    question: "Por que o Mercado Pago retém meus pagamentos por 14 dias?",
+    answer: `O Mercado Pago retém pagamentos por até 14 dias como medida de segurança contra fraudes e chargebacks. Esse prazo pode variar de acordo com:
+
+• **Verificação da conta:** Contas verificadas têm prazos menores
+• **Histórico de vendas:** Vendedores com bom histórico recebem mais rápido
+• **Tipo de conta:** Contas empresariais podem ter condições diferentes
+
+Você pode configurar a liberação imediata no app do Mercado Pago em: Seu negócio → Configurações → Liberação de dinheiro.`
   },
   {
     question: "Como recebo os pagamentos das gorjetas?",
-    answer: `Os pagamentos são processados de forma segura pela plataforma:
+    answer: `Os pagamentos são processados pelo Mercado Pago e vão diretamente para sua conta vinculada:
 
-1. **Plano Free:** Os clientes pagam via cartão de crédito/débito. Você recebe 80% do valor.
-2. **Plano Pro:** Configure seu PIX próprio e receba 100% instantaneamente, ou receba via plataforma com 0% de taxa.
+1. **Vincule sua conta:** Conecte sua conta Mercado Pago nas configurações
+2. **Receba gorjetas:** Quando um fã fizer uma gorjeta, o valor vai para o Mercado Pago
+3. **Saque:** O dinheiro fica disponível na sua conta Mercado Pago para saque
 
-Os valores são creditados e podem ser transferidos para sua conta.`
+Se você não vincular sua conta, os pagamentos ficam retidos na plataforma e precisam ser transferidos manualmente.`
   },
   {
     question: "Quais métodos de pagamento os fãs podem usar?",
     answer: `Os fãs podem pagar gorjetas usando:
 
-• **Cartão de Crédito/Débito:** Pagamento seguro via gateway de pagamento
-• **PIX Direto (artistas Pro):** Pagamento instantâneo direto para o artista
+• **Pix:** Pagamento instantâneo via QR Code ou código copia e cola
+• **Cartão de Crédito:** Pagamento parcelado em até 12x (dependendo do valor)
 
-Todos os métodos são processados com total segurança e criptografia.`
+Ambos os métodos são processados pelo Mercado Pago com total segurança.`
   },
   {
     question: "Vale a pena assinar o plano Pro?",
-    answer: `O plano Pro (a partir de R$19,90/mês) vale a pena se você recebe gorjetas regularmente:
+    answer: `O plano Pro (R$39,90/mês) vale a pena se você recebe mais de R$200/mês em gorjetas:
 
 **Cálculo de exemplo:**
 • **Free:** R$200 em gorjetas = R$160 líquido (20% taxa)
-• **Pro:** R$200 em gorjetas = R$200 líquido - R$19,90 = R$180,10 líquido
+• **Pro:** R$200 em gorjetas = R$200 líquido - R$39,90 = R$160,10 líquido
 
-A partir de ~R$100/mês em gorjetas, o Pro já começa a compensar!`
+A partir de R$200/mês em gorjetas, o Pro começa a compensar. Quanto mais você recebe, maior a economia!`
   },
   {
     question: "Preciso emitir nota fiscal das gorjetas?",
@@ -56,11 +67,13 @@ Recomendamos consultar um contador para orientação específica sobre sua situa
   },
   {
     question: "O que acontece se um cliente pedir reembolso?",
-    answer: `Disputas de pagamento são tratadas pela plataforma de pagamentos:
+    answer: `Chargebacks (pedidos de reembolso) são tratados pelo Mercado Pago:
 
-• O gateway analisa cada caso e pode contestar chargebacks indevidos
-• Se o chargeback for aprovado, o valor é debitado
-• Mantenha um bom relacionamento com seu público para evitar disputas`
+• O Mercado Pago analisa cada caso e pode contestar chargebacks indevidos
+• Se o chargeback for aprovado, o valor é debitado da sua conta
+• Por isso o Mercado Pago retém pagamentos inicialmente - para cobrir possíveis chargebacks
+
+Mantenha um bom relacionamento com seu público para evitar disputas.`
   }
 ];
 

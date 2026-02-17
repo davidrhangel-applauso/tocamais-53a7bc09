@@ -143,11 +143,7 @@ export const useNotifications = (userId: string | undefined) => {
   const handleNotificationClick = (notification: Notification) => {
     markAsRead(notification.id);
     if (notification.link) {
-      if (window.location.pathname === notification.link) {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        navigate(notification.link);
-      }
+      navigate(notification.link);
     }
   };
 

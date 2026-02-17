@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Button } from "./ui/button";
-import { Loader2, CreditCard } from "lucide-react";
+import { CreditCard, Smartphone, Loader2 } from "lucide-react";
+import { CardPaymentForm } from "./CardPaymentForm";
+import { PixPaymentDialog } from "./PixPaymentDialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -25,44 +28,55 @@ export const TipPaymentDialog = ({
   artistaId,
   clienteId,
   clienteNome,
+  clienteCpf,
   sessionId,
   pedidoMusica,
   pedidoMensagem,
 }: TipPaymentDialogProps) => {
   const { toast } = useToast();
+  const [paymentMethod, setPaymentMethod] = useState<'pix' | 'card'>('pix');
   const [processing, setProcessing] = useState(false);
+  
+  // Estados para Pix
+  const [pixPaymentData, setPixPaymentData] = useState<{
+    gorjetaId: string;
+    qrCode: string;
+    qrCodeBase64: string;
+    expiresAt: string;
+  } | null>(null);
+  const [pixDialogOpen, setPixDialogOpen] = useState(false);
 
-  const handlePayment = async () => {
+  const handleCreatePixPayment = async () => {
     setProcessing(true);
     try {
-      const origin = window.location.origin;
-      
-      const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
+      const { data, error } = await supabase.functions.invoke('create-pix-payment', {
         body: {
           valor,
           artista_id: artistaId,
           cliente_id: clienteId,
           cliente_nome: clienteNome,
+          cliente_cpf: clienteCpf,
           session_id: sessionId,
           pedido_musica: pedidoMusica,
           pedido_mensagem: pedidoMensagem,
-          success_url: `${origin}/artista/${artistaId}?payment=success`,
-          cancel_url: `${origin}/artista/${artistaId}?payment=cancelled`,
         },
       });
 
       if (error) throw error;
 
-      if (data?.checkout_url) {
-        // Redirect to Stripe Checkout
-        window.location.href = data.checkout_url;
-      } else {
-        throw new Error('URL de pagamento não gerada');
-      }
+      setPixPaymentData({
+        gorjetaId: data.id,
+        qrCode: data.qr_code,
+        qrCodeBase64: data.qr_code_base64,
+        expiresAt: data.expires_at,
+      });
+      
+      setPixDialogOpen(true);
+      onOpenChange(false); // Fechar o diálogo de método de pagamento
     } catch (error) {
-      console.error('Error creating checkout:', error);
+      console.error('Error creating Pix payment:', error);
       toast({
-        title: "Erro ao processar pagamento",
+        title: "Erro ao gerar Pix",
         description: error instanceof Error ? error.message : "Tente novamente",
         variant: "destructive",
       });
@@ -71,57 +85,98 @@ export const TipPaymentDialog = ({
     }
   };
 
+  const handleCardPaymentSuccess = (paymentId: string) => {
+    toast({
+      title: "Pagamento Aprovado!",
+      description: "Sua gorjeta foi enviada com sucesso.",
+    });
+    onOpenChange(false);
+  };
+
+  const handleCardPaymentError = (error: string) => {
+    toast({
+      title: "Erro no Pagamento",
+      description: error,
+      variant: "destructive",
+    });
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Confirmar Pagamento</DialogTitle>
-          <DialogDescription>
-            Você será redirecionado para uma página segura de pagamento
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Escolha a forma de pagamento</DialogTitle>
+            <DialogDescription>
+              Valor da gorjeta: R$ {valor.toFixed(2)}
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="bg-muted/30 p-4 rounded-lg text-center">
-            <p className="text-sm text-muted-foreground mb-1">Valor da gorjeta</p>
-            <p className="text-3xl font-bold text-primary">
-              R$ {valor.toFixed(2)}
-            </p>
-          </div>
+          <Tabs value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as 'pix' | 'card')}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="pix" className="flex items-center gap-2">
+                <Smartphone className="w-4 h-4" />
+                Pix
+              </TabsTrigger>
+              <TabsTrigger value="card" className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4" />
+                Cartão
+              </TabsTrigger>
+            </TabsList>
 
-          {pedidoMusica && (
-            <div className="bg-muted/20 p-3 rounded-lg">
-              <p className="text-xs text-muted-foreground">Pedido musical</p>
-              <p className="text-sm font-medium">{pedidoMusica}</p>
-            </div>
-          )}
+            <TabsContent value="pix" className="space-y-4">
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Pagamento instantâneo via Pix
+                </p>
+                <Button 
+                  onClick={handleCreatePixPayment}
+                  disabled={processing}
+                  className="w-full"
+                >
+                  {processing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Gerando QR Code...
+                    </>
+                  ) : (
+                    <>
+                      <Smartphone className="w-4 h-4 mr-2" />
+                      Gerar QR Code Pix
+                    </>
+                  )}
+                </Button>
+              </div>
+            </TabsContent>
 
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground text-center">
-              Aceitamos cartão de crédito, débito e outros métodos
-            </p>
-          </div>
+            <TabsContent value="card">
+              <CardPaymentForm
+                valor={valor}
+                artistaId={artistaId}
+                clienteId={clienteId}
+                clienteNome={clienteNome}
+                sessionId={sessionId}
+                pedidoMusica={pedidoMusica}
+                pedidoMensagem={pedidoMensagem}
+                onSuccess={handleCardPaymentSuccess}
+                onError={handleCardPaymentError}
+              />
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
 
-          <Button
-            onClick={handlePayment}
-            disabled={processing}
-            className="w-full"
-            size="lg"
-          >
-            {processing ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Processando...
-              </>
-            ) : (
-              <>
-                <CreditCard className="w-4 h-4 mr-2" />
-                Pagar R$ {valor.toFixed(2)}
-              </>
-            )}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+      {/* Pix Payment Dialog */}
+      {pixPaymentData && (
+        <PixPaymentDialog
+          open={pixDialogOpen}
+          onOpenChange={setPixDialogOpen}
+          gorjetaId={pixPaymentData.gorjetaId}
+          qrCode={pixPaymentData.qrCode}
+          qrCodeBase64={pixPaymentData.qrCodeBase64}
+          expiresAt={pixPaymentData.expiresAt}
+        />
+      )}
+    </>
   );
 };

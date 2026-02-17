@@ -1,48 +1,32 @@
 
 
-## Corrigir Notificacoes + Esclarecer Fluxo de Gorjetas
+## Substituir Metricas por Secao Persuasiva
 
-### 1. Corrigir clique nas notificacoes
+### Problema
+A secao de metricas mostra dados reais do banco que sao muito baixos (R$58, 3 artistas, 0 avaliacoes), transmitindo a impressao de plataforma vazia e afastando novos usuarios.
 
-**Problema:** O `e.preventDefault()` no `onSelect` impede o dropdown de fechar, e a combinacao com o comportamento do Radix UI bloqueia a navegacao.
+### Solucao
+Substituir o bloco de metricas por uma secao de **proposta de valor** focada nos beneficios concretos para o artista, sem depender de numeros do banco. A secao de compartilhamento social (WhatsApp/Instagram) sera mantida e reposicionada.
 
-**Solucao:** Usar um estado controlado para o dropdown (`open`/`onOpenChange`) e fechar o dropdown programaticamente antes de navegar.
+### Nova Secao: "Por que artistas escolhem o Toca+"
 
-**Arquivo: `src/components/NotificationBell.tsx`**
-- Adicionar estado `open` para controlar o dropdown
-- No `onSelect`, fechar o dropdown e depois executar a navegacao com um pequeno delay
+Tres cards com icones destacando:
+1. **"100% das gorjetas no seu bolso"** - Com plano PRO, sem taxas escondidas
+2. **"Receba via PIX na hora"** - Dinheiro cai direto na sua conta, sem burocracia
+3. **"QR Code inteligente"** - Seus fas pedem musicas e enviam gorjetas com um scan
 
-```typescript
-const [open, setOpen] = useState(false);
+Os botoes de compartilhamento social ficam abaixo dos cards.
 
-// No DropdownMenu:
-<DropdownMenu open={open} onOpenChange={setOpen}>
+### Detalhes Tecnicos
 
-// No DropdownMenuItem:
-onSelect={(e) => {
-  e.preventDefault();
-  setOpen(false);
-  setTimeout(() => handleNotificationClick(notification), 100);
-}}
-```
+**Arquivo:** `src/components/landing/MetricsSection.tsx`
+- Remover toda a logica de fetch do banco de dados (queries a gorjetas, profiles, avaliacoes_artistas)
+- Remover o state de metricas
+- Substituir o grid de numeros por 3 cards com icones do Lucide (Wallet, Zap, QrCode)
+- Manter o bloco de SocialShareButtons integrado na mesma secao
+- Manter a mesma estrutura de section/container para consistencia visual
 
-### 2. Fluxo de recebimento de gorjetas pelos artistas
+**Nenhuma alteracao necessaria em outros arquivos** - o componente ja esta importado e renderizado em Landing.tsx.
 
-**Situacao atual:** Com a migracao para Stripe, todo o dinheiro das gorjetas e depositado na conta Stripe da plataforma (a sua). Nao ha mecanismo automatico para transferir os valores aos artistas.
-
-**Opcoes disponiveis:**
-
-- **Opcao A - Transferencia Manual:** Voce visualiza as gorjetas no painel admin e faz transferencias manuais (PIX/bancaria) para os artistas. Simples, mas trabalhoso.
-
-- **Opcao B - Stripe Connect (recomendado para escala):** Cada artista cria uma conta Stripe conectada. O Stripe automaticamente divide o pagamento: a taxa da plataforma (20% para Free, 0% para Pro) fica com voce e o restante vai direto para o artista. Requer que cada artista faca um onboarding no Stripe.
-
-Neste plano, vou implementar apenas a **correcao das notificacoes**. A questao do fluxo de pagamento para artistas e uma decisao de negocio que precisa ser discutida separadamente.
-
-### Detalhes tecnicos
-
-**Arquivo modificado:** `src/components/NotificationBell.tsx`
-- Importar `useState` do React
-- Adicionar estado controlado `open` para o `DropdownMenu`
-- No `onSelect` do `DropdownMenuItem`: fechar dropdown, depois navegar com delay
-
-Nenhuma alteracao no hook `useNotifications.tsx` e necessaria - a logica de same-route scroll ja esta correta.
+### Quando reativar as metricas
+Futuramente, quando a plataforma tiver numeros expressivos (ex: +R$10.000 em gorjetas, +100 artistas), a secao de metricas pode ser reintroduzida com impacto real.

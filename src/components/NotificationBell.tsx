@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Bell, Check, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +19,6 @@ interface NotificationBellProps {
 }
 
 const NotificationBell = ({ userId }: NotificationBellProps) => {
-  const [open, setOpen] = useState(false);
   const { notifications, unreadCount, markAllAsRead, handleNotificationClick } =
     useNotifications(userId);
 
@@ -45,7 +43,7 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
   };
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
@@ -87,11 +85,7 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
                 className={`flex flex-col items-start gap-2 p-4 cursor-pointer ${
                   !notification.lida ? "bg-primary/5" : ""
                 }`}
-                onSelect={(e) => {
-                  e.preventDefault();
-                  setOpen(false);
-                  setTimeout(() => handleNotificationClick(notification), 100);
-                }}
+                onClick={() => handleNotificationClick(notification)}
               >
                 <div className="flex items-start gap-3 w-full">
                   <div className="mt-1">{getNotificationIcon(notification.tipo)}</div>
