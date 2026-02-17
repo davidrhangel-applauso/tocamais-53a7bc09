@@ -34,6 +34,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
 import { ArtistCheckinManager } from "@/components/ArtistCheckinManager";
 import { useArtistCheckin, useArtistEstabelecimentoPedidos } from "@/hooks/useEstabelecimento";
+import { useFreeTipLimit, FREE_TIP_LIMIT } from "@/hooks/useFreeTipLimit";
+import { FreeLimitReachedModal } from "@/components/FreeLimitReachedModal";
+import { Progress } from "@/components/ui/progress";
 
 const ArtistPanel = () => {
   const navigate = useNavigate();
@@ -81,6 +84,8 @@ const ArtistPanel = () => {
 
   // Check subscription status
   const { isPro } = useSubscription(artistId);
+  const { totalReceived, limitReached, remainingAmount, progressPercent } = useFreeTipLimit(artistId, isPro);
+  const [freeLimitModalOpen, setFreeLimitModalOpen] = useState(false);
 
   // Check if user is admin and redirect
   const { isAdmin, loading: adminLoading } = useAdmin();
@@ -237,6 +242,7 @@ const ArtistPanel = () => {
   }
 
   return (
+    <>
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-background via-background to-primary/5">
         <AppSidebar 
@@ -311,6 +317,35 @@ const ArtistPanel = () => {
           <div className="mt-4">
             <ArtistCheckinManager artistaId={artistId || ''} />
           </div>
+
+          {/* Free Tip Limit Progress */}
+          {!isPro && (
+            <Card className={`mt-4 border-amber-500/30 ${limitReached ? 'bg-amber-500/10' : ''}`}>
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Limite gratuito de gorjetas</span>
+                  <span className="text-sm text-muted-foreground">
+                    R$ {totalReceived.toFixed(2)} / R$ {FREE_TIP_LIMIT.toFixed(2)}
+                  </span>
+                </div>
+                <Progress value={progressPercent} className="h-2.5" />
+                {limitReached ? (
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                      Limite atingido! Assine o PRO para continuar recebendo.
+                    </p>
+                    <Button size="sm" variant="outline" className="shrink-0 border-amber-500 text-amber-600 hover:bg-amber-500/10" onClick={() => setFreeLimitModalOpen(true)}>
+                      Assinar PRO
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    Restam R$ {remainingAmount.toFixed(2)} no plano gratuito
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Stats Cards */}
@@ -1126,6 +1161,9 @@ const ArtistPanel = () => {
         </div>
       </div>
     </SidebarProvider>
+
+    <FreeLimitReachedModal open={freeLimitModalOpen} onOpenChange={setFreeLimitModalOpen} />
+    </>
   );
 };
 
