@@ -176,7 +176,7 @@ export function PremiumOfferModal({
 
           {/* Trust badges */}
           <p className="text-[10px] sm:text-xs text-center text-muted-foreground">
-            🔒 Pagamento seguro via Mercado Pago • Cancele quando quiser
+            🔒 Pagamento seguro via PIX • Cancele quando quiser
           </p>
         </div>
       </DialogContent>

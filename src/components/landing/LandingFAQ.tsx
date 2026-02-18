@@ -13,11 +13,11 @@ const faqs = [
   },
   {
     question: "Qual a diferença entre o plano Free e o PRO?",
-    answer: "No plano Free, cobramos 20% de taxa sobre cada gorjeta. No plano PRO, você recebe 100% das gorjetas (0% de taxa), além de destaque na busca, analytics completo e suporte prioritário.",
+    answer: "No plano Free, você recebe gorjetas via PIX até o limite de R$ 10,00. No plano PRO, você recebe gorjetas ilimitadas via PIX, além de destaque na busca, analytics completo e suporte prioritário.",
   },
   {
     question: "Como recebo as gorjetas?",
-    answer: "No plano Free, as gorjetas são processadas via Mercado Pago e creditadas na sua conta. No plano PRO, você pode configurar seu PIX e receber instantaneamente na sua conta bancária.",
+    answer: "Configure sua chave PIX nas configurações do seu perfil e receba gorjetas diretamente na sua conta bancária, instantaneamente e sem taxas.",
   },
   {
     question: "Preciso de equipamento especial?",
