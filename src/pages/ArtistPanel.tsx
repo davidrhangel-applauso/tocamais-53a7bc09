@@ -14,7 +14,7 @@ import { Music, Heart, Check, X, CheckCheck, Menu, Building2 } from "lucide-reac
 import { toast } from "sonner";
 import PaymentHistory from "@/components/PaymentHistory";
 import NotificationBell from "@/components/NotificationBell";
-import { MercadoPagoLink } from "@/components/MercadoPagoLink";
+
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import MusicRepertoire from "@/components/MusicRepertoire";
@@ -746,37 +746,23 @@ const ArtistPanel = () => {
             {/* Histórico de Pagamentos primeiro - mais importante */}
             <PaymentHistory gorjetas={gorjetas} artistId={artistId || undefined} />
             
-            {/* MercadoPago e Dicas em acordeão colapsável no mobile */}
+            {/* Dicas de pagamento */}
             <details className="group">
               <summary className="flex items-center justify-between cursor-pointer p-3 sm:p-4 bg-muted/50 rounded-lg border hover:bg-muted/70 transition-colors">
                 <span className="font-medium text-sm sm:text-base flex items-center gap-2">
-                  💳 Configurações de Pagamento
+                  💰 Dicas de Pagamento
                 </span>
                 <span className="text-muted-foreground text-xs group-open:rotate-180 transition-transform">▼</span>
               </summary>
               <div className="mt-3 space-y-4">
-                {artistId && <MercadoPagoLink userId={artistId} />}
-                
-                {/* Aviso sobre liberação de pagamentos - compacto */}
-                <Card className="border-amber-500/30 bg-amber-500/5">
-                  <CardHeader className="p-3 sm:pb-3 sm:p-6">
-                    <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-                      <span>⏱️</span>
-                      Receber mais rápido
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0 space-y-2 text-xs sm:text-sm text-muted-foreground">
-                    <p>
-                      Por padrão, o Mercado Pago retém os pagamentos por até 14 dias. Para receber mais rápido:
-                    </p>
+                <Card className="border-primary/20">
+                  <CardContent className="p-3 sm:p-6 space-y-2 text-xs sm:text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground">Como receber gorjetas:</p>
                     <ol className="list-decimal list-inside space-y-1 ml-1 text-xs">
-                      <li><strong>Verificar sua conta</strong> no app do Mercado Pago</li>
-                      <li><strong>Ativar liberação imediata</strong> em Seu negócio → Configurações</li>
-                      <li><strong>Manter histórico positivo</strong> de vendas</li>
+                      <li>Configure sua <strong>chave PIX</strong> nas Configurações</li>
+                      <li>Compartilhe seu perfil com os clientes</li>
+                      <li>Receba pagamentos diretamente na sua conta</li>
                     </ol>
-                    <p className="text-[10px] sm:text-xs pt-2 border-t border-border/50">
-                      💡 Contas verificadas podem receber em até 24h.
-                    </p>
                   </CardContent>
                 </Card>
               </div>

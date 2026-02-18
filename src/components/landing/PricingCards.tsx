@@ -157,7 +157,7 @@ export function PricingCards({ onSelectPlan }: PricingCardsProps) {
 
         {/* Trust message */}
         <p className="text-center text-sm text-muted-foreground mt-8">
-          🔒 Pagamento seguro via Mercado Pago • Cancele quando quiser • Garantia de 7 dias
+          🔒 Pagamento seguro via PIX • Cancele quando quiser • Garantia de 7 dias
         </p>
       </div>
     </section>

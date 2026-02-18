@@ -55,7 +55,7 @@ const extraBenefits = [
   },
   {
     icon: Shield,
-    text: "Pagamentos seguros via Mercado Pago",
+    text: "Pagamentos seguros via PIX direto",
   },
 ];
 
