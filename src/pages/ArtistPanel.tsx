@@ -702,12 +702,18 @@ const ArtistPanel = () => {
                             {pedido.valor && pedido.valor > 0 ? (
                               <Button
                                 size="sm"
-                                onClick={() => confirmPixPayment.mutate({ pedido })}
-                                disabled={confirmPixPayment.isPending}
+                                onClick={() => confirmPixPayment.mutate({ pedido }, {
+                                  onError: (error: any) => {
+                                    if (error.code === 'FREE_LIMIT_REACHED') {
+                                      setFreeLimitModalOpen(true);
+                                    }
+                                  }
+                                })}
+                                disabled={confirmPixPayment.isPending || (!isPro && limitReached)}
                                 className="flex-1 sm:flex-none"
                               >
                                 <Check className="w-4 h-4 mr-1" />
-                                Confirmar R$ {pedido.valor.toFixed(2)}
+                                {!isPro && limitReached ? 'Limite atingido' : `Confirmar R$ ${pedido.valor.toFixed(2)}`}
                               </Button>
                             ) : (
                               <Button
