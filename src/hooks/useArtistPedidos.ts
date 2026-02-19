@@ -166,89 +166,31 @@ export function useConfirmPixPayment() {
 
   return useMutation({
     mutationFn: async ({ pedido }: { pedido: Pedido }) => {
-      // Debug: log the pedido being confirmed
-      console.log("[useConfirmPixPayment] Confirming PIX for pedido:", {
-        id: pedido.id,
-        musica: pedido.musica,
-        valor: pedido.valor,
-        valorType: typeof pedido.valor,
-        status: pedido.status,
-        artista_id: pedido.artista_id,
+      console.log("[useConfirmPixPayment] Confirming PIX via RPC for pedido:", pedido.id);
+
+      const { data, error } = await supabase.rpc('confirm_pix_with_limit_check', {
+        p_pedido_id: pedido.id,
+        p_artista_id: pedido.artista_id,
       });
 
-      // Fetch fresh data from DB to ensure we have the latest valor
-      const { data: freshPedido, error: fetchError } = await supabase
-        .from("pedidos")
-        .select("*")
-        .eq("id", pedido.id)
-        .single();
-
-      if (fetchError) {
-        console.error("[useConfirmPixPayment] Error fetching fresh pedido:", fetchError);
-        throw fetchError;
+      if (error) {
+        console.error("[useConfirmPixPayment] RPC error:", error);
+        throw error;
       }
 
-      console.log("[useConfirmPixPayment] Fresh pedido from DB:", {
-        id: freshPedido.id,
-        valor: freshPedido.valor,
-        valorType: typeof freshPedido.valor,
-        status: freshPedido.status,
-      });
-
-      const valorToUse = freshPedido.valor ?? pedido.valor;
+      const result = data as any;
       
-      if (!valorToUse || valorToUse <= 0) {
-        console.error("[useConfirmPixPayment] Invalid valor:", valorToUse);
-        throw new Error("Valor inválido ou não encontrado. Verifique se o cliente informou o valor do PIX.");
+      if (!result.success) {
+        console.log("[useConfirmPixPayment] RPC returned error:", result.error);
+        const err = new Error(result.error);
+        (err as any).code = result.error;
+        (err as any).rpcResult = result;
+        throw err;
       }
 
-      console.log("[useConfirmPixPayment] Creating gorjeta with valor:", valorToUse);
-
-      // 1. Create gorjeta with status approved (PRO artists: 0% fee) and return the created record
-      const { data: gorjetaData, error: gorjetaError } = await supabase
-        .from("gorjetas")
-        .insert({
-          artista_id: freshPedido.artista_id,
-          cliente_id: freshPedido.cliente_id,
-          cliente_nome: freshPedido.cliente_nome,
-          session_id: freshPedido.session_id,
-          valor: valorToUse,
-          valor_liquido_artista: valorToUse, // 100% for PRO artists
-          taxa_plataforma: 0, // PRO artists don't pay platform fee
-          status_pagamento: 'approved',
-          pedido_musica: freshPedido.musica,
-          pedido_mensagem: freshPedido.mensagem,
-        })
-        .select('id, valor')
-        .single();
-
-      if (gorjetaError) {
-        console.error("[useConfirmPixPayment] Error creating gorjeta:", gorjetaError);
-        throw gorjetaError;
-      }
-
-      console.log("[useConfirmPixPayment] Gorjeta created successfully:", {
-        gorjetaId: gorjetaData?.id,
-        valor: gorjetaData?.valor,
-      });
-
-      // 2. Update pedido status to pendente
-      const { error: pedidoError } = await supabase
-        .from("pedidos")
-        .update({ status: 'pendente' })
-        .eq("id", pedido.id);
-
-      if (pedidoError) {
-        console.error("[useConfirmPixPayment] Error updating pedido:", pedidoError);
-        throw pedidoError;
-      }
-
-      console.log("[useConfirmPixPayment] Pedido updated to pendente");
-
-      // Return the gorjeta info for success toast
       return {
-        gorjetaId: gorjetaData?.id,
-        valor: gorjetaData?.valor,
+        gorjetaId: result.gorjeta_id,
+        valor: result.valor,
       };
     },
     onSuccess: (result) => {
@@ -258,6 +200,8 @@ export function useConfirmPixPayment() {
       toast.success(`PIX confirmado! Gorjeta registrada ${valorFormatado} ✅`);
     },
     onError: (error: any) => {
+      // Don't show generic toast for FREE_LIMIT_REACHED - handled by the component
+      if (error.code === 'FREE_LIMIT_REACHED') return;
       console.error("[useConfirmPixPayment] Mutation error:", error);
       toast.error(`Erro ao confirmar PIX: ${error.message ?? "tente novamente"}`);
     },

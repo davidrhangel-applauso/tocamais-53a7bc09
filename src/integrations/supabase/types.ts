@@ -831,6 +831,10 @@ export type Database = {
         }
         Returns: Json
       }
+      confirm_pix_with_limit_check: {
+        Args: { p_artista_id: string; p_pedido_id: string }
+        Returns: Json
+      }
       criar_notificacao: {
         Args: {
           p_data?: Json

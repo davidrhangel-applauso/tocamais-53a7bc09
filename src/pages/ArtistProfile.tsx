@@ -117,6 +117,21 @@ const ArtistProfile = () => {
   const isMobile = useIsMobile();
   const tipCardRef = useRef<HTMLDivElement>(null);
   
+  // Check free tip limit for this artist
+  const [artistLimitReached, setArtistLimitReached] = useState(false);
+  
+  useEffect(() => {
+    if (!id || isPro) {
+      setArtistLimitReached(false);
+      return;
+    }
+    const checkLimit = async () => {
+      const { data } = await supabase.rpc('get_artist_approved_total', { artist_id: id });
+      setArtistLimitReached(Number(data) >= 10);
+    };
+    checkLimit();
+  }, [id, isPro]);
+  
   const scrollToTipCard = () => {
     tipCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -351,22 +366,30 @@ const ArtistProfile = () => {
                 )}
 
                 {/* Prominent tip button on mobile */}
-                <Button 
-                  className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg"
-                  size="lg"
-                  onClick={() => {
-                    if (pixInfo.pix_chave) {
-                      setDirectPixDialogOpen(true);
-                    } else {
-                      scrollToTipCard();
-                    }
-                  }}
-                  disabled={!pixInfo.pix_chave}
-                >
-                  <Heart className="w-5 h-5 mr-2" />
-                  Enviar Gorjeta
-                  <Badge className="ml-2 text-[10px] bg-white/20 border-0">0% taxa</Badge>
-                </Button>
+                {artistLimitReached ? (
+                  <div className="w-full p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-center">
+                    <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
+                      Este artista atingiu o limite de gorjetas gratuitas.
+                    </p>
+                  </div>
+                ) : (
+                  <Button 
+                    className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg"
+                    size="lg"
+                    onClick={() => {
+                      if (pixInfo.pix_chave) {
+                        setDirectPixDialogOpen(true);
+                      } else {
+                        scrollToTipCard();
+                      }
+                    }}
+                    disabled={!pixInfo.pix_chave}
+                  >
+                    <Heart className="w-5 h-5 mr-2" />
+                    Enviar Gorjeta
+                    <Badge className="ml-2 text-[10px] bg-white/20 border-0">0% taxa</Badge>
+                  </Button>
+                )}
               </div>
             ) : (
               /* Desktop Layout */
@@ -486,7 +509,16 @@ const ArtistProfile = () => {
             {interactionType === 'tip' ? (
               <>
                 {/* UNIFIED TIP FLOW - PIX direto for all artists */}
-                {pixInfo.pix_chave ? (
+                {artistLimitReached ? (
+                  <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg text-center space-y-2">
+                    <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                      🚫 Este artista atingiu o limite de gorjetas gratuitas (R$ 10).
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      O artista precisa assinar o plano PRO para continuar recebendo gorjetas.
+                    </p>
+                  </div>
+                ) : pixInfo.pix_chave ? (
                   <>
                     <div className="p-4 bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20 rounded-lg">
                       <div className="flex items-center gap-2 mb-2">
