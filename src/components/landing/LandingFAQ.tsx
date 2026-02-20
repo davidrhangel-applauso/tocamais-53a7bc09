@@ -9,11 +9,11 @@ import { HelpCircle } from "lucide-react";
 const faqs = [
   {
     question: "O cadastro é realmente gratuito?",
-    answer: "Sim! Você pode criar sua conta e começar a receber gorjetas e pedidos de música sem pagar nada. No plano gratuito, cobramos apenas 20% de taxa sobre as gorjetas recebidas.",
+    answer: "Sim! Você pode criar sua conta e já começar a receber gorjetas via PIX sem pagar nada. No plano Free, você recebe até R$ 10 em gorjetas para experimentar o app — sem nenhuma taxa.",
   },
   {
     question: "Qual a diferença entre o plano Free e o PRO?",
-    answer: "No plano Free, você recebe gorjetas via PIX até o limite de R$ 10,00. No plano PRO, você recebe gorjetas ilimitadas via PIX, além de destaque na busca, analytics completo e suporte prioritário.",
+    answer: "No plano Free você recebe gorjetas via PIX até R$ 10 para testar o app, sem nenhuma taxa. No plano PRO, você recebe gorjetas ilimitadas via PIX, além de destaque na busca, analytics completo e suporte prioritário.",
   },
   {
     question: "Como recebo as gorjetas?",

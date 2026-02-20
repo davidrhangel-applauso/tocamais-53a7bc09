@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { X } from "lucide-react";
+import { Download } from "lucide-react";
+import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 
 interface StickyHeaderCTAProps {
   onArtistClick: () => void;
@@ -10,10 +11,10 @@ interface StickyHeaderCTAProps {
 export function StickyHeaderCTA({ onArtistClick }: StickyHeaderCTAProps) {
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
+  const { canInstall, isIOS, install } = useInstallPrompt();
 
   useEffect(() => {
     const handleScroll = () => {
-      // Mostrar sticky header após rolar 300px
       setIsVisible(window.scrollY > 300);
     };
 
@@ -31,6 +32,18 @@ export function StickyHeaderCTA({ onArtistClick }: StickyHeaderCTAProps) {
         </div>
         
         <div className="flex items-center gap-2 sm:gap-3">
+          {canInstall && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={install}
+              className="text-xs sm:text-sm text-green-400 hover:text-green-300 hover:bg-green-400/10 gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Instalar App</span>
+              <span className="sm:hidden">Instalar</span>
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"

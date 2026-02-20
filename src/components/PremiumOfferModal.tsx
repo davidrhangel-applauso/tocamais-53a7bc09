@@ -45,12 +45,12 @@ const plans = [
 ];
 
 const benefits = [
-  "Receba pagamentos PIX direto na sua conta",
-  "Taxa de apenas 5% (vs 10% no plano Free)",
+  "Gorjetas ilimitadas via PIX (Free: até R$ 10)",
+  "0% de taxa — tudo direto na sua conta",
   "Destaque nos resultados de busca",
   "Analytics completo de performance",
   "Suporte prioritário",
-  "Sem limite de pedidos",
+  "Sem limite de pedidos de música",
 ];
 
 export function PremiumOfferModal({
