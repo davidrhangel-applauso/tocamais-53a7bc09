@@ -1,69 +1,118 @@
 
+## Três melhorias na Landing Page
 
-## Limitar Gorjetas para Artistas Free (R$ 10)
+### 1. Favicon (já configurado)
+O `favicon.png` atual já está corretamente referenciado no `index.html` (`<link rel="icon" href="/favicon.png" />`). Vamos garantir que ele também apareça como ícone do app PWA (ver item 2 abaixo).
 
-### Problema Atual
-O hook `useFreeTipLimit` e o modal `FreeLimitReachedModal` ja existem no painel do artista, mas nao ha **bloqueio real** no momento de confirmar o pagamento. Um artista Free pode continuar recebendo gorjetas alem do limite porque nenhuma verificacao e feita quando o PIX e confirmado.
+---
 
-### Onde o bloqueio precisa acontecer
+### 2. Botão "Instalar App" (PWA)
 
-```text
-Fluxo atual sem bloqueio:
+O projeto ainda não tem suporte a PWA. Vamos configurá-lo do zero para que usuários consigam instalar o app na tela inicial do celular (iOS e Android) — sem precisar de loja de apps.
 
-Cliente abre perfil -> Envia PIX -> Artista confirma -> Gorjeta criada (sem limite)
+**Passos técnicos:**
 
-Fluxo corrigido:
+**a) Instalar `vite-plugin-pwa`**
+Único pacote necessário. Integra automaticamente com Vite.
 
-1. Cliente abre perfil -> Verifica limite -> Se atingido, desabilita botao de gorjeta
-2. Artista confirma PIX -> Verifica limite via RPC -> Se atingido, rejeita + mostra modal PRO
+**b) Configurar `vite.config.ts`**
+Adicionar o plugin com o manifesto do app:
+```typescript
+VitePWA({
+  registerType: 'autoUpdate',
+  workbox: {
+    navigateFallbackDenylist: [/^\/~oauth/], // nunca cachear rotas OAuth
+  },
+  manifest: {
+    name: 'Toca Mais',
+    short_name: 'Toca+',
+    description: 'Gorjetas e pedidos de música via PIX',
+    theme_color: '#...',  // cor primary do app
+    background_color: '#000000',
+    display: 'standalone',
+    icons: [
+      { src: '/favicon.png', sizes: '192x192', type: 'image/png' },
+      { src: '/favicon.png', sizes: '512x512', type: 'image/png' },
+    ],
+  },
+})
 ```
 
-### Mudancas necessarias
+**c) Adicionar meta tags PWA ao `index.html`**
+```html
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Toca+" />
+<link rel="apple-touch-icon" href="/favicon.png" />
+```
 
-#### 1. Funcao SQL: `confirm_direct_pix_payment_with_limit`
-Criar uma nova funcao RPC (ou modificar `confirm_direct_pix_payment`) que, ao confirmar PIX de artista Free:
-- Consulta `get_artist_approved_total` para verificar se o total + novo valor ultrapassa R$ 10
-- Consulta `is_artist_pro` para saber se e PRO
-- Se limite atingido, retorna erro `FREE_LIMIT_REACHED` sem criar gorjeta
-- Se dentro do limite, cria a gorjeta diretamente dentro da funcao (atomico)
-- Dispara notificacao automatica via `criar_notificacao` quando o limite e atingido
+**d) Criar hook `useInstallPrompt.ts`**
+Captura o evento `beforeinstallprompt` do navegador e expõe:
+- `canInstall: boolean` — se o dispositivo suporta instalação
+- `install(): Promise<void>` — dispara o prompt nativo de instalação
 
-Isso resolve o problema de race condition e garante atomicidade (a verificacao e insercao acontecem na mesma transacao no banco).
+**e) Adicionar botão na Landing Page**
+- No `StickyHeaderCTA`: Adicionar botão "📲 Instalar App" ao lado dos botões existentes (visível quando `canInstall = true`)
+- No `LandingHero`: Adicionar um terceiro badge de confiança "✓ Instale no celular" e um botão secundário "Instalar Grátis" abaixo dos CTAs principais
+- O botão só aparece em dispositivos que suportam a instalação (Android Chrome, Edge, etc.) — em iOS mostramos uma dica de "Adicionar à tela inicial"
 
-#### 2. Hook `useConfirmPixPayment` (src/hooks/useArtistPedidos.ts)
-- Substituir a logica atual de criar gorjeta manualmente pelo client por uma chamada a nova funcao RPC
-- Tratar o erro `FREE_LIMIT_REACHED` de forma especifica, exibindo o modal de upgrade PRO
+---
 
-#### 3. Perfil do Artista - lado do cliente (src/pages/ArtistProfile.tsx)
-- Antes de exibir o botao de gorjeta, verificar se o artista Free atingiu o limite
-- Usar `supabase.rpc('get_artist_approved_total')` para consultar o total
-- Se limite atingido: mostrar mensagem "Este artista atingiu o limite de gorjetas gratuitas" e desabilitar o botao
-- Tambem verificar `is_artist_pro` para determinar se a verificacao e necessaria
+### 3. Atualizar informações do plano Free
 
-#### 4. Painel do Artista (src/pages/ArtistPanel.tsx)
-- Quando o artista tenta confirmar PIX e recebe erro `FREE_LIMIT_REACHED`, abrir o `FreeLimitReachedModal` automaticamente
-- Desabilitar o botao "Confirmar PIX" nos pedidos aguardando quando `limitReached = true`
+Vários componentes ainda têm informações desatualizadas sobre o plano Free (taxa de 20%, PIX apenas no PRO). Com a nova arquitetura, **ambos os planos recebem via PIX direto**, mas o Free tem limite de R$ 10,00.
 
-#### 5. Notificacoes
-- A funcao SQL dispara `criar_notificacao` com tipo `limite_free_atingido` quando o artista atinge o limite pela primeira vez
-- Mensagem: "Voce atingiu o limite de R$ 10 em gorjetas gratuitas! Assine o PRO para continuar recebendo."
-- Link: `/pro-sales`
+**Arquivos a corrigir:**
 
-### Detalhes Tecnicos
+**`PlanComparison.tsx`** — Tabela de features:
+```
+ANTES:
+- "Taxa da plataforma": Free=20%, PRO=0%
+- "PIX direto na sua conta": Free=❌, PRO=✅
 
-**Migracao SQL:**
-- Criar funcao `confirm_pix_with_limit_check(p_pedido_id uuid, p_artista_id uuid, p_is_artist_confirming boolean)` que:
-  1. Verifica se artista e PRO
-  2. Se Free, consulta total aprovado
-  3. Se total + valor >= 10, retorna `{success: false, error: 'FREE_LIMIT_REACHED'}`
-  4. Se ok, insere gorjeta e atualiza pedido atomicamente
-  5. Envia notificacao se limite atingido
+DEPOIS:
+- "Gorjetas via PIX": Free=✅, PRO=✅
+- "Limite de gorjetas": Free="R$ 10/mês", PRO="Ilimitado"
+- "Taxa da plataforma": Free=0%, PRO=0%  (removida ou ambos 0%)
+- "Destaque na busca": Free=❌, PRO=✅
+- "Analytics completo": Free=❌, PRO=✅
+- "Suporte prioritário": Free=❌, PRO=✅
+```
+O header do plano Free mostrará "Grátis • Até R$ 10" em vez de apenas "R$ 0".
 
-**Arquivos a modificar:**
-- `src/hooks/useArtistPedidos.ts` - Alterar `useConfirmPixPayment` para usar nova RPC e tratar erro de limite
-- `src/pages/ArtistProfile.tsx` - Adicionar verificacao de limite no perfil publico do artista
-- `src/pages/ArtistPanel.tsx` - Integrar tratamento do erro `FREE_LIMIT_REACHED` com o modal existente
+**`LandingFAQ.tsx`** — Duas respostas a corrigir:
+1. Pergunta "O cadastro é gratuito?" → Remover menção da taxa de 20%: *"No plano Free você recebe gorjetas via PIX até R$ 10 para experimentar o app."*
+2. Pergunta "Qual a diferença entre Free e PRO?" → Atualizar com a realidade atual: *"No Free você recebe via PIX até R$ 10 de gorjetas para testar. No PRO, gorjetas ilimitadas, destaque na busca, analytics e suporte prioritário."*
 
-**Nenhum arquivo novo necessario** - os componentes `FreeLimitReachedModal` e `useFreeTipLimit` ja existem.
+**`PremiumOfferModal.tsx`** — Lista de benefícios PRO:
+```
+ANTES: "Taxa de apenas 5% (vs 10% no plano Free)"
+DEPOIS: "Gorjetas ilimitadas via PIX (Free: até R$ 10)"
+```
+Também atualizar: *"Sem limite de pedidos"* → manter, e remover qualquer referência a taxa de Free.
 
-**Constante de limite:** R$ 10,00 definida na funcao SQL e no frontend (`FREE_TIP_LIMIT` em `useFreeTipLimit.ts`).
+**`LandingHero.tsx`** — Subtítulo abaixo do headline:
+```
+ANTES: "Com o plano PRO, você recebe 100% das gorjetas direto na sua conta"
+DEPOIS: "Teste grátis até R$ 10 em gorjetas. Com o plano PRO, receba ilimitado."
+```
+Ou algo que comunique claramente o modelo freemium.
+
+**`PricingCards.tsx`** — Já está com informações mais atualizadas, mas verificar se os features do plano Monthly/Anual/Bienal ainda mencionam "0% de taxa nas gorjetas" — ok, está correto.
+
+---
+
+### Resumo dos arquivos a modificar
+
+| Arquivo | Mudança |
+|---|---|
+| `package.json` | Adicionar `vite-plugin-pwa` |
+| `vite.config.ts` | Configurar VitePWA com manifesto |
+| `index.html` | Adicionar meta tags PWA |
+| `src/hooks/useInstallPrompt.ts` | Novo hook para capturar evento de instalação |
+| `src/components/landing/StickyHeaderCTA.tsx` | Botão "Instalar App" |
+| `src/components/landing/LandingHero.tsx` | Badge + botão instalar + texto atualizado |
+| `src/components/landing/PlanComparison.tsx` | Atualizar tabela de features |
+| `src/components/landing/LandingFAQ.tsx` | Corrigir 2 respostas |
+| `src/components/PremiumOfferModal.tsx` | Corrigir lista de benefícios |
