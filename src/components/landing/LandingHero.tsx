@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { Music, ArrowRight, Search } from "lucide-react";
+import { Music, ArrowRight, Download, Smartphone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import heroImage from "@/assets/hero-concert.jpg";
+import { useInstallPrompt } from "@/hooks/useInstallPrompt";
+import { useState } from "react";
 
 interface LandingHeroProps {
   onArtistClick: () => void;
@@ -9,6 +11,17 @@ interface LandingHeroProps {
 }
 
 export function LandingHero({ onArtistClick, onClientClick }: LandingHeroProps) {
+  const { canInstall, isIOS, install } = useInstallPrompt();
+  const [showIOSHint, setShowIOSHint] = useState(false);
+
+  const handleInstallClick = () => {
+    if (isIOS) {
+      setShowIOSHint(true);
+    } else {
+      install();
+    }
+  };
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
@@ -57,7 +70,7 @@ export function LandingHero({ onArtistClick, onClientClick }: LandingHeroProps) 
         </p>
         
         <p className="text-base sm:text-lg text-white/70 mb-8 sm:mb-10 md:mb-12 animate-fade-in max-w-2xl mx-auto px-2" style={{ animationDelay: '0.2s' }}>
-          Com o plano PRO, você recebe <span className="text-green-400 font-semibold">100% das gorjetas</span> direto na sua conta
+          Teste grátis com <span className="text-green-400 font-semibold">até R$ 10 em gorjetas</span>. Com o PRO, receba ilimitado via PIX.
         </p>
         
         {/* CTA Buttons */}
@@ -70,7 +83,30 @@ export function LandingHero({ onArtistClick, onClientClick }: LandingHeroProps) 
             Cadastrar como Artista
             <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Button>
+
+          {/* Install button - only when supported */}
+          {(canInstall || isIOS) && (
+            <Button
+              size="lg"
+              variant="outline"
+              className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 border-2 border-green-400/50 text-green-400 hover:bg-green-400/10 hover:border-green-400 transition-all duration-300 font-semibold w-full sm:w-auto gap-2"
+              onClick={handleInstallClick}
+            >
+              <Download className="w-5 h-5" />
+              Instalar App Grátis
+            </Button>
+          )}
         </div>
+
+        {/* iOS install hint */}
+        {showIOSHint && (
+          <div className="mt-4 animate-fade-in bg-black/60 border border-green-400/30 rounded-xl px-4 py-3 max-w-sm mx-auto">
+            <p className="text-sm text-green-400 flex items-center gap-2">
+              <Smartphone className="w-4 h-4 shrink-0" />
+              Toque em <strong>Compartilhar</strong> e depois <strong>"Adicionar à Tela Inicial"</strong>
+            </p>
+          </div>
+        )}
 
         {/* Trust badges */}
         <div className="mt-10 sm:mt-12 flex flex-col items-center gap-3 animate-fade-in" style={{ animationDelay: '0.6s' }}>
@@ -86,6 +122,12 @@ export function LandingHero({ onArtistClick, onClientClick }: LandingHeroProps) 
             <span className="text-green-400 text-xl">✓</span>
             Pagamento via PIX
           </div>
+          {(canInstall || isIOS) && (
+            <div className="flex items-center gap-3 text-base sm:text-lg text-white/90 font-medium">
+              <span className="text-green-400 text-xl">✓</span>
+              Instale no celular, sem loja de apps
+            </div>
+          )}
         </div>
       </div>
     </section>

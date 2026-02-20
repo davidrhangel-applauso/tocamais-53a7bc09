@@ -8,12 +8,11 @@ interface PlanComparisonProps {
 }
 
 const features = [
-  { name: "Receber gorjetas", free: true, pro: true },
+  { name: "Gorjetas via PIX", free: true, pro: true },
   { name: "Pedidos de música", free: true, pro: true },
   { name: "Perfil de artista", free: true, pro: true },
-  { name: "QR Code básico", free: true, pro: true },
-  { name: "Taxa da plataforma", free: "20%", pro: "0%" },
-  { name: "PIX direto na sua conta", free: false, pro: true },
+  { name: "Taxa da plataforma", free: "0%", pro: "0%" },
+  { name: "Limite de gorjetas", free: "R$ 10", pro: "Ilimitado" },
   { name: "QR Code personalizado", free: false, pro: true },
   { name: "Destaque na busca", free: false, pro: true },
   { name: "Analytics completo", free: false, pro: true },
@@ -90,7 +89,7 @@ export function PlanComparison({ onProClick, onFreeClick }: PlanComparisonProps)
           <div className="rounded-2xl border border-border bg-card shadow-sm">
             <div className="bg-muted/40 p-5 text-center">
               <p className="font-bold text-xl text-foreground">Free</p>
-              <p className="text-muted-foreground text-sm">R$ 0</p>
+              <p className="text-muted-foreground text-sm">Grátis • Até R$ 10</p>
             </div>
             <div className="p-4 space-y-3">
               {features.map((f, i) => (
@@ -119,7 +118,7 @@ export function PlanComparison({ onProClick, onFreeClick }: PlanComparisonProps)
             <div className="p-6 bg-muted/50"></div>
             <div className="p-6 text-center border-l border-border bg-muted/40">
               <p className="font-bold text-xl text-foreground">Free</p>
-              <p className="text-muted-foreground text-sm">R$ 0</p>
+              <p className="text-muted-foreground text-sm">Grátis • Até R$ 10</p>
             </div>
             <div className="p-6 text-center border-l border-primary bg-gradient-to-br from-primary/20 to-accent/20">
               <div className="flex items-center justify-center gap-2 mb-2">
@@ -138,7 +137,7 @@ export function PlanComparison({ onProClick, onFreeClick }: PlanComparisonProps)
               </div>
               <div className="p-4 flex items-center justify-center border-l border-border">
                 {typeof feature.free === "string" ? (
-                  <span className="text-destructive font-bold text-lg">{feature.free}</span>
+                  <span className={`font-bold text-lg ${feature.free === "R$ 10" ? "text-muted-foreground" : "text-green-500"}`}>{feature.free}</span>
                 ) : (
                   <FeatureValue value={feature.free} />
                 )}
