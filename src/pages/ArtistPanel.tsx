@@ -1146,6 +1146,8 @@ const ArtistPanel = () => {
             concluidos={pedidosConcluidos.length}
             recusados={pedidosRecusados.length}
             gorjetas={gorjetas.length}
+            activeCheckin={!!activeCheckin}
+            pedidosLocal={pedidosLocalPendentes?.length || 0}
           />
           
           {/* Bottom padding for mobile nav */}
