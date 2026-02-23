@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Building2, Check, X } from "lucide-react";
+import { Building2, Check, X, Loader2 } from "lucide-react";
 import { waitForProfile } from "@/lib/auth-utils";
 import { z } from "zod";
 import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicator";
@@ -37,6 +37,7 @@ const tiposEstabelecimento = [
 const AuthEstabelecimento = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -46,6 +47,35 @@ const AuthEstabelecimento = () => {
   const [tipoEstabelecimento, setTipoEstabelecimento] = useState("");
 
   const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
+
+  // Check for existing session on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, tipo')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          if (profile?.tipo === 'estabelecimento') {
+            navigate('/painel-local', { replace: true });
+            return;
+          } else if (profile) {
+            // Logged in as another type - sign out first
+            await supabase.auth.signOut();
+          }
+        }
+      } catch (error) {
+        console.error('Session check error:', error);
+      } finally {
+        setCheckingSession(false);
+      }
+    };
+    checkSession();
+  }, [navigate]);
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -218,6 +248,14 @@ const AuthEstabelecimento = () => {
       setLoading(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
