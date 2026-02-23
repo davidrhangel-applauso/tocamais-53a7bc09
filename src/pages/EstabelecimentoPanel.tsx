@@ -20,7 +20,10 @@ import {
   Check,
   X,
   Play,
-  History
+  History,
+  BarChart3,
+  TrendingUp,
+  Calendar
 } from "lucide-react";
 import { useEstabelecimento } from "@/hooks/useEstabelecimento";
 import ProfileQRCode from "@/components/ProfileQRCode";
@@ -249,8 +252,8 @@ const EstabelecimentoPanel = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="pedidos" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="pedidos" className="relative">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="pedidos" className="relative text-xs sm:text-sm">
               Pedidos
               {pendingPedidos.length > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs" variant="destructive">
@@ -258,9 +261,10 @@ const EstabelecimentoPanel = () => {
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="avaliacoes">Avaliações</TabsTrigger>
-            <TabsTrigger value="historico">Histórico</TabsTrigger>
-            <TabsTrigger value="qrcode">QR Code</TabsTrigger>
+            <TabsTrigger value="relatorios" className="text-xs sm:text-sm">Relatórios</TabsTrigger>
+            <TabsTrigger value="avaliacoes" className="text-xs sm:text-sm">Avaliações</TabsTrigger>
+            <TabsTrigger value="historico" className="text-xs sm:text-sm">Histórico</TabsTrigger>
+            <TabsTrigger value="qrcode" className="text-xs sm:text-sm">QR Code</TabsTrigger>
           </TabsList>
 
           <TabsContent value="pedidos" className="mt-4">
@@ -338,6 +342,129 @@ const EstabelecimentoPanel = () => {
                 </Card>
               ))
             )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="relatorios" className="mt-4">
+            <div className="space-y-4">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-2 gap-3">
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Music className="w-4 h-4 text-primary" />
+                      <span className="text-xs text-muted-foreground">Total Pedidos</span>
+                    </div>
+                    <p className="text-2xl font-bold">{pedidos.length}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-xs text-muted-foreground">Concluídos</span>
+                    </div>
+                    <p className="text-2xl font-bold">
+                      {pedidos.filter(p => p.status === 'concluido').length}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Star className="w-4 h-4 text-yellow-500" />
+                      <span className="text-xs text-muted-foreground">Avaliações</span>
+                    </div>
+                    <p className="text-2xl font-bold">{avaliacoes.length}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Calendar className="w-4 h-4 text-primary" />
+                      <span className="text-xs text-muted-foreground">Apresentações</span>
+                    </div>
+                    <p className="text-2xl font-bold">{historico.length}</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Performance metrics */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4" />
+                    Desempenho dos Pedidos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {pedidos.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Sem dados ainda. Os pedidos dos clientes serão analisados aqui.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {[
+                        { label: 'Pendentes', count: pedidos.filter(p => p.status === 'pendente').length, color: 'bg-primary' },
+                        { label: 'Aceitos', count: pedidos.filter(p => p.status === 'aceito').length, color: 'bg-blue-500' },
+                        { label: 'Concluídos', count: pedidos.filter(p => p.status === 'concluido').length, color: 'bg-green-500' },
+                        { label: 'Recusados', count: pedidos.filter(p => p.status === 'recusado').length, color: 'bg-destructive' },
+                      ].map(({ label, count, color }) => (
+                        <div key={label}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span>{label}</span>
+                            <span className="font-medium">{count}</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className={`h-full ${color} rounded-full transition-all`}
+                              style={{ width: `${pedidos.length > 0 ? (count / pedidos.length) * 100 : 0}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Top artists */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" />
+                    Artistas Mais Frequentes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {historico.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Nenhum artista ainda. O ranking aparecerá aqui.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {Object.entries(
+                        historico.reduce((acc: Record<string, number>, checkin) => {
+                          const nome = checkin.artista_nome || 'Desconhecido';
+                          acc[nome] = (acc[nome] || 0) + 1;
+                          return acc;
+                        }, {})
+                      )
+                        .sort(([, a], [, b]) => (b as number) - (a as number))
+                        .slice(0, 5)
+                        .map(([nome, count], index) => (
+                          <div key={nome} className="flex items-center justify-between py-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-muted-foreground w-4">{index + 1}.</span>
+                              <span className="text-sm">{nome}</span>
+                            </div>
+                            <Badge variant="secondary">{count as number} {(count as number) === 1 ? 'vez' : 'vezes'}</Badge>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
