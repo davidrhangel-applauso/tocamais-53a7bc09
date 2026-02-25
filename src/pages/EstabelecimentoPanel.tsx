@@ -8,6 +8,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AvatarUpload } from "@/components/AvatarUpload";
+import { CoverPhotoUpload } from "@/components/CoverPhotoUpload";
 import { 
   Building2, 
   Music, 
@@ -23,7 +29,10 @@ import {
   History,
   BarChart3,
   TrendingUp,
-  Calendar
+  Calendar,
+  Pencil,
+  Save,
+  Loader2
 } from "lucide-react";
 import { useEstabelecimento } from "@/hooks/useEstabelecimento";
 import ProfileQRCode from "@/components/ProfileQRCode";
@@ -37,6 +46,17 @@ const EstabelecimentoPanel = () => {
   const [loading, setLoading] = useState(true);
   const [avaliacoes, setAvaliacoes] = useState<any[]>([]);
   const [historico, setHistorico] = useState<any[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [editProfile, setEditProfile] = useState({
+    nome: '',
+    bio: '',
+    cidade: '',
+    endereco: '',
+    telefone: '',
+    tipo_estabelecimento: '',
+    foto_url: '',
+    foto_capa_url: '',
+  });
 
   const { activeCheckin, pedidos, refetch } = useEstabelecimento(user?.id || null);
 
@@ -63,6 +83,16 @@ const EstabelecimentoPanel = () => {
 
       setUser(user);
       setProfile(profileData);
+      setEditProfile({
+        nome: profileData.nome || '',
+        bio: profileData.bio || '',
+        cidade: profileData.cidade || '',
+        endereco: profileData.endereco || '',
+        telefone: profileData.telefone || '',
+        tipo_estabelecimento: profileData.tipo_estabelecimento || '',
+        foto_url: profileData.foto_url || '',
+        foto_capa_url: profileData.foto_capa_url || '',
+      });
       setLoading(false);
 
       // Fetch avaliacoes
@@ -134,6 +164,36 @@ const EstabelecimentoPanel = () => {
     } catch (error) {
       console.error('Error ending checkin:', error);
       toast.error("Erro ao encerrar apresentação");
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    try {
+      setSaving(true);
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          nome: editProfile.nome,
+          bio: editProfile.bio,
+          cidade: editProfile.cidade,
+          endereco: editProfile.endereco,
+          telefone: editProfile.telefone,
+          tipo_estabelecimento: editProfile.tipo_estabelecimento,
+          foto_url: editProfile.foto_url || null,
+          foto_capa_url: editProfile.foto_capa_url || null,
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setProfile((prev: any) => ({ ...prev, ...editProfile }));
+      toast.success("Perfil atualizado com sucesso!");
+    } catch (error: any) {
+      console.error('Error saving profile:', error);
+      toast.error("Erro ao salvar perfil: " + error.message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -252,7 +312,7 @@ const EstabelecimentoPanel = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="pedidos" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="pedidos" className="relative text-xs sm:text-sm">
               Pedidos
               {pendingPedidos.length > 0 && (
@@ -262,6 +322,7 @@ const EstabelecimentoPanel = () => {
               )}
             </TabsTrigger>
             <TabsTrigger value="relatorios" className="text-xs sm:text-sm">Relatórios</TabsTrigger>
+            <TabsTrigger value="perfil" className="text-xs sm:text-sm">Perfil</TabsTrigger>
             <TabsTrigger value="avaliacoes" className="text-xs sm:text-sm">Avaliações</TabsTrigger>
             <TabsTrigger value="historico" className="text-xs sm:text-sm">Histórico</TabsTrigger>
             <TabsTrigger value="qrcode" className="text-xs sm:text-sm">QR Code</TabsTrigger>
@@ -466,6 +527,129 @@ const EstabelecimentoPanel = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="perfil" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Pencil className="w-5 h-5" />
+                  Editar Perfil
+                </CardTitle>
+                <CardDescription>
+                  Atualize as informações do seu estabelecimento
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Avatar */}
+                <AvatarUpload
+                  currentUrl={editProfile.foto_url || null}
+                  onUpload={(url) => setEditProfile(prev => ({ ...prev, foto_url: url }))}
+                  userName={editProfile.nome || 'E'}
+                />
+
+                {/* Cover Photo */}
+                <CoverPhotoUpload
+                  currentUrl={editProfile.foto_capa_url || null}
+                  onUpload={(url) => setEditProfile(prev => ({ ...prev, foto_capa_url: url }))}
+                />
+
+                {/* Nome */}
+                <div className="space-y-2">
+                  <Label htmlFor="nome">Nome do Estabelecimento</Label>
+                  <Input
+                    id="nome"
+                    value={editProfile.nome}
+                    onChange={(e) => setEditProfile(prev => ({ ...prev, nome: e.target.value }))}
+                    placeholder="Nome do estabelecimento"
+                  />
+                </div>
+
+                {/* Bio */}
+                <div className="space-y-2">
+                  <Label htmlFor="bio">Descrição / Bio</Label>
+                  <Textarea
+                    id="bio"
+                    value={editProfile.bio}
+                    onChange={(e) => setEditProfile(prev => ({ ...prev, bio: e.target.value }))}
+                    placeholder="Descreva seu estabelecimento..."
+                    rows={3}
+                  />
+                </div>
+
+                {/* Tipo de Estabelecimento */}
+                <div className="space-y-2">
+                  <Label>Tipo de Estabelecimento</Label>
+                  <Select
+                    value={editProfile.tipo_estabelecimento}
+                    onValueChange={(value) => setEditProfile(prev => ({ ...prev, tipo_estabelecimento: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bar">Bar</SelectItem>
+                      <SelectItem value="restaurante">Restaurante</SelectItem>
+                      <SelectItem value="casa_noturna">Casa Noturna</SelectItem>
+                      <SelectItem value="pub">Pub</SelectItem>
+                      <SelectItem value="lounge">Lounge</SelectItem>
+                      <SelectItem value="cafe">Café</SelectItem>
+                      <SelectItem value="hotel">Hotel</SelectItem>
+                      <SelectItem value="evento">Evento</SelectItem>
+                      <SelectItem value="outro">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Cidade */}
+                <div className="space-y-2">
+                  <Label htmlFor="cidade">Cidade</Label>
+                  <Input
+                    id="cidade"
+                    value={editProfile.cidade}
+                    onChange={(e) => setEditProfile(prev => ({ ...prev, cidade: e.target.value }))}
+                    placeholder="Sua cidade"
+                  />
+                </div>
+
+                {/* Endereço */}
+                <div className="space-y-2">
+                  <Label htmlFor="endereco">Endereço Completo</Label>
+                  <Input
+                    id="endereco"
+                    value={editProfile.endereco}
+                    onChange={(e) => setEditProfile(prev => ({ ...prev, endereco: e.target.value }))}
+                    placeholder="Rua, número, bairro..."
+                  />
+                </div>
+
+                {/* Telefone */}
+                <div className="space-y-2">
+                  <Label htmlFor="telefone">Telefone</Label>
+                  <Input
+                    id="telefone"
+                    value={editProfile.telefone}
+                    onChange={(e) => setEditProfile(prev => ({ ...prev, telefone: e.target.value }))}
+                    placeholder="(11) 99999-9999"
+                  />
+                </div>
+
+                {/* Save Button */}
+                <Button onClick={handleSaveProfile} disabled={saving || !editProfile.nome.trim()} className="w-full">
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Salvar Perfil
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="avaliacoes" className="mt-4">
