@@ -1,50 +1,51 @@
 
 
-## Navegacao mobile completa com botao "Mais"
+## Adicionar edição de perfil ao painel do estabelecimento
 
 ### Problema
-O painel tem ~10 abas (Pendentes, Aceitos, Concluidos, Recusados, Gorjetas, Historico, Repertorio, Setlists, + PIX e Local condicionais), mas a barra inferior mobile so mostra 5. As abas "Concluidos", "Recusados" e "Historico" ficam inacessiveis no celular.
+A página de Configurações (`Settings.tsx`) é exclusiva para artistas -- quase todos os campos (PIX, estilo musical, redes sociais, status ao vivo) são condicionados a `profile.tipo === "artista"`. Estabelecimentos não têm como editar nome, foto, bio, endereço ou telefone de dentro do painel.
 
-### Solucao proposta
+### Solução
 
-Manter as 4 abas mais importantes fixas na barra inferior e adicionar um botao **"Mais"** que abre um **Drawer** (menu deslizante de baixo para cima) com todas as demais abas.
+Adicionar uma nova aba **"Perfil"** ao `EstabelecimentoPanel.tsx` com formulário de edição inline. Os campos já existem na tabela `profiles` do banco de dados (não é necessário criar migrações).
 
 ```text
-Barra inferior (sempre visivel):
-[ Pendentes ] [ Aceitos ] [ Gorjetas ] [ Repertorio ] [ ••• Mais ]
-
-Drawer "Mais" (abre ao tocar):
-  - Concluidos (12)
-  - Recusados (4)
-  - Historico
-  - Setlists
-  - PIX (se houver)
-  - Local (se houver)
+Tabs do Estabelecimento (6 abas):
+[ Pedidos ] [ Relatórios ] [ Perfil ] [ Avaliações ] [ Histórico ] [ QR Code ]
+                             ↑ NOVO
 ```
 
-Vantagens:
-- Nao sobrecarrega a barra inferior
-- Todas as abas ficam acessiveis
-- Usa o componente Drawer que ja existe no projeto (vaul)
-- Badges com contadores continuam visiveis nos itens do drawer
+### Campos editáveis na aba Perfil
 
-### Detalhes tecnicos
+| Campo | Tipo | Já existe no banco |
+|---|---|---|
+| Nome | Input text | sim (`nome`) |
+| Bio / Descrição | Textarea | sim (`bio`) |
+| Foto de perfil | AvatarUpload (componente existente) | sim (`foto_url`) |
+| Foto de capa | CoverPhotoUpload (componente existente) | sim (`foto_capa_url`) |
+| Cidade | Input text | sim (`cidade`) |
+| Endereço completo | Input text | sim (`endereco`) |
+| Telefone | Input text | sim (`telefone`) |
+| Tipo de estabelecimento | Select (bar, restaurante, casa_noturna, etc.) | sim (`tipo_estabelecimento`) |
 
-**Arquivo a modificar: `src/components/MobileBottomNav.tsx`**
+### Detalhes técnicos
 
-Mudancas:
-1. Reduzir `mainNavItems` para 4 itens fixos: Pendentes, Aceitos, Gorjetas, Repertorio
-2. Mover os demais (Concluidos, Recusados, Historico, Setlists, PIX, Local) para um array `moreItems`
-3. Adicionar um 5o botao "Mais" (icone `MoreHorizontal`) que abre um `Drawer`
-4. Dentro do Drawer, listar os itens extras como botoes com icone + label + badge
-5. Ao selecionar um item do Drawer, fechar o drawer e navegar para a aba
-6. Destacar visualmente se a aba ativa atual esta dentro do "Mais" (icone do "Mais" fica com cor primaria)
+**Arquivo modificado: `src/pages/EstabelecimentoPanel.tsx`**
 
-**Props adicionais necessarias:**
-- `concluidos: number` (ja existe como opcional, tornar obrigatorio para mostrar badge)
-- `recusados: number` (idem)
-- `activeCheckin?: boolean` (para mostrar aba Local condicionalmente)
-- `pedidosLocal?: number` (contagem para badge do Local)
+1. Adicionar estados para edição do perfil (`editProfile`, `saving`)
+2. Adicionar a aba "Perfil" na `TabsList` (mudar grid de 5 para 6 colunas)
+3. Criar `TabsContent value="perfil"` com:
+   - `AvatarUpload` (importado de `@/components/AvatarUpload`)
+   - `CoverPhotoUpload` (importado de `@/components/CoverPhotoUpload`)
+   - Campos de texto para nome, bio, cidade, endereco, telefone
+   - Select para `tipo_estabelecimento`
+   - Botão "Salvar" que faz `supabase.from('profiles').update(...)` nos campos editados
+4. Após salvar, atualizar o estado `profile` local para refletir as mudanças no header
+5. Adicionar import de `Pencil` (ou `Edit`) do lucide-react para o ícone da aba
 
-**Nenhum arquivo novo necessario** - o Drawer ja esta em `src/components/ui/drawer.tsx`.
+**Nenhuma migração necessária** -- todos os campos já existem na tabela `profiles`.
+
+**Componentes reutilizados** (zero código novo de upload):
+- `AvatarUpload` -- já trata upload para storage e retorna URL
+- `CoverPhotoUpload` -- idem para foto de capa
 
