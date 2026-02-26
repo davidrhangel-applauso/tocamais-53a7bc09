@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Music } from "lucide-react";
+import logoTocaMais from "@/assets/logo-tocamais.png";
 
 export function LandingFooter() {
   return (
@@ -8,9 +8,7 @@ export function LandingFooter() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Music className="w-6 h-6 text-primary" />
-            </div>
+            <img src={logoTocaMais} alt="Toca Mais" className="w-10 h-10" />
             <span className="font-bold text-xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Toca+
             </span>

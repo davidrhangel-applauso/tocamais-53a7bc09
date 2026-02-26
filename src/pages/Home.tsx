@@ -7,7 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Music, Search, LogOut, Star, MessageCircle, Settings, Eye, ArrowLeft } from "lucide-react";
+import { Search, LogOut, Star, MessageCircle, Settings, Eye, ArrowLeft, Music } from "lucide-react";
+import logoTocaMais from "@/assets/logo-tocamais.png";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import { waitForProfile } from "@/lib/auth-utils";
@@ -163,7 +164,7 @@ const Home = () => {
       <header className="border-b border-border/40 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Music className="w-8 h-8 text-primary" />
+            <img src={logoTocaMais} alt="Toca Mais" className="w-10 h-10" />
             <h1 className="text-2xl font-bold text-gradient">Toca+</h1>
           </div>
           <div className="flex gap-2">

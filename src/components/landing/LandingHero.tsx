@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { Music, ArrowRight, Download, Smartphone } from "lucide-react";
+import { ArrowRight, Download, Smartphone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import heroImage from "@/assets/hero-concert.jpg";
+import logoTocaMais from "@/assets/logo-tocamais.png";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { useState } from "react";
 
@@ -50,9 +51,7 @@ export function LandingHero({ onArtistClick, onClientClick }: LandingHeroProps) 
 
         {/* Logo */}
         <div className="flex justify-center mb-6 sm:mb-8 animate-scale-in">
-          <div className="p-4 sm:p-5 md:p-6 bg-gradient-to-br from-primary to-primary-glow rounded-2xl sm:rounded-3xl shadow-2xl backdrop-blur-sm border border-primary/20">
-            <Music className="w-12 h-12 sm:w-16 md:w-20 text-white animate-float" />
-          </div>
+          <img src={logoTocaMais} alt="Toca Mais" className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 animate-float drop-shadow-2xl" />
         </div>
         
         {/* Main Headline */}
