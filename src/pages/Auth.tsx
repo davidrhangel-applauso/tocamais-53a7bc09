@@ -289,7 +289,7 @@ const Auth = () => {
                     className="w-full text-sm"
                     onClick={() => setIsForgotPassword(true)}
                   >
-                    Esqueci minha senha
+                    Redefinir minha senha
                   </Button>
                 </form>
               )}

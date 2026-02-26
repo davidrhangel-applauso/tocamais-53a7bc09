@@ -29,7 +29,7 @@ const ResetPassword = () => {
     // Check if user has a valid session from the reset link
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
-        toast.error("Link de recuperação inválido ou expirado");
+        toast.error("Link de redefinição inválido ou expirado");
         navigate("/auth");
       }
     });
