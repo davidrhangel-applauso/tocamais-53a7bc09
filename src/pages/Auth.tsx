@@ -183,9 +183,7 @@ const Auth = () => {
       <Card className="w-full max-w-md border-primary/20 shadow-glow">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="p-3 bg-primary/10 rounded-full">
-              <Music className="w-8 h-8 text-primary" />
-            </div>
+            <img src={logoTocaMais} alt="Toca Mais" className="w-16 h-16" />
           </div>
           <CardTitle className="text-3xl font-bold text-gradient">Toca+</CardTitle>
           <CardDescription>Área exclusiva para artistas</CardDescription>
