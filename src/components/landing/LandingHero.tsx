@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Download, Smartphone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import heroImage from "@/assets/hero-concert.jpg";
-import logoTocaMais from "@/assets/logo-tocamais.png";
+
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { useState } from "react";
 
