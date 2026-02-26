@@ -239,7 +239,7 @@ const Auth = () => {
                     )}
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Enviando..." : "Enviar Link de Recuperação"}
+                    {loading ? "Enviando..." : "Enviar Link para Redefinir Senha"}
                   </Button>
                   <Button
                     type="button"
