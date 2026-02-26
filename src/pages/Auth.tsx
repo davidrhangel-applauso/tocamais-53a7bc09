@@ -127,7 +127,7 @@ const Auth = () => {
       toast.success("Email para redefinição de senha enviado! Verifique sua caixa de entrada.");
       setIsForgotPassword(false);
     } catch (error: any) {
-      toast.error(error.message || "Erro ao enviar email de recuperação");
+      toast.error(error.message || "Erro ao enviar email de redefinição");
       console.error('Password reset error:', error);
     } finally {
       setLoading(false);
