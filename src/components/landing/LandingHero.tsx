@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Download, Smartphone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import heroImage from "@/assets/hero-concert.jpg";
-import logoTocaMais from "@/assets/logo-tocamais.png";
+
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { useState } from "react";
 
@@ -50,8 +50,16 @@ export function LandingHero({ onArtistClick, onClientClick }: LandingHeroProps) 
         </div>
 
         {/* Logo */}
-        <div className="flex justify-center mb-6 sm:mb-8 animate-scale-in">
-          <img src={logoTocaMais} alt="Toca Mais" className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 animate-float drop-shadow-2xl" />
+        <div className="w-full max-w-3xl mx-auto mb-6 sm:mb-8 animate-scale-in rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+          <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+            <iframe
+              className="absolute inset-0 w-full h-full"
+              src="https://www.youtube.com/embed/tLeo0JgrEr0?rel=0&modestbranding=1"
+              title="Toca Mais - Vídeo"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
         </div>
         
         {/* Main Headline */}
