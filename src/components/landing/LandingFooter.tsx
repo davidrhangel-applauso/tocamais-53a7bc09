@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Music } from "lucide-react";
+import logoTocaMais from "@/assets/logo-tocamais.png";
 
 export function LandingFooter() {
   return (
