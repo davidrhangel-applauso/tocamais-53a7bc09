@@ -124,7 +124,7 @@ const Auth = () => {
 
       if (error) throw error;
 
-      toast.success("Email de recuperação enviado! Verifique sua caixa de entrada.");
+      toast.success("Email para redefinição de senha enviado! Verifique sua caixa de entrada.");
       setIsForgotPassword(false);
     } catch (error: any) {
       toast.error(error.message || "Erro ao enviar email de recuperação");
