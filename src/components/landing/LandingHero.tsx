@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Music, ArrowRight, Download, Smartphone } from "lucide-react";
+import { ArrowRight, Download, Smartphone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import heroImage from "@/assets/hero-concert.jpg";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
