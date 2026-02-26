@@ -124,10 +124,10 @@ const Auth = () => {
 
       if (error) throw error;
 
-      toast.success("Email de recuperação enviado! Verifique sua caixa de entrada.");
+      toast.success("Email para redefinição de senha enviado! Verifique sua caixa de entrada.");
       setIsForgotPassword(false);
     } catch (error: any) {
-      toast.error(error.message || "Erro ao enviar email de recuperação");
+      toast.error(error.message || "Erro ao enviar email de redefinição");
       console.error('Password reset error:', error);
     } finally {
       setLoading(false);
@@ -239,7 +239,7 @@ const Auth = () => {
                     )}
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Enviando..." : "Enviar Link de Recuperação"}
+                    {loading ? "Enviando..." : "Enviar Link para Redefinir Senha"}
                   </Button>
                   <Button
                     type="button"
@@ -289,7 +289,7 @@ const Auth = () => {
                     className="w-full text-sm"
                     onClick={() => setIsForgotPassword(true)}
                   >
-                    Esqueci minha senha
+                    Redefinir minha senha
                   </Button>
                 </form>
               )}
