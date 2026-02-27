@@ -15,8 +15,11 @@ export function SalesFooter() {
           </Link>
 
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <Link to="/instrucoes" className="hover:text-foreground transition-colors">
+            <Link to="/termos" className="hover:text-foreground transition-colors">
               Termos de Uso
+            </Link>
+            <Link to="/privacidade" className="hover:text-foreground transition-colors">
+              Privacidade
             </Link>
             <span>© {new Date().getFullYear()} TocaMais</span>
           </div>

@@ -25,6 +25,12 @@ export function LandingFooter() {
             <Link to="/buscar" className="hover:text-foreground transition-colors">
               Buscar Artistas
             </Link>
+            <Link to="/termos" className="hover:text-foreground transition-colors">
+              Termos de Uso
+            </Link>
+            <Link to="/privacidade" className="hover:text-foreground transition-colors">
+              Privacidade
+            </Link>
           </div>
 
           {/* Copyright */}
