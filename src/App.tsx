@@ -22,6 +22,8 @@ import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
 import Instructions from "./pages/Instructions";
 import ProSales from "./pages/ProSales";
+import TermosDeUso from "./pages/TermosDeUso";
+import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
