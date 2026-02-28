@@ -13,40 +13,54 @@ import { SalesFAQ } from "@/components/sales/SalesFAQ";
 import { FinalCTA } from "@/components/sales/FinalCTA";
 import { StickyMobileCTA } from "@/components/sales/StickyMobileCTA";
 import { SalesFooter } from "@/components/sales/SalesFooter";
-import { SubscriptionCard } from "@/components/SubscriptionCard";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { STRIPE_PLANS, type PlanKey } from "@/lib/stripe-plans";
 
 export default function ProSales() {
   const navigate = useNavigate();
-  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
-      setUserId(session?.user?.id || null);
       setIsLoading(false);
     };
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
-      setUserId(session?.user?.id || null);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleCTAClick = () => {
-    if (isAuthenticated) {
-      // Se já está logado, abre o modal de upgrade
-      setShowPremiumModal(true);
-    } else {
-      // Se não está logado, redireciona para auth com flag de upgrade
+  const handleCTAClick = async (priceId?: string) => {
+    if (!isAuthenticated) {
       navigate("/auth?upgrade=true");
+      return;
+    }
+
+    // Default to annual plan
+    const selectedPriceId = priceId || STRIPE_PLANS.anual.price_id;
+    
+    setIsCheckingOut(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { price_id: selectedPriceId },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
+      console.error('Checkout error:', error);
+      toast.error("Erro ao iniciar pagamento. Tente novamente.");
+    } finally {
+      setIsCheckingOut(false);
     }
   };
 
@@ -60,58 +74,18 @@ export default function ProSales() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero */}
-      <SalesHero onCTAClick={handleCTAClick} />
-
-      {/* Problem Section */}
+      <SalesHero onCTAClick={() => handleCTAClick()} />
       <ProblemSection />
-
-      {/* Solution Section */}
       <SolutionSection />
-
-      {/* Savings Calculator */}
-      <SavingsCalculator onCTAClick={handleCTAClick} />
-
-      {/* Comparison Section */}
+      <SavingsCalculator onCTAClick={() => handleCTAClick()} />
       <ComparisonSection />
-
-      {/* Testimonials */}
       <TestimonialsSection />
-
-      {/* Pricing */}
       <PricingSection onCTAClick={handleCTAClick} />
-
-      {/* Guarantee */}
       <GuaranteeSection />
-
-      {/* FAQ */}
       <SalesFAQ />
-
-      {/* Final CTA */}
-      <FinalCTA onCTAClick={handleCTAClick} />
-
-      {/* Footer */}
+      <FinalCTA onCTAClick={() => handleCTAClick()} />
       <SalesFooter />
-
-      {/* Sticky Mobile CTA */}
-      <StickyMobileCTA onCTAClick={handleCTAClick} />
-
-      {/* Subscription Modal */}
-      <Dialog open={showPremiumModal} onOpenChange={setShowPremiumModal}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-center">
-              Assine o Plano PRO
-            </DialogTitle>
-          </DialogHeader>
-          {userId && <SubscriptionCard artistaId={userId} />}
-          {!userId && (
-            <p className="text-center text-muted-foreground py-4">
-              Carregando informações...
-            </p>
-          )}
-        </DialogContent>
-      </Dialog>
+      <StickyMobileCTA onCTAClick={() => handleCTAClick()} />
     </div>
   );
 }
