@@ -8,16 +8,16 @@ import { HelpCircle } from "lucide-react";
 
 const faqs = [
   {
-    question: "Como funciona o pagamento?",
-    answer: "Você pode pagar via PIX ou cartão de crédito. O pagamento é processado de forma segura e seu plano PRO é ativado imediatamente após a confirmação.",
+    question: "Como funciona o pagamento da assinatura?",
+    answer: "Você paga via cartão de crédito com renovação automática. O pagamento é processado de forma segura pelo Stripe e seu plano PRO é ativado imediatamente após a confirmação.",
   },
   {
     question: "Quando o PRO é ativado?",
-    answer: "Assim que o pagamento for confirmado, seu plano PRO é ativado instantaneamente. No caso de PIX, a ativação leva poucos segundos. Com cartão, a ativação é imediata.",
+    answer: "Assim que o pagamento for confirmado, seu plano PRO é ativado instantaneamente. A ativação é imediata após a aprovação do cartão.",
   },
   {
     question: "Posso cancelar a qualquer momento?",
-    answer: "Sim! Você pode cancelar sua assinatura quando quiser, sem multas ou taxas adicionais. Basta acessar as configurações da sua conta.",
+    answer: "Sim! Você pode cancelar sua assinatura quando quiser pelo portal de gerenciamento, sem multas ou taxas adicionais. Seu acesso PRO continua até o final do período pago.",
   },
   {
     question: "E se eu não gostar?",

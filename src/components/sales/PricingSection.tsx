@@ -1,37 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Sparkles } from "lucide-react";
+import { STRIPE_PLANS, type PlanKey } from "@/lib/stripe-plans";
 
 interface PricingSectionProps {
-  onCTAClick: () => void;
+  onCTAClick: (priceId?: string) => void;
 }
 
-const plans = [
-  {
-    name: "Mensal",
-    price: 19.90,
-    period: "/mês",
-    description: "Sem compromisso",
-    savings: null,
-    recommended: false,
-  },
-  {
-    name: "Anual",
-    price: 99.00,
-    period: "/ano",
-    description: "R$ 8,25/mês",
-    savings: "Economize R$ 139,80",
-    recommended: true,
-  },
-  {
-    name: "Bienal",
-    price: 169.90,
-    period: "/2 anos",
-    description: "R$ 7,08/mês",
-    savings: "Economize R$ 308,50",
-    recommended: false,
-  },
-];
+const planKeys: PlanKey[] = ["mensal", "anual", "bienal"];
 
 const features = [
   "0% de taxa em gorjetas",
@@ -59,55 +35,57 @@ export function PricingSection({ onCTAClick }: PricingSectionProps) {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12">
-          {plans.map((plan, index) => (
-            <div
-              key={index}
-              className={`relative bg-card border rounded-2xl p-6 ${
-                plan.recommended
-                  ? "border-primary shadow-xl shadow-primary/20 scale-105"
-                  : "border-border"
-              }`}
-            >
-              {plan.recommended && (
-                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
-                  <Sparkles className="w-3 h-3 mr-1" />
-                  Mais Popular
-                </Badge>
-              )}
-
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-                <div className="flex items-end justify-center gap-1">
-                  <span className="text-4xl font-bold">
-                    R$ {plan.price.toFixed(2).replace(".", ",")}
-                  </span>
-                  <span className="text-muted-foreground mb-1">{plan.period}</span>
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {plan.description}
-                </p>
-                {plan.savings && (
-                  <Badge variant="secondary" className="mt-2 bg-green-500/10 text-green-500 border-green-500/20">
-                    {plan.savings}
-                  </Badge>
-                )}
-              </div>
-
-              <Button
-                onClick={onCTAClick}
-                className={`w-full ${
+          {planKeys.map((key) => {
+            const plan = STRIPE_PLANS[key];
+            return (
+              <div
+                key={key}
+                className={`relative bg-card border rounded-2xl p-6 ${
                   plan.recommended
-                    ? "bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
-                    : "bg-muted hover:bg-muted/80 text-foreground"
+                    ? "border-primary shadow-xl shadow-primary/20 scale-105"
+                    : "border-border"
                 }`}
               >
-                Assinar {plan.name}
-              </Button>
-            </div>
-          ))}
+                {plan.recommended && (
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    Mais Popular
+                  </Badge>
+                )}
+
+                <div className="text-center mb-6">
+                  <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+                  <div className="flex items-end justify-center gap-1">
+                    <span className="text-4xl font-bold">
+                      R$ {plan.price.toFixed(2).replace(".", ",")}
+                    </span>
+                    <span className="text-muted-foreground mb-1">{plan.period}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {plan.description}
+                  </p>
+                  {plan.savings && (
+                    <Badge variant="secondary" className="mt-2 bg-green-500/10 text-green-500 border-green-500/20">
+                      {plan.savings}
+                    </Badge>
+                  )}
+                </div>
+
+                <Button
+                  onClick={() => onCTAClick(plan.price_id)}
+                  className={`w-full ${
+                    plan.recommended
+                      ? "bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
+                      : "bg-muted hover:bg-muted/80 text-foreground"
+                  }`}
+                >
+                  Assinar {plan.name}
+                </Button>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Features List */}
         <div className="max-w-xl mx-auto">
           <p className="text-center text-muted-foreground mb-4">
             Todos os planos incluem:

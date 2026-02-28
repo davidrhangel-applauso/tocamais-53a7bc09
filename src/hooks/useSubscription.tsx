@@ -30,14 +30,34 @@ export function useSubscription(artistaId: string | null): UseSubscriptionReturn
     }
 
     try {
-      // Buscar plano do perfil
+      // First check Stripe via edge function
+      const { data: stripeData, error: stripeError } = await supabase.functions.invoke('check-subscription');
+
+      if (!stripeError && stripeData) {
+        if (stripeData.subscribed) {
+          setIsPro(true);
+          if (stripeData.subscription_end) {
+            const endsAt = new Date(stripeData.subscription_end);
+            const now = new Date();
+            const diffTime = endsAt.getTime() - now.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            setDaysRemaining(diffDays > 0 ? diffDays : 0);
+          } else {
+            // Admin-granted or permanent
+            setDaysRemaining(null);
+          }
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // Fallback: check local DB (admin-granted PRO)
       const { data: profile } = await supabase
         .from('profiles')
         .select('plano')
         .eq('id', artistaId)
         .single();
 
-      // Buscar assinatura ativa
       const { data: sub } = await supabase
         .from('artist_subscriptions')
         .select('*')
@@ -47,23 +67,19 @@ export function useSubscription(artistaId: string | null): UseSubscriptionReturn
         .limit(1)
         .single();
 
-      // Check if profile is PRO
       const isProfilePro = profile?.plano === 'pro';
-      
+
       if (sub && sub.ends_at) {
-        // Has subscription with expiration date (paid subscription)
         const endsAt = new Date(sub.ends_at);
         const now = new Date();
         const diffTime = endsAt.getTime() - now.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
         setDaysRemaining(diffDays > 0 ? diffDays : 0);
         setSubscription(sub);
         setIsPro(isProfilePro && diffDays > 0);
       } else if (isProfilePro) {
-        // PRO without subscription or with ends_at = null (admin-granted permanent PRO)
         setSubscription(sub || null);
-        setDaysRemaining(null); // Permanent PRO has no expiration
+        setDaysRemaining(null);
         setIsPro(true);
       } else {
         setSubscription(null);

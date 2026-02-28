@@ -13,48 +13,47 @@ const faqItems = [
     answer: `A plataforma cobra uma taxa sobre cada gorjeta recebida:
 
 • **Artistas Free:** Taxa de 20% (você recebe 80% da gorjeta)
-• **Artistas Pro (R$39,90/mês):** Taxa de 0% (você recebe 100% da gorjeta)
+• **Artistas Pro (a partir de R$19,90/mês):** Taxa de 0% (você recebe 100% da gorjeta)
 
-Além disso, o Mercado Pago cobra uma pequena taxa de processamento (~1%) que é descontada automaticamente do seu recebimento.`
-  },
-  {
-    question: "Por que o Mercado Pago retém meus pagamentos por 14 dias?",
-    answer: `O Mercado Pago retém pagamentos por até 14 dias como medida de segurança contra fraudes e chargebacks. Esse prazo pode variar de acordo com:
-
-• **Verificação da conta:** Contas verificadas têm prazos menores
-• **Histórico de vendas:** Vendedores com bom histórico recebem mais rápido
-• **Tipo de conta:** Contas empresariais podem ter condições diferentes
-
-Você pode configurar a liberação imediata no app do Mercado Pago em: Seu negócio → Configurações → Liberação de dinheiro.`
+As gorjetas são enviadas diretamente via PIX para sua conta.`
   },
   {
     question: "Como recebo os pagamentos das gorjetas?",
-    answer: `Os pagamentos são processados pelo Mercado Pago e vão diretamente para sua conta vinculada:
+    answer: `As gorjetas são enviadas diretamente para sua chave PIX cadastrada:
 
-1. **Vincule sua conta:** Conecte sua conta Mercado Pago nas configurações
-2. **Receba gorjetas:** Quando um fã fizer uma gorjeta, o valor vai para o Mercado Pago
-3. **Saque:** O dinheiro fica disponível na sua conta Mercado Pago para saque
+1. **Cadastre sua chave PIX:** Configure sua chave PIX nas configurações do perfil
+2. **Receba gorjetas:** Quando um fã fizer uma gorjeta, ele escaneia seu QR Code PIX
+3. **Receba instantaneamente:** O dinheiro vai direto para sua conta bancária
 
-Se você não vincular sua conta, os pagamentos ficam retidos na plataforma e precisam ser transferidos manualmente.`
+Não há intermediários — o pagamento é feito diretamente entre o fã e você.`
   },
   {
     question: "Quais métodos de pagamento os fãs podem usar?",
     answer: `Os fãs podem pagar gorjetas usando:
 
-• **Pix:** Pagamento instantâneo via QR Code ou código copia e cola
-• **Cartão de Crédito:** Pagamento parcelado em até 12x (dependendo do valor)
+• **Pix:** Pagamento instantâneo via QR Code diretamente para sua conta
 
-Ambos os métodos são processados pelo Mercado Pago com total segurança.`
+O pagamento é feito diretamente entre o fã e o artista, sem intermediários.`
+  },
+  {
+    question: "Como funciona a assinatura Pro?",
+    answer: `A assinatura Pro é paga via cartão de crédito com renovação automática:
+
+• **Mensal:** R$ 19,90/mês
+• **Anual:** R$ 99,00/ano (R$ 8,25/mês)
+• **Bienal:** R$ 169,90/2 anos (R$ 7,08/mês)
+
+O pagamento é processado de forma segura via Stripe. Você pode cancelar ou trocar de plano a qualquer momento pelo portal de gerenciamento.`
   },
   {
     question: "Vale a pena assinar o plano Pro?",
-    answer: `O plano Pro (R$39,90/mês) vale a pena se você recebe mais de R$200/mês em gorjetas:
+    answer: `O plano Pro vale a pena se você recebe mais de R$100/mês em gorjetas:
 
-**Cálculo de exemplo:**
-• **Free:** R$200 em gorjetas = R$160 líquido (20% taxa)
-• **Pro:** R$200 em gorjetas = R$200 líquido - R$39,90 = R$160,10 líquido
+**Cálculo de exemplo (plano mensal):**
+• **Free:** R$100 em gorjetas = R$80 líquido (20% taxa)
+• **Pro:** R$100 em gorjetas = R$100 líquido - R$19,90 = R$80,10 líquido
 
-A partir de R$200/mês em gorjetas, o Pro começa a compensar. Quanto mais você recebe, maior a economia!`
+A partir de R$100/mês em gorjetas, o Pro começa a compensar. Quanto mais você recebe, maior a economia! Com o plano anual, o ponto de equilíbrio é ainda menor.`
   },
   {
     question: "Preciso emitir nota fiscal das gorjetas?",
@@ -66,14 +65,13 @@ A partir de R$200/mês em gorjetas, o Pro começa a compensar. Quanto mais você
 Recomendamos consultar um contador para orientação específica sobre sua situação fiscal.`
   },
   {
-    question: "O que acontece se um cliente pedir reembolso?",
-    answer: `Chargebacks (pedidos de reembolso) são tratados pelo Mercado Pago:
+    question: "Posso cancelar minha assinatura Pro a qualquer momento?",
+    answer: `Sim! Você pode cancelar sua assinatura quando quiser:
 
-• O Mercado Pago analisa cada caso e pode contestar chargebacks indevidos
-• Se o chargeback for aprovado, o valor é debitado da sua conta
-• Por isso o Mercado Pago retém pagamentos inicialmente - para cobrir possíveis chargebacks
-
-Mantenha um bom relacionamento com seu público para evitar disputas.`
+• Acesse "Gerenciar Assinatura" no seu painel
+• O acesso Pro continua até o final do período pago
+• Sem multas ou taxas de cancelamento
+• Você pode reativar a qualquer momento`
   }
 ];
 
@@ -86,7 +84,7 @@ export function PaymentFAQ() {
           Perguntas Frequentes sobre Pagamentos
         </CardTitle>
         <CardDescription>
-          Entenda como funcionam as gorjetas, taxas e prazos de recebimento
+          Entenda como funcionam as gorjetas, taxas e assinatura Pro
         </CardDescription>
       </CardHeader>
       <CardContent>
