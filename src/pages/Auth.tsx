@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,8 @@ const passwordSchema = z.string()
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isUpgrade = searchParams.get("upgrade") === "true";
   const [loading, setLoading] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -93,7 +95,7 @@ const Auth = () => {
           return;
         }
         
-        navigate("/painel", { replace: true });
+        navigate(isUpgrade ? "/pro" : "/painel", { replace: true });
       }
     } catch (error: any) {
       if (error.message?.includes("User already registered")) {
@@ -168,7 +170,7 @@ const Auth = () => {
         }
 
         toast.success("Login realizado com sucesso!");
-        navigate("/painel");
+        navigate(isUpgrade ? "/pro" : "/painel");
       }
     } catch (error: any) {
       toast.error(error.message || "Erro ao fazer login");
