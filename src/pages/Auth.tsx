@@ -95,7 +95,7 @@ const Auth = () => {
           return;
         }
         
-        navigate("/painel", { replace: true });
+        navigate(isUpgrade ? "/pro" : "/painel", { replace: true });
       }
     } catch (error: any) {
       if (error.message?.includes("User already registered")) {
