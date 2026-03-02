@@ -170,7 +170,7 @@ const Auth = () => {
         }
 
         toast.success("Login realizado com sucesso!");
-        navigate("/painel");
+        navigate(isUpgrade ? "/pro" : "/painel");
       }
     } catch (error: any) {
       toast.error(error.message || "Erro ao fazer login");
