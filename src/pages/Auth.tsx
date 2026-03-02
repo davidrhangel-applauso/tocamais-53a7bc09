@@ -25,6 +25,8 @@ const passwordSchema = z.string()
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isUpgrade = searchParams.get("upgrade") === "true";
   const [loading, setLoading] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
