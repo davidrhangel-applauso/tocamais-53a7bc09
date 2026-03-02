@@ -85,6 +85,19 @@ const Auth = () => {
       if (authError) throw authError;
 
       if (authData.user) {
+        // Check if email confirmation is required (user not confirmed yet)
+        const needsEmailConfirmation = authData.user.identities?.length === 0 || 
+          (authData.session === null && !authData.user.confirmed_at);
+        
+        if (needsEmailConfirmation) {
+          if (isUpgrade) {
+            toast.success("Conta criada! Verifique seu email para confirmar a conta e depois volte à página /pro para assinar o PRO.", { duration: 8000 });
+          } else {
+            toast.success("Conta criada! Verifique seu email para confirmar a conta.", { duration: 6000 });
+          }
+          return;
+        }
+
         toast.success("Conta criada com sucesso!");
         
         // Wait for the trigger to create the profile with retry logic
