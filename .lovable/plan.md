@@ -1,51 +1,42 @@
 
 
-## Adicionar edição de perfil ao painel do estabelecimento
+## Problema
 
-### Problema
-A página de Configurações (`Settings.tsx`) é exclusiva para artistas -- quase todos os campos (PIX, estilo musical, redes sociais, status ao vivo) são condicionados a `profile.tipo === "artista"`. Estabelecimentos não têm como editar nome, foto, bio, endereço ou telefone de dentro do painel.
+Há dois problemas no fluxo atual:
 
-### Solução
+1. **Edge function `create-checkout` quebra quando não há token de auth** — a linha `req.headers.get("Authorization")!` retorna `null` e `.replace()` falha com o erro `Cannot read properties of null (reading 'replace')`.
 
-Adicionar uma nova aba **"Perfil"** ao `EstabelecimentoPanel.tsx` com formulário de edição inline. Os campos já existem na tabela `profiles` do banco de dados (não é necessário criar migrações).
+2. **Após cadastro com verificação de email obrigatória**, o usuário é redirecionado para `/pro` mas **não está autenticado** (precisa confirmar o email primeiro). Ao clicar em "Assinar", é enviado de volta para `/auth?upgrade=true` em loop.
 
-```text
-Tabs do Estabelecimento (6 abas):
-[ Pedidos ] [ Relatórios ] [ Perfil ] [ Avaliações ] [ Histórico ] [ QR Code ]
-                             ↑ NOVO
-```
+## Plano
 
-### Campos editáveis na aba Perfil
+### 1. Corrigir a edge function `create-checkout`
+- Adicionar validação segura do header `Authorization` — retornar erro 401 claro se ausente, em vez de quebrar com erro genérico.
 
-| Campo | Tipo | Já existe no banco |
-|---|---|---|
-| Nome | Input text | sim (`nome`) |
-| Bio / Descrição | Textarea | sim (`bio`) |
-| Foto de perfil | AvatarUpload (componente existente) | sim (`foto_url`) |
-| Foto de capa | CoverPhotoUpload (componente existente) | sim (`foto_capa_url`) |
-| Cidade | Input text | sim (`cidade`) |
-| Endereço completo | Input text | sim (`endereco`) |
-| Telefone | Input text | sim (`telefone`) |
-| Tipo de estabelecimento | Select (bar, restaurante, casa_noturna, etc.) | sim (`tipo_estabelecimento`) |
+### 2. Melhorar o fluxo de cadastro + assinatura no `Auth.tsx`
+- Após cadastro bem-sucedido, se `upgrade=true` e o email ainda não foi confirmado, exibir uma mensagem clara: **"Verifique seu email para confirmar a conta e depois volte aqui para assinar o PRO"**, em vez de redirecionar silenciosamente para `/pro` onde o botão não funciona.
+
+### 3. Melhorar feedback na página `/pro` (ProSales.tsx)
+- Quando o usuário clica para assinar e não está autenticado, exibir um **toast informativo** antes de redirecionar, explicando que precisa fazer login primeiro.
+- Se a chamada ao `create-checkout` falhar, mostrar a mensagem de erro específica ao invés de genérica.
 
 ### Detalhes técnicos
 
-**Arquivo modificado: `src/pages/EstabelecimentoPanel.tsx`**
+**`supabase/functions/create-checkout/index.ts`** — linha 21:
+```typescript
+// Antes:
+const authHeader = req.headers.get("Authorization")!;
+// Depois:
+const authHeader = req.headers.get("Authorization");
+if (!authHeader) {
+  return new Response(JSON.stringify({ error: "Not authenticated" }), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    status: 401,
+  });
+}
+```
 
-1. Adicionar estados para edição do perfil (`editProfile`, `saving`)
-2. Adicionar a aba "Perfil" na `TabsList` (mudar grid de 5 para 6 colunas)
-3. Criar `TabsContent value="perfil"` com:
-   - `AvatarUpload` (importado de `@/components/AvatarUpload`)
-   - `CoverPhotoUpload` (importado de `@/components/CoverPhotoUpload`)
-   - Campos de texto para nome, bio, cidade, endereco, telefone
-   - Select para `tipo_estabelecimento`
-   - Botão "Salvar" que faz `supabase.from('profiles').update(...)` nos campos editados
-4. Após salvar, atualizar o estado `profile` local para refletir as mudanças no header
-5. Adicionar import de `Pencil` (ou `Edit`) do lucide-react para o ícone da aba
+**`src/pages/Auth.tsx`** — no `handleSignUp`, verificar se o usuário foi confirmado automaticamente ou precisa confirmar email antes de redirecionar para `/pro`.
 
-**Nenhuma migração necessária** -- todos os campos já existem na tabela `profiles`.
-
-**Componentes reutilizados** (zero código novo de upload):
-- `AvatarUpload` -- já trata upload para storage e retorna URL
-- `CoverPhotoUpload` -- idem para foto de capa
+**`src/pages/ProSales.tsx`** — adicionar toast antes do redirect para `/auth`.
 
