@@ -124,6 +124,13 @@ const Landing = () => {
         onContinueFree={handleContinueFree}
         onSelectPlan={handleSelectPlan}
       />
+
+      {/* Auth Required Dialog */}
+      <AuthRequiredDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        onConfirm={() => navigate("/auth?upgrade=true")}
+      />
     </div>
   );
 };
