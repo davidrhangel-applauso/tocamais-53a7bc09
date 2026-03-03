@@ -13,6 +13,7 @@ import { SalesFAQ } from "@/components/sales/SalesFAQ";
 import { FinalCTA } from "@/components/sales/FinalCTA";
 import { StickyMobileCTA } from "@/components/sales/StickyMobileCTA";
 import { SalesFooter } from "@/components/sales/SalesFooter";
+import { AuthRequiredDialog } from "@/components/AuthRequiredDialog";
 import { toast } from "sonner";
 import { STRIPE_PLANS, type PlanKey } from "@/lib/stripe-plans";
 
@@ -21,6 +22,7 @@ export default function ProSales() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -39,8 +41,7 @@ export default function ProSales() {
 
   const handleCTAClick = async (priceId?: string) => {
     if (!isAuthenticated) {
-      toast.info("Faça login ou crie sua conta para assinar o PRO!", { duration: 5000 });
-      navigate("/auth?upgrade=true");
+      setShowAuthDialog(true);
       return;
     }
 
@@ -87,6 +88,11 @@ export default function ProSales() {
       <FinalCTA onCTAClick={() => handleCTAClick()} />
       <SalesFooter />
       <StickyMobileCTA onCTAClick={() => handleCTAClick()} />
+      <AuthRequiredDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        onConfirm={() => navigate("/auth?upgrade=true")}
+      />
     </div>
   );
 }
