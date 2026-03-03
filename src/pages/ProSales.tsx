@@ -13,6 +13,7 @@ import { SalesFAQ } from "@/components/sales/SalesFAQ";
 import { FinalCTA } from "@/components/sales/FinalCTA";
 import { StickyMobileCTA } from "@/components/sales/StickyMobileCTA";
 import { SalesFooter } from "@/components/sales/SalesFooter";
+import { AuthRequiredDialog } from "@/components/AuthRequiredDialog";
 import { toast } from "sonner";
 import { STRIPE_PLANS, type PlanKey } from "@/lib/stripe-plans";
 
