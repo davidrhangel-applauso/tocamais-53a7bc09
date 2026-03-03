@@ -88,6 +88,11 @@ export default function ProSales() {
       <FinalCTA onCTAClick={() => handleCTAClick()} />
       <SalesFooter />
       <StickyMobileCTA onCTAClick={() => handleCTAClick()} />
+      <AuthRequiredDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        onConfirm={() => navigate("/auth?upgrade=true")}
+      />
     </div>
   );
 }
