@@ -64,7 +64,8 @@ const Landing = () => {
   const handleSelectPlan = (plan: "monthly" | "annual" | "biennial") => {
     sessionStorage.setItem("selectedPremiumPlan", plan);
     setShowPremiumModal(false);
-    navigate("/auth?upgrade=true");
+    setPendingPlan(plan);
+    setShowAuthDialog(true);
   };
 
   return (
