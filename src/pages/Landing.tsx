@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { waitForProfile } from "@/lib/auth-utils";
 import { PremiumOfferModal } from "@/components/PremiumOfferModal";
+import { AuthRequiredDialog } from "@/components/AuthRequiredDialog";
 import { LandingHero } from "@/components/landing/LandingHero";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { ArtistBenefits } from "@/components/landing/ArtistBenefits";
@@ -20,6 +21,8 @@ import { MetricsSection } from "@/components/landing/MetricsSection";
 const Landing = () => {
   const navigate = useNavigate();
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<"monthly" | "annual" | "biennial" | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -62,7 +65,8 @@ const Landing = () => {
   const handleSelectPlan = (plan: "monthly" | "annual" | "biennial") => {
     sessionStorage.setItem("selectedPremiumPlan", plan);
     setShowPremiumModal(false);
-    navigate("/auth?upgrade=true");
+    setPendingPlan(plan);
+    setShowAuthDialog(true);
   };
 
   return (
@@ -119,6 +123,13 @@ const Landing = () => {
         onOpenChange={setShowPremiumModal}
         onContinueFree={handleContinueFree}
         onSelectPlan={handleSelectPlan}
+      />
+
+      {/* Auth Required Dialog */}
+      <AuthRequiredDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        onConfirm={() => navigate("/auth?upgrade=true")}
       />
     </div>
   );
