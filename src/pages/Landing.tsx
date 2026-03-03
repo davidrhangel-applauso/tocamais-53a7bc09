@@ -20,6 +20,8 @@ import { MetricsSection } from "@/components/landing/MetricsSection";
 const Landing = () => {
   const navigate = useNavigate();
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<"monthly" | "annual" | "biennial" | null>(null);
 
   useEffect(() => {
     checkAuth();
