@@ -41,8 +41,7 @@ export default function ProSales() {
 
   const handleCTAClick = async (priceId?: string) => {
     if (!isAuthenticated) {
-      toast.info("Faça login ou crie sua conta para assinar o PRO!", { duration: 5000 });
-      navigate("/auth?upgrade=true");
+      setShowAuthDialog(true);
       return;
     }
 
