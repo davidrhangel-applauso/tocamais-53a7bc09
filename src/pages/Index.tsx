@@ -159,6 +159,12 @@ const Index = () => {
         onContinueFree={handleContinueFree}
         onSelectPlan={handleSelectPlan}
       />
+
+      <AuthRequiredDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        onConfirm={() => navigate(`/auth?upgrade=true${pendingPlan ? `&plan=${pendingPlan}` : ''}`)}
+      />
     </div>
   );
 };
