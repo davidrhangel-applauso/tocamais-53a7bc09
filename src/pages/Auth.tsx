@@ -109,7 +109,7 @@ const Auth = () => {
           return;
         }
         
-        navigate(isUpgrade ? "/pro" : "/painel", { replace: true });
+        navigate(isUpgrade ? `/pro${planParam ? `?plan=${planParam}` : ''}` : "/painel", { replace: true });
       }
     } catch (error: any) {
       if (error.message?.includes("User already registered")) {
