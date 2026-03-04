@@ -5,12 +5,15 @@ import { Music, Search, Building2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { waitForProfile } from "@/lib/auth-utils";
 import { PremiumOfferModal } from "@/components/PremiumOfferModal";
+import { AuthRequiredDialog } from "@/components/AuthRequiredDialog";
 import heroImage from "@/assets/hero-concert.jpg";
 
 const Index = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -51,7 +54,8 @@ const Index = () => {
 
   const handleSelectPlan = (plan: "monthly" | "annual" | "biennial") => {
     setShowPremiumModal(false);
-    navigate(`/auth?upgrade=true&plan=${plan}`);
+    setPendingPlan(plan);
+    setShowAuthDialog(true);
   };
 
   if (isLoading) {
@@ -154,6 +158,12 @@ const Index = () => {
         onOpenChange={setShowPremiumModal}
         onContinueFree={handleContinueFree}
         onSelectPlan={handleSelectPlan}
+      />
+
+      <AuthRequiredDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        onConfirm={() => navigate(`/auth?upgrade=true${pendingPlan ? `&plan=${pendingPlan}` : ''}`)}
       />
     </div>
   );
