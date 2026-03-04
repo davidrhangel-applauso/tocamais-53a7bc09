@@ -19,10 +19,18 @@ import { STRIPE_PLANS, type PlanKey } from "@/lib/stripe-plans";
 
 export default function ProSales() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [autoCheckoutDone, setAutoCheckoutDone] = useState(false);
+
+  const planParamMap: Record<string, PlanKey> = {
+    monthly: "mensal",
+    annual: "anual",
+    biennial: "bienal",
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -38,6 +46,17 @@ export default function ProSales() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Auto-checkout when arriving with a plan parameter
+  useEffect(() => {
+    if (isLoading || autoCheckoutDone || !isAuthenticated) return;
+    const planParam = searchParams.get("plan");
+    if (!planParam) return;
+    const planKey = planParamMap[planParam];
+    if (!planKey) return;
+    setAutoCheckoutDone(true);
+    handleCTAClick(STRIPE_PLANS[planKey].price_id);
+  }, [isLoading, isAuthenticated, autoCheckoutDone]);
 
   const handleCTAClick = async (priceId?: string) => {
     if (!isAuthenticated) {
