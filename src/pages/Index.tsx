@@ -54,7 +54,8 @@ const Index = () => {
 
   const handleSelectPlan = (plan: "monthly" | "annual" | "biennial") => {
     setShowPremiumModal(false);
-    navigate(`/auth?upgrade=true&plan=${plan}`);
+    setPendingPlan(plan);
+    setShowAuthDialog(true);
   };
 
   if (isLoading) {
