@@ -12,6 +12,8 @@ const Index = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
