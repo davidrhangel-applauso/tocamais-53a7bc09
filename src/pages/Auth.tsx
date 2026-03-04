@@ -27,6 +27,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isUpgrade = searchParams.get("upgrade") === "true";
+  const planParam = searchParams.get("plan");
   const [loading, setLoading] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -108,7 +109,7 @@ const Auth = () => {
           return;
         }
         
-        navigate(isUpgrade ? "/pro" : "/painel", { replace: true });
+        navigate(isUpgrade ? `/pro${planParam ? `?plan=${planParam}` : ''}` : "/painel", { replace: true });
       }
     } catch (error: any) {
       if (error.message?.includes("User already registered")) {
@@ -183,7 +184,7 @@ const Auth = () => {
         }
 
         toast.success("Login realizado com sucesso!");
-        navigate(isUpgrade ? "/pro" : "/painel");
+        navigate(isUpgrade ? `/pro${planParam ? `?plan=${planParam}` : ''}` : "/painel");
       }
     } catch (error: any) {
       toast.error(error.message || "Erro ao fazer login");
