@@ -1,51 +1,35 @@
 
 
-## Adicionar edição de perfil ao painel do estabelecimento
+## Problema
 
-### Problema
-A página de Configurações (`Settings.tsx`) é exclusiva para artistas -- quase todos os campos (PIX, estilo musical, redes sociais, status ao vivo) são condicionados a `profile.tipo === "artista"`. Estabelecimentos não têm como editar nome, foto, bio, endereço ou telefone de dentro do painel.
+O fluxo de seleção de plano perde a informação do plano escolhido em dois pontos:
 
-### Solução
+1. **Auth.tsx**: Após login/cadastro com `?upgrade=true&plan=monthly`, redireciona para `/pro` **sem preservar o parâmetro `plan`**.
+2. **ProSales.tsx**: Ao chegar na página `/pro`, se o usuário está autenticado, não lê nenhum parâmetro da URL. Quando os CTAs genéricos (Hero, FAQ, etc.) chamam `handleCTAClick()` sem `priceId`, o código faz fallback para `STRIPE_PLANS.anual.price_id`.
 
-Adicionar uma nova aba **"Perfil"** ao `EstabelecimentoPanel.tsx` com formulário de edição inline. Os campos já existem na tabela `profiles` do banco de dados (não é necessário criar migrações).
+Resultado: independentemente do plano selecionado, o Stripe sempre recebe o `price_id` do plano anual.
 
-```text
-Tabs do Estabelecimento (6 abas):
-[ Pedidos ] [ Relatórios ] [ Perfil ] [ Avaliações ] [ Histórico ] [ QR Code ]
-                             ↑ NOVO
+## Plano
+
+### 1. Auth.tsx — Preservar o parâmetro `plan` no redirect
+
+Após login/signup, ao redirecionar para `/pro`, incluir o parâmetro `plan`:
+```
+navigate(`/pro${plan ? `?plan=${plan}` : ''}`)
 ```
 
-### Campos editáveis na aba Perfil
+### 2. ProSales.tsx — Ler `plan` da URL e iniciar checkout automaticamente
 
-| Campo | Tipo | Já existe no banco |
-|---|---|---|
-| Nome | Input text | sim (`nome`) |
-| Bio / Descrição | Textarea | sim (`bio`) |
-| Foto de perfil | AvatarUpload (componente existente) | sim (`foto_url`) |
-| Foto de capa | CoverPhotoUpload (componente existente) | sim (`foto_capa_url`) |
-| Cidade | Input text | sim (`cidade`) |
-| Endereço completo | Input text | sim (`endereco`) |
-| Telefone | Input text | sim (`telefone`) |
-| Tipo de estabelecimento | Select (bar, restaurante, casa_noturna, etc.) | sim (`tipo_estabelecimento`) |
+- Ler `searchParams.get("plan")` da URL
+- Mapear `"monthly"` → `"mensal"`, `"annual"` → `"anual"`, `"biennial"` → `"bienal"`
+- Se o usuário está autenticado E há um `plan` na URL, iniciar o checkout automaticamente com o `price_id` correto ao carregar a página
+- Manter o fallback para anual nos CTAs genéricos
 
-### Detalhes técnicos
+### 3. Index.tsx e Landing.tsx — Já passam o plan na URL (OK)
 
-**Arquivo modificado: `src/pages/EstabelecimentoPanel.tsx`**
+Esses já estão corretos: `navigate(/auth?upgrade=true&plan=${pendingPlan})`.
 
-1. Adicionar estados para edição do perfil (`editProfile`, `saving`)
-2. Adicionar a aba "Perfil" na `TabsList` (mudar grid de 5 para 6 colunas)
-3. Criar `TabsContent value="perfil"` com:
-   - `AvatarUpload` (importado de `@/components/AvatarUpload`)
-   - `CoverPhotoUpload` (importado de `@/components/CoverPhotoUpload`)
-   - Campos de texto para nome, bio, cidade, endereco, telefone
-   - Select para `tipo_estabelecimento`
-   - Botão "Salvar" que faz `supabase.from('profiles').update(...)` nos campos editados
-4. Após salvar, atualizar o estado `profile` local para refletir as mudanças no header
-5. Adicionar import de `Pencil` (ou `Edit`) do lucide-react para o ícone da aba
+### Resultado esperado
 
-**Nenhuma migração necessária** -- todos os campos já existem na tabela `profiles`.
-
-**Componentes reutilizados** (zero código novo de upload):
-- `AvatarUpload` -- já trata upload para storage e retorna URL
-- `CoverPhotoUpload` -- idem para foto de capa
+Usuário seleciona "Mensal" → faz login → é redirecionado para `/pro?plan=monthly` → checkout abre automaticamente com o price_id mensal correto.
 
