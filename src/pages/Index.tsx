@@ -5,6 +5,7 @@ import { Music, Search, Building2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { waitForProfile } from "@/lib/auth-utils";
 import { PremiumOfferModal } from "@/components/PremiumOfferModal";
+import { AuthRequiredDialog } from "@/components/AuthRequiredDialog";
 import heroImage from "@/assets/hero-concert.jpg";
 
 const Index = () => {
