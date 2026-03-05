@@ -108,9 +108,8 @@ export function PricingSection({ onCTAClick }: PricingSectionProps) {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Button
-                    onClick={() => onCTAClick(plan.price_id)}
+                <Button
+                    onClick={() => handlePlanClick(key)}
                     className={`w-full ${
                       plan.recommended
                         ? "bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
@@ -119,15 +118,6 @@ export function PricingSection({ onCTAClick }: PricingSectionProps) {
                   >
                     Assinar {plan.name}
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => handlePixClick(key)}
-                    className="w-full gap-2"
-                  >
-                    <QrCode className="w-4 h-4" />
-                    Pagar via PIX
-                  </Button>
-                </div>
               </div>
             );
           })}
