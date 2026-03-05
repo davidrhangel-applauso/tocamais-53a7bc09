@@ -28,6 +28,10 @@ export default function ProSales() {
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [autoCheckoutDone, setAutoCheckoutDone] = useState(false);
   const [pendingPlanKey, setPendingPlanKey] = useState<string | null>(null);
+  const [paymentMethodOpen, setPaymentMethodOpen] = useState(false);
+  const [selectedPlanKey, setSelectedPlanKey] = useState<PlanKey>("anual");
+  const [pixDialogOpen, setPixDialogOpen] = useState(false);
+  const [artistaId, setArtistaId] = useState<string | null>(null);
 
   const planParamMap: Record<string, PlanKey> = {
     monthly: "mensal",
