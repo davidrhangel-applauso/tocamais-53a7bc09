@@ -96,16 +96,26 @@ export function PricingSection({ onCTAClick }: PricingSectionProps) {
                   )}
                 </div>
 
-                <Button
-                  onClick={() => onCTAClick(plan.price_id)}
-                  className={`w-full ${
-                    plan.recommended
-                      ? "bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
-                      : "bg-muted hover:bg-muted/80 text-foreground"
-                  }`}
-                >
-                  Assinar {plan.name}
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    onClick={() => onCTAClick(plan.price_id)}
+                    className={`w-full ${
+                      plan.recommended
+                        ? "bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
+                        : "bg-muted hover:bg-muted/80 text-foreground"
+                    }`}
+                  >
+                    Assinar {plan.name}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handlePixClick(key)}
+                    className="w-full gap-2"
+                  >
+                    <QrCode className="w-4 h-4" />
+                    Pagar via PIX
+                  </Button>
+                </div>
               </div>
             );
           })}
