@@ -25,12 +25,19 @@ export default function ProSales() {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [autoCheckoutDone, setAutoCheckoutDone] = useState(false);
+  const [pendingPlanKey, setPendingPlanKey] = useState<string | null>(null);
 
   const planParamMap: Record<string, PlanKey> = {
     monthly: "mensal",
     annual: "anual",
     biennial: "bienal",
   };
+
+  const priceIdToPlanParam: Record<string, string> = Object.entries(STRIPE_PLANS).reduce((acc, [key, plan]) => {
+    const englishKey = key === "mensal" ? "monthly" : key === "anual" ? "annual" : "biennial";
+    acc[plan.price_id] = englishKey;
+    return acc;
+  }, {} as Record<string, string>);
 
   useEffect(() => {
     const checkAuth = async () => {

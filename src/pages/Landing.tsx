@@ -129,7 +129,7 @@ const Landing = () => {
       <AuthRequiredDialog
         open={showAuthDialog}
         onOpenChange={setShowAuthDialog}
-        onConfirm={() => navigate("/auth?upgrade=true")}
+        onConfirm={() => navigate(`/auth?upgrade=true${pendingPlan ? `&plan=${pendingPlan}` : ''}`)}
       />
     </div>
   );
