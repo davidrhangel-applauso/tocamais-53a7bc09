@@ -49,12 +49,14 @@ export default function ProSales() {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
+      setArtistaId(session?.user?.id || null);
       setIsLoading(false);
     };
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
+      setArtistaId(session?.user?.id || null);
     });
 
     return () => subscription.unsubscribe();
