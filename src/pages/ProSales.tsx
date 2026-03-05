@@ -67,6 +67,8 @@ export default function ProSales() {
 
   const handleCTAClick = async (priceId?: string) => {
     if (!isAuthenticated) {
+      const planName = priceId ? priceIdToPlanParam[priceId] || null : "annual";
+      setPendingPlanKey(planName);
       setShowAuthDialog(true);
       return;
     }
