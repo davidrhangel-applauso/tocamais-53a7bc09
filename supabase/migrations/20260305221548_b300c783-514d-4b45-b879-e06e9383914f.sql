@@ -1,0 +1,1 @@
+ALTER TABLE artist_subscriptions ADD COLUMN IF NOT EXISTS plano_tipo text DEFAULT 'mensal';

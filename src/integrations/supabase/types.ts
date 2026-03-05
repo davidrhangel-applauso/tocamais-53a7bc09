@@ -105,6 +105,7 @@ export type Database = {
           ends_at: string | null
           id: string
           payment_id: string | null
+          plano_tipo: string | null
           starts_at: string | null
           status: string
           subscription_id: string | null
@@ -117,6 +118,7 @@ export type Database = {
           ends_at?: string | null
           id?: string
           payment_id?: string | null
+          plano_tipo?: string | null
           starts_at?: string | null
           status?: string
           subscription_id?: string | null
@@ -129,6 +131,7 @@ export type Database = {
           ends_at?: string | null
           id?: string
           payment_id?: string | null
+          plano_tipo?: string | null
           starts_at?: string | null
           status?: string
           subscription_id?: string | null
