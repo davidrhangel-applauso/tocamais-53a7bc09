@@ -7,8 +7,9 @@ import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
-import { Crown, Check, Zap, Clock, AlertCircle, Loader2, ExternalLink, Settings } from "lucide-react";
+import { Crown, Check, Zap, Clock, AlertCircle, Loader2, ExternalLink, Settings, QrCode } from "lucide-react";
 import { STRIPE_PLANS, type PlanKey } from "@/lib/stripe-plans";
+import { PixSubscriptionDialog } from "@/components/PixSubscriptionDialog";
 
 interface SubscriptionCardProps {
   artistaId: string;
