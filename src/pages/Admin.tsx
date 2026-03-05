@@ -295,6 +295,7 @@ export default function Admin() {
                           <TableHead>Cidade</TableHead>
                           <TableHead>Estilo</TableHead>
                           <TableHead>Plano</TableHead>
+                          <TableHead>Assinatura</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead className="text-right">Ações</TableHead>
                         </TableRow>
