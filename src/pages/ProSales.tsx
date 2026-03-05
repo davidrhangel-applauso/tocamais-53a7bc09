@@ -25,12 +25,19 @@ export default function ProSales() {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [autoCheckoutDone, setAutoCheckoutDone] = useState(false);
+  const [pendingPlanKey, setPendingPlanKey] = useState<string | null>(null);
 
   const planParamMap: Record<string, PlanKey> = {
     monthly: "mensal",
     annual: "anual",
     biennial: "bienal",
   };
+
+  const priceIdToPlanParam: Record<string, string> = Object.entries(STRIPE_PLANS).reduce((acc, [key, plan]) => {
+    const englishKey = key === "mensal" ? "monthly" : key === "anual" ? "annual" : "biennial";
+    acc[plan.price_id] = englishKey;
+    return acc;
+  }, {} as Record<string, string>);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -60,6 +67,8 @@ export default function ProSales() {
 
   const handleCTAClick = async (priceId?: string) => {
     if (!isAuthenticated) {
+      const planName = priceId ? priceIdToPlanParam[priceId] || null : "annual";
+      setPendingPlanKey(planName);
       setShowAuthDialog(true);
       return;
     }
@@ -110,7 +119,7 @@ export default function ProSales() {
       <AuthRequiredDialog
         open={showAuthDialog}
         onOpenChange={setShowAuthDialog}
-        onConfirm={() => navigate("/auth?upgrade=true")}
+        onConfirm={() => navigate(`/auth?upgrade=true${pendingPlanKey ? `&plan=${pendingPlanKey}` : ''}`)}
       />
     </div>
   );
