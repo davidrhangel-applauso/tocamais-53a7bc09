@@ -83,23 +83,30 @@ export default function ProSales() {
     handleCTAClick(STRIPE_PLANS[planKey].price_id);
   }, [isLoading, isAuthenticated, autoCheckoutDone]);
 
-  const handleCTAClick = async (priceId?: string) => {
+  const handleCTAClick = (priceId?: string) => {
+    // Find the plan key from priceId
+    const planKey: PlanKey = priceId
+      ? (Object.entries(STRIPE_PLANS).find(([, p]) => p.price_id === priceId)?.[0] as PlanKey) || "anual"
+      : "anual";
+
     if (!isAuthenticated) {
-      const planName = priceId ? priceIdToPlanParam[priceId] || null : "annual";
+      const planName = priceIdToPlanParam[STRIPE_PLANS[planKey].price_id] || "annual";
       setPendingPlanKey(planName);
       setShowAuthDialog(true);
       return;
     }
 
-    // Default to annual plan
-    const selectedPriceId = priceId || STRIPE_PLANS.anual.price_id;
-    
+    setSelectedPlanKey(planKey);
+    setPaymentMethodOpen(true);
+  };
+
+  const handleCardPayment = async () => {
+    const priceId = STRIPE_PLANS[selectedPlanKey].price_id;
     setIsCheckingOut(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { price_id: selectedPriceId },
+        body: { price_id: priceId },
       });
-
       if (error) throw error;
       if (data?.url) {
         window.open(data.url, '_blank');
@@ -110,6 +117,11 @@ export default function ProSales() {
     } finally {
       setIsCheckingOut(false);
     }
+  };
+
+  const handlePixPayment = () => {
+    if (!artistaId) return;
+    setPixDialogOpen(true);
   };
 
   if (isLoading) {
