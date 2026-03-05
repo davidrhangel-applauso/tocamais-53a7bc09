@@ -237,6 +237,23 @@ export function SubscriptionCard({ artistaId }: SubscriptionCardProps) {
                 </>
               )}
             </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => setPixDialogOpen(true)}
+              className="w-full gap-2"
+              size="lg"
+            >
+              <QrCode className="h-4 w-4" />
+              Pagar via PIX
+            </Button>
+
+            <PixSubscriptionDialog
+              open={pixDialogOpen}
+              onOpenChange={setPixDialogOpen}
+              planKey={selectedPlan}
+              artistaId={artistaId}
+            />
           </div>
         )}
       </CardContent>
