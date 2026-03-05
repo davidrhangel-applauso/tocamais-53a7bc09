@@ -54,6 +54,16 @@ export default function ProSales() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Handle checkout cancelled
+  useEffect(() => {
+    if (searchParams.get("checkout") === "cancelled") {
+      toast.info("Checkout cancelado. Escolha outro plano abaixo.");
+      setTimeout(() => {
+        document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+      }, 300);
+    }
+  }, []);
+
   // Auto-checkout when arriving with a plan parameter
   useEffect(() => {
     if (isLoading || autoCheckoutDone || !isAuthenticated) return;
