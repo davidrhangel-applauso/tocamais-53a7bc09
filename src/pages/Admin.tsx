@@ -35,6 +35,13 @@ interface Artist {
   created_at: string | null;
 }
 
+interface ArtistSubscriptionInfo {
+  artista_id: string;
+  ends_at: string | null;
+  status: string;
+  plano_tipo?: string;
+}
+
 interface EmailMap {
   [key: string]: string;
 }
