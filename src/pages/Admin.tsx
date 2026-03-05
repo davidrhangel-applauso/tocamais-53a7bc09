@@ -330,6 +330,7 @@ export default function Admin() {
                                 if (diffDays <= 15) return <Badge className="bg-yellow-500/20 text-yellow-600 border-yellow-500/30">{diffDays}d restantes</Badge>;
                                 return <Badge className="bg-green-500/20 text-green-600 border-green-500/30">{diffDays}d restantes</Badge>;
                               })()}
+                            </TableCell>
                             <TableCell>
                               <span className="text-sm text-muted-foreground">
                                 {artistEmails[artist.id] || "-"}
