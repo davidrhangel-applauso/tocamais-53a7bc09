@@ -20,7 +20,7 @@ const features = [
 
 export function PricingSection({ onCTAClick }: PricingSectionProps) {
   return (
-    <section className="py-20 bg-gradient-to-br from-background to-primary/5">
+    <section id="pricing" className="py-20 bg-gradient-to-br from-background to-primary/5">
       <div className="container px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
