@@ -151,6 +151,21 @@ export default function ProSales() {
         onOpenChange={setShowAuthDialog}
         onConfirm={() => navigate(`/auth?upgrade=true${pendingPlanKey ? `&plan=${pendingPlanKey}` : ''}`)}
       />
+      <PaymentMethodDialog
+        open={paymentMethodOpen}
+        onOpenChange={setPaymentMethodOpen}
+        onSelectCard={handleCardPayment}
+        onSelectPix={handlePixPayment}
+        planName={STRIPE_PLANS[selectedPlanKey].name}
+      />
+      {artistaId && (
+        <PixSubscriptionDialog
+          open={pixDialogOpen}
+          onOpenChange={setPixDialogOpen}
+          planKey={selectedPlanKey}
+          artistaId={artistaId}
+        />
+      )}
     </div>
   );
 }
