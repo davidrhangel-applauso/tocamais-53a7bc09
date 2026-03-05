@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Sparkles, QrCode } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import { STRIPE_PLANS, type PlanKey } from "@/lib/stripe-plans";
 import { PixSubscriptionDialog } from "@/components/PixSubscriptionDialog";
+import { PaymentMethodDialog } from "@/components/PaymentMethodDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PricingSectionProps {
@@ -25,6 +26,8 @@ export function PricingSection({ onCTAClick }: PricingSectionProps) {
   const [pixDialogOpen, setPixDialogOpen] = useState(false);
   const [selectedPixPlan, setSelectedPixPlan] = useState<PlanKey>("mensal");
   const [artistaId, setArtistaId] = useState<string | null>(null);
+  const [paymentMethodOpen, setPaymentMethodOpen] = useState(false);
+  const [selectedPlanKey, setSelectedPlanKey] = useState<PlanKey>("anual");
 
   useEffect(() => {
     const getUser = async () => {
@@ -34,12 +37,21 @@ export function PricingSection({ onCTAClick }: PricingSectionProps) {
     getUser();
   }, []);
 
-  const handlePixClick = (key: PlanKey) => {
+  const handlePlanClick = (key: PlanKey) => {
+    setSelectedPlanKey(key);
+    setPaymentMethodOpen(true);
+  };
+
+  const handleCardPayment = () => {
+    onCTAClick(STRIPE_PLANS[selectedPlanKey].price_id);
+  };
+
+  const handlePixPayment = () => {
     if (!artistaId) {
-      onCTAClick(); // will trigger auth dialog
+      onCTAClick(); // triggers auth dialog
       return;
     }
-    setSelectedPixPlan(key);
+    setSelectedPixPlan(selectedPlanKey);
     setPixDialogOpen(true);
   };
 
@@ -96,9 +108,8 @@ export function PricingSection({ onCTAClick }: PricingSectionProps) {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Button
-                    onClick={() => onCTAClick(plan.price_id)}
+                <Button
+                    onClick={() => handlePlanClick(key)}
                     className={`w-full ${
                       plan.recommended
                         ? "bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
@@ -107,15 +118,6 @@ export function PricingSection({ onCTAClick }: PricingSectionProps) {
                   >
                     Assinar {plan.name}
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => handlePixClick(key)}
-                    className="w-full gap-2"
-                  >
-                    <QrCode className="w-4 h-4" />
-                    Pagar via PIX
-                  </Button>
-                </div>
               </div>
             );
           })}
@@ -136,6 +138,13 @@ export function PricingSection({ onCTAClick }: PricingSectionProps) {
         </div>
       </div>
     </section>
+    <PaymentMethodDialog
+      open={paymentMethodOpen}
+      onOpenChange={setPaymentMethodOpen}
+      onSelectCard={handleCardPayment}
+      onSelectPix={handlePixPayment}
+      planName={STRIPE_PLANS[selectedPlanKey].name}
+    />
     {artistaId && (
       <PixSubscriptionDialog
         open={pixDialogOpen}
