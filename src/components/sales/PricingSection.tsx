@@ -22,7 +22,29 @@ const features = [
 ];
 
 export function PricingSection({ onCTAClick }: PricingSectionProps) {
+  const [pixDialogOpen, setPixDialogOpen] = useState(false);
+  const [selectedPixPlan, setSelectedPixPlan] = useState<PlanKey>("mensal");
+  const [artistaId, setArtistaId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setArtistaId(user?.id || null);
+    };
+    getUser();
+  }, []);
+
+  const handlePixClick = (key: PlanKey) => {
+    if (!artistaId) {
+      onCTAClick(); // will trigger auth dialog
+      return;
+    }
+    setSelectedPixPlan(key);
+    setPixDialogOpen(true);
+  };
+
   return (
+    <>
     <section id="pricing" className="py-20 bg-gradient-to-br from-background to-primary/5">
       <div className="container px-4">
         <div className="text-center mb-12">
