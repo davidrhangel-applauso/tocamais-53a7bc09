@@ -35,6 +35,13 @@ interface Artist {
   created_at: string | null;
 }
 
+interface ArtistSubscriptionInfo {
+  artista_id: string;
+  ends_at: string | null;
+  status: string;
+  plano_tipo?: string;
+}
+
 interface EmailMap {
   [key: string]: string;
 }
@@ -52,6 +59,7 @@ export default function Admin() {
   const [adminPhoto, setAdminPhoto] = useState<string | undefined>();
   const [adminId, setAdminId] = useState<string | undefined>();
   const [artistEmails, setArtistEmails] = useState<EmailMap>({});
+  const [artistSubscriptions, setArtistSubscriptions] = useState<Record<string, ArtistSubscriptionInfo>>({});
 
   const currentTab = searchParams.get("tab") || "dashboard";
 
@@ -112,6 +120,24 @@ export default function Admin() {
             emailMap[item.user_id] = item.email;
           });
           setArtistEmails(emailMap);
+        }
+
+        // Fetch active subscriptions for all artists
+        const { data: subsData } = await supabase
+          .from('artist_subscriptions')
+          .select('artista_id, ends_at, status')
+          .in('artista_id', userIds)
+          .eq('status', 'active');
+
+        if (subsData) {
+          const subsMap: Record<string, ArtistSubscriptionInfo> = {};
+          subsData.forEach((sub: any) => {
+            // Keep the latest one per artist
+            if (!subsMap[sub.artista_id] || new Date(sub.ends_at || 0) > new Date(subsMap[sub.artista_id].ends_at || 0)) {
+              subsMap[sub.artista_id] = sub;
+            }
+          });
+          setArtistSubscriptions(subsMap);
         }
       }
     } catch (error) {
@@ -269,6 +295,7 @@ export default function Admin() {
                           <TableHead>Cidade</TableHead>
                           <TableHead>Estilo</TableHead>
                           <TableHead>Plano</TableHead>
+                          <TableHead>Assinatura</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead className="text-right">Ações</TableHead>
                         </TableRow>
@@ -289,6 +316,20 @@ export default function Admin() {
                                   </p>
                                 </div>
                               </div>
+                            </TableCell>
+                            <TableCell>
+                              {(() => {
+                                const sub = artistSubscriptions[artist.id];
+                                if (artist.plano !== 'pro') return <Badge variant="secondary">-</Badge>;
+                                if (!sub || !sub.ends_at) return <Badge className="bg-primary/20 text-primary border-primary/30">Permanente</Badge>;
+                                const endsAt = new Date(sub.ends_at);
+                                const now = new Date();
+                                const diffDays = Math.ceil((endsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                                if (diffDays <= 0) return <Badge variant="destructive">Expirado</Badge>;
+                                if (diffDays <= 5) return <Badge variant="destructive">{diffDays}d restantes</Badge>;
+                                if (diffDays <= 15) return <Badge className="bg-yellow-500/20 text-yellow-600 border-yellow-500/30">{diffDays}d restantes</Badge>;
+                                return <Badge className="bg-green-500/20 text-green-600 border-green-500/30">{diffDays}d restantes</Badge>;
+                              })()}
                             </TableCell>
                             <TableCell>
                               <span className="text-sm text-muted-foreground">

@@ -153,10 +153,21 @@ export function AdminSubscriptions() {
 
       if (receiptError) throw receiptError;
 
+      // Fetch plano_tipo from subscription to determine duration
+      const { data: subData } = await supabase
+        .from('artist_subscriptions')
+        .select('*')
+        .eq('id', receipt.subscription_id)
+        .single();
+
+      const planoTipo = (subData as any)?.plano_tipo || 'mensal';
+      const daysMap: Record<string, number> = { mensal: 30, anual: 365, bienal: 730 };
+      const days = daysMap[planoTipo] || 30;
+
       // Calculate subscription dates
       const startsAt = new Date();
       const endsAt = new Date();
-      endsAt.setDate(endsAt.getDate() + 30);
+      endsAt.setDate(endsAt.getDate() + days);
 
       // Update subscription
       const { error: subError } = await supabase
@@ -179,15 +190,16 @@ export function AdminSubscriptions() {
       if (profileError) throw profileError;
 
       // Create notification for artist
+      const planLabel = planoTipo === 'anual' ? 'Anual' : planoTipo === 'bienal' ? 'Bienal' : 'Mensal';
       await supabase.rpc('criar_notificacao', {
         p_usuario_id: receipt.artista_id,
         p_tipo: 'assinatura_aprovada',
         p_titulo: 'Plano Pro Ativado! 🎉',
-        p_mensagem: 'Seu pagamento foi aprovado e seu plano Pro já está ativo. Aproveite todos os benefícios!',
+        p_mensagem: `Seu pagamento do plano ${planLabel} foi aprovado e já está ativo por ${days} dias. Aproveite!`,
         p_link: '/painel',
       });
 
-      toast.success('Assinatura aprovada com sucesso!');
+      toast.success(`Assinatura ${planLabel} (${days} dias) aprovada!`);
       fetchReceipts();
     } catch (error) {
       console.error('Error approving receipt:', error);

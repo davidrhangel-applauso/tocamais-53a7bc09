@@ -7,8 +7,9 @@ import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
-import { Crown, Check, Zap, Clock, AlertCircle, Loader2, ExternalLink, Settings } from "lucide-react";
+import { Crown, Check, Zap, Clock, AlertCircle, Loader2, ExternalLink, Settings, QrCode } from "lucide-react";
 import { STRIPE_PLANS, type PlanKey } from "@/lib/stripe-plans";
+import { PixSubscriptionDialog } from "@/components/PixSubscriptionDialog";
 
 interface SubscriptionCardProps {
   artistaId: string;
@@ -19,6 +20,7 @@ export function SubscriptionCard({ artistaId }: SubscriptionCardProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PlanKey>("anual");
   const [isManaging, setIsManaging] = useState(false);
+  const [pixDialogOpen, setPixDialogOpen] = useState(false);
 
   const handleSubscribe = async () => {
     setIsCreating(true);
@@ -235,6 +237,23 @@ export function SubscriptionCard({ artistaId }: SubscriptionCardProps) {
                 </>
               )}
             </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => setPixDialogOpen(true)}
+              className="w-full gap-2"
+              size="lg"
+            >
+              <QrCode className="h-4 w-4" />
+              Pagar via PIX
+            </Button>
+
+            <PixSubscriptionDialog
+              open={pixDialogOpen}
+              onOpenChange={setPixDialogOpen}
+              planKey={selectedPlan}
+              artistaId={artistaId}
+            />
           </div>
         )}
       </CardContent>
