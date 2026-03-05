@@ -20,6 +20,7 @@ export function SubscriptionCard({ artistaId }: SubscriptionCardProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PlanKey>("anual");
   const [isManaging, setIsManaging] = useState(false);
+  const [pixDialogOpen, setPixDialogOpen] = useState(false);
 
   const handleSubscribe = async () => {
     setIsCreating(true);
