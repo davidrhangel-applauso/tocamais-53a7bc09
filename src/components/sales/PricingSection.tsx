@@ -136,5 +136,14 @@ export function PricingSection({ onCTAClick }: PricingSectionProps) {
         </div>
       </div>
     </section>
+    {artistaId && (
+      <PixSubscriptionDialog
+        open={pixDialogOpen}
+        onOpenChange={setPixDialogOpen}
+        planKey={selectedPixPlan}
+        artistaId={artistaId}
+      />
+    )}
+    </>
   );
 }
