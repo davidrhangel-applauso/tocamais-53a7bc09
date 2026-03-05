@@ -26,6 +26,8 @@ export function PricingSection({ onCTAClick }: PricingSectionProps) {
   const [pixDialogOpen, setPixDialogOpen] = useState(false);
   const [selectedPixPlan, setSelectedPixPlan] = useState<PlanKey>("mensal");
   const [artistaId, setArtistaId] = useState<string | null>(null);
+  const [paymentMethodOpen, setPaymentMethodOpen] = useState(false);
+  const [selectedPlanKey, setSelectedPlanKey] = useState<PlanKey>("anual");
 
   useEffect(() => {
     const getUser = async () => {
@@ -35,12 +37,21 @@ export function PricingSection({ onCTAClick }: PricingSectionProps) {
     getUser();
   }, []);
 
-  const handlePixClick = (key: PlanKey) => {
+  const handlePlanClick = (key: PlanKey) => {
+    setSelectedPlanKey(key);
+    setPaymentMethodOpen(true);
+  };
+
+  const handleCardPayment = () => {
+    onCTAClick(STRIPE_PLANS[selectedPlanKey].price_id);
+  };
+
+  const handlePixPayment = () => {
     if (!artistaId) {
-      onCTAClick(); // will trigger auth dialog
+      onCTAClick(); // triggers auth dialog
       return;
     }
-    setSelectedPixPlan(key);
+    setSelectedPixPlan(selectedPlanKey);
     setPixDialogOpen(true);
   };
 
