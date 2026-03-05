@@ -14,6 +14,8 @@ import { FinalCTA } from "@/components/sales/FinalCTA";
 import { StickyMobileCTA } from "@/components/sales/StickyMobileCTA";
 import { SalesFooter } from "@/components/sales/SalesFooter";
 import { AuthRequiredDialog } from "@/components/AuthRequiredDialog";
+import { PaymentMethodDialog } from "@/components/PaymentMethodDialog";
+import { PixSubscriptionDialog } from "@/components/PixSubscriptionDialog";
 import { toast } from "sonner";
 import { STRIPE_PLANS, type PlanKey } from "@/lib/stripe-plans";
 
@@ -26,6 +28,10 @@ export default function ProSales() {
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [autoCheckoutDone, setAutoCheckoutDone] = useState(false);
   const [pendingPlanKey, setPendingPlanKey] = useState<string | null>(null);
+  const [paymentMethodOpen, setPaymentMethodOpen] = useState(false);
+  const [selectedPlanKey, setSelectedPlanKey] = useState<PlanKey>("anual");
+  const [pixDialogOpen, setPixDialogOpen] = useState(false);
+  const [artistaId, setArtistaId] = useState<string | null>(null);
 
   const planParamMap: Record<string, PlanKey> = {
     monthly: "mensal",
@@ -43,12 +49,14 @@ export default function ProSales() {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
+      setArtistaId(session?.user?.id || null);
       setIsLoading(false);
     };
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
+      setArtistaId(session?.user?.id || null);
     });
 
     return () => subscription.unsubscribe();
@@ -75,23 +83,30 @@ export default function ProSales() {
     handleCTAClick(STRIPE_PLANS[planKey].price_id);
   }, [isLoading, isAuthenticated, autoCheckoutDone]);
 
-  const handleCTAClick = async (priceId?: string) => {
+  const handleCTAClick = (priceId?: string) => {
+    // Find the plan key from priceId
+    const planKey: PlanKey = priceId
+      ? (Object.entries(STRIPE_PLANS).find(([, p]) => p.price_id === priceId)?.[0] as PlanKey) || "anual"
+      : "anual";
+
     if (!isAuthenticated) {
-      const planName = priceId ? priceIdToPlanParam[priceId] || null : "annual";
+      const planName = priceIdToPlanParam[STRIPE_PLANS[planKey].price_id] || "annual";
       setPendingPlanKey(planName);
       setShowAuthDialog(true);
       return;
     }
 
-    // Default to annual plan
-    const selectedPriceId = priceId || STRIPE_PLANS.anual.price_id;
-    
+    setSelectedPlanKey(planKey);
+    setPaymentMethodOpen(true);
+  };
+
+  const handleCardPayment = async () => {
+    const priceId = STRIPE_PLANS[selectedPlanKey].price_id;
     setIsCheckingOut(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { price_id: selectedPriceId },
+        body: { price_id: priceId },
       });
-
       if (error) throw error;
       if (data?.url) {
         window.open(data.url, '_blank');
@@ -102,6 +117,11 @@ export default function ProSales() {
     } finally {
       setIsCheckingOut(false);
     }
+  };
+
+  const handlePixPayment = () => {
+    if (!artistaId) return;
+    setPixDialogOpen(true);
   };
 
   if (isLoading) {
@@ -131,6 +151,21 @@ export default function ProSales() {
         onOpenChange={setShowAuthDialog}
         onConfirm={() => navigate(`/auth?upgrade=true${pendingPlanKey ? `&plan=${pendingPlanKey}` : ''}`)}
       />
+      <PaymentMethodDialog
+        open={paymentMethodOpen}
+        onOpenChange={setPaymentMethodOpen}
+        onSelectCard={handleCardPayment}
+        onSelectPix={handlePixPayment}
+        planName={STRIPE_PLANS[selectedPlanKey].name}
+      />
+      {artistaId && (
+        <PixSubscriptionDialog
+          open={pixDialogOpen}
+          onOpenChange={setPixDialogOpen}
+          planKey={selectedPlanKey}
+          artistaId={artistaId}
+        />
+      )}
     </div>
   );
 }
