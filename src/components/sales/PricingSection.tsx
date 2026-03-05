@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Sparkles, QrCode } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import { STRIPE_PLANS, type PlanKey } from "@/lib/stripe-plans";
 import { PixSubscriptionDialog } from "@/components/PixSubscriptionDialog";
+import { PaymentMethodDialog } from "@/components/PaymentMethodDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PricingSectionProps {
