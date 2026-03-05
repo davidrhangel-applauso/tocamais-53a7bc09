@@ -121,6 +121,24 @@ export default function Admin() {
           });
           setArtistEmails(emailMap);
         }
+
+        // Fetch active subscriptions for all artists
+        const { data: subsData } = await supabase
+          .from('artist_subscriptions')
+          .select('artista_id, ends_at, status')
+          .in('artista_id', userIds)
+          .eq('status', 'active');
+
+        if (subsData) {
+          const subsMap: Record<string, ArtistSubscriptionInfo> = {};
+          subsData.forEach((sub: any) => {
+            // Keep the latest one per artist
+            if (!subsMap[sub.artista_id] || new Date(sub.ends_at || 0) > new Date(subsMap[sub.artista_id].ends_at || 0)) {
+              subsMap[sub.artista_id] = sub;
+            }
+          });
+          setArtistSubscriptions(subsMap);
+        }
       }
     } catch (error) {
       console.error("Error fetching artists:", error);
