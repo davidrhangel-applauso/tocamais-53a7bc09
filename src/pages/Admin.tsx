@@ -59,6 +59,7 @@ export default function Admin() {
   const [adminPhoto, setAdminPhoto] = useState<string | undefined>();
   const [adminId, setAdminId] = useState<string | undefined>();
   const [artistEmails, setArtistEmails] = useState<EmailMap>({});
+  const [artistSubscriptions, setArtistSubscriptions] = useState<Record<string, ArtistSubscriptionInfo>>({});
 
   const currentTab = searchParams.get("tab") || "dashboard";
 
