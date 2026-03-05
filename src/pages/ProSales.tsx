@@ -119,7 +119,7 @@ export default function ProSales() {
       <AuthRequiredDialog
         open={showAuthDialog}
         onOpenChange={setShowAuthDialog}
-        onConfirm={() => navigate("/auth?upgrade=true")}
+        onConfirm={() => navigate(`/auth?upgrade=true${pendingPlanKey ? `&plan=${pendingPlanKey}` : ''}`)}
       />
     </div>
   );
