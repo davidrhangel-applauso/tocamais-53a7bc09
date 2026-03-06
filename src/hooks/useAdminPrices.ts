@@ -46,7 +46,11 @@ export function useAdminPrices(): AdminPrices {
           }
         }
       }
-      return prices;
+      return {
+        mensal: prices.mensal ?? DEFAULT_PRICES.mensal,
+        anual: prices.anual ?? DEFAULT_PRICES.anual,
+        bienal: prices.bienal ?? DEFAULT_PRICES.bienal,
+      };
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
