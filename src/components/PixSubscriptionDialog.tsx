@@ -119,7 +119,7 @@ export function PixSubscriptionDialog({ open, onOpenChange, planKey, artistaId }
         .from('artist_subscriptions')
         .select('id')
         .eq('artista_id', artistaId)
-        .in('status', ['pending_payment', 'pending'])
+        .in('status', ['pending'])
         .order('created_at', { ascending: false })
         .limit(1)
         .single();

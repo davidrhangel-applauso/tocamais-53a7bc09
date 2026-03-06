@@ -56,7 +56,7 @@ serve(async (req) => {
       .from('artist_subscriptions')
       .select('id, status')
       .eq('artista_id', artista_id)
-      .in('status', ['active', 'pending_payment'])
+      .in('status', ['active', 'pending'])
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
@@ -108,7 +108,7 @@ serve(async (req) => {
         .from('artist_subscriptions')
         .insert({
           artista_id,
-          status: 'pending_payment',
+          status: 'pending',
           valor: price,
         })
         .select('id')
