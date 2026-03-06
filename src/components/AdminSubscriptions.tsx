@@ -69,56 +69,6 @@ export function AdminSubscriptions() {
     }
   };
 
-  const fetchSettings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('admin_settings')
-        .select('setting_key, setting_value');
-
-      if (error) throw error;
-
-      const settingsMap: Record<string, string> = {};
-      data?.forEach(s => {
-        settingsMap[s.setting_key] = s.setting_value;
-      });
-
-      setSettings({
-        subscription_pix_key: settingsMap['subscription_pix_key'] || '',
-        subscription_pix_key_type: settingsMap['subscription_pix_key_type'] || 'cpf',
-        subscription_pix_name: settingsMap['subscription_pix_name'] || 'TocaMais',
-        subscription_pix_city: settingsMap['subscription_pix_city'] || 'São Paulo',
-        subscription_price: settingsMap['subscription_price'] || '19.90',
-      });
-    } catch (error) {
-      console.error('Error fetching settings:', error);
-    }
-  };
-
-  const saveSettings = async () => {
-    setSavingSettings(true);
-    try {
-      const updates = Object.entries(settings).map(([key, value]) => ({
-        setting_key: key,
-        setting_value: value,
-      }));
-
-      for (const update of updates) {
-        const { error } = await supabase
-          .from('admin_settings')
-          .update({ setting_value: update.setting_value })
-          .eq('setting_key', update.setting_key);
-
-        if (error) throw error;
-      }
-
-      toast.success('Configurações salvas com sucesso!');
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      toast.error('Erro ao salvar configurações');
-    } finally {
-      setSavingSettings(false);
-    }
-  };
 
   const approveReceipt = async (receipt: SubscriptionReceipt) => {
     setProcessing(receipt.id);
