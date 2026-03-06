@@ -6,8 +6,54 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function generatePixCode(
+  key: string,
+  name: string,
+  city: string,
+  amount: number,
+  txid: string
+): string {
+  const formatField = (id: string, value: string) => {
+    const len = value.length.toString().padStart(2, '0');
+    return `${id}${len}${value}`;
+  };
+
+  let pix = formatField('00', '01');
+  const gui = formatField('00', 'BR.GOV.BCB.PIX');
+  const chave = formatField('01', key);
+  pix += formatField('26', gui + chave);
+  pix += formatField('52', '0000');
+  pix += formatField('53', '986');
+  pix += formatField('54', amount.toFixed(2));
+  pix += formatField('58', 'BR');
+  pix += formatField('59', name.substring(0, 25).toUpperCase());
+  pix += formatField('60', city.substring(0, 15).toUpperCase());
+  const txidField = formatField('05', txid.substring(0, 25));
+  pix += formatField('62', txidField);
+  pix += '6304';
+
+  const crc = calculateCRC16(pix);
+  pix = pix.slice(0, -4) + '6304' + crc;
+  return pix;
+}
+
+function calculateCRC16(str: string): string {
+  let crc = 0xFFFF;
+  for (let i = 0; i < str.length; i++) {
+    crc ^= str.charCodeAt(i) << 8;
+    for (let j = 0; j < 8; j++) {
+      if (crc & 0x8000) {
+        crc = (crc << 1) ^ 0x1021;
+      } else {
+        crc <<= 1;
+      }
+    }
+    crc &= 0xFFFF;
+  }
+  return crc.toString(16).toUpperCase().padStart(4, '0');
+}
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -17,11 +63,10 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { artista_id } = await req.json();
+    const { artista_id, plan_key } = await req.json();
 
-    console.log('Creating manual subscription for artist:', artista_id);
+    console.log('Creating manual subscription for artist:', artista_id, 'plan:', plan_key);
 
-    // Validate artista_id
     if (!artista_id) {
       return new Response(
         JSON.stringify({ error: 'ID do artista não fornecido' }),
@@ -37,7 +82,6 @@ serve(async (req) => {
       .single();
 
     if (artistError || !artist) {
-      console.error('Artist not found:', artistError);
       return new Response(
         JSON.stringify({ error: 'Artista não encontrado' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -68,20 +112,18 @@ serve(async (req) => {
       );
     }
 
-    // Get admin settings for PIX
+    // Get admin settings
     const { data: settings, error: settingsError } = await supabase
       .from('admin_settings')
       .select('setting_key, setting_value');
 
     if (settingsError) {
-      console.error('Error fetching admin settings:', settingsError);
       return new Response(
         JSON.stringify({ error: 'Erro ao buscar configurações de pagamento' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Parse settings
     const adminSettings: Record<string, string> = {};
     settings?.forEach(s => {
       adminSettings[s.setting_key] = s.setting_value;
@@ -91,7 +133,11 @@ serve(async (req) => {
     const pixKeyType = adminSettings['subscription_pix_key_type'] || 'cpf';
     const pixName = adminSettings['subscription_pix_name'] || 'TocaMais';
     const pixCity = adminSettings['subscription_pix_city'] || 'São Paulo';
-    const price = parseFloat(adminSettings['subscription_price'] || '19.90');
+
+    // Resolve price based on plan_key
+    const validPlanKey = plan_key && ['mensal', 'anual', 'bienal'].includes(plan_key) ? plan_key : 'mensal';
+    const defaultPrices: Record<string, number> = { mensal: 19.90, anual: 99.00, bienal: 169.90 };
+    const price = parseFloat(adminSettings[`subscription_price_${validPlanKey}`] || '') || defaultPrices[validPlanKey];
 
     if (!pixKey) {
       return new Response(
@@ -100,9 +146,9 @@ serve(async (req) => {
       );
     }
 
-    // Create subscription record with pending_payment status
+    // Create or reuse subscription record
     let subscriptionId = existingSubscription?.id;
-    
+
     if (!subscriptionId) {
       const { data: newSubscription, error: subError } = await supabase
         .from('artist_subscriptions')
@@ -110,90 +156,26 @@ serve(async (req) => {
           artista_id,
           status: 'pending',
           valor: price,
+          plano_tipo: validPlanKey,
         })
         .select('id')
         .single();
 
       if (subError) {
-        console.error('Error creating subscription:', subError);
         return new Response(
           JSON.stringify({ error: 'Erro ao criar assinatura' }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       subscriptionId = newSubscription.id;
+    } else {
+      // Update existing pending subscription with new plan info
+      await supabase
+        .from('artist_subscriptions')
+        .update({ valor: price, plano_tipo: validPlanKey })
+        .eq('id', subscriptionId);
     }
 
-    // Generate PIX code using EMV format
-    function generatePixCode(
-      key: string,
-      name: string,
-      city: string,
-      amount: number,
-      txid: string
-    ): string {
-      const formatField = (id: string, value: string) => {
-        const len = value.length.toString().padStart(2, '0');
-        return `${id}${len}${value}`;
-      };
-
-      // Payload Format Indicator
-      let pix = formatField('00', '01');
-      
-      // Merchant Account Information (PIX)
-      const gui = formatField('00', 'BR.GOV.BCB.PIX');
-      const chave = formatField('01', key);
-      pix += formatField('26', gui + chave);
-      
-      // Merchant Category Code
-      pix += formatField('52', '0000');
-      
-      // Transaction Currency (986 = BRL)
-      pix += formatField('53', '986');
-      
-      // Transaction Amount
-      pix += formatField('54', amount.toFixed(2));
-      
-      // Country Code
-      pix += formatField('58', 'BR');
-      
-      // Merchant Name (max 25 chars)
-      pix += formatField('59', name.substring(0, 25).toUpperCase());
-      
-      // Merchant City (max 15 chars)
-      pix += formatField('60', city.substring(0, 15).toUpperCase());
-      
-      // Additional Data Field (TXID)
-      const txidField = formatField('05', txid.substring(0, 25));
-      pix += formatField('62', txidField);
-      
-      // CRC16 placeholder
-      pix += '6304';
-      
-      // Calculate CRC16-CCITT
-      const crc = calculateCRC16(pix);
-      pix = pix.slice(0, -4) + '6304' + crc;
-      
-      return pix;
-    }
-
-    function calculateCRC16(str: string): string {
-      let crc = 0xFFFF;
-      for (let i = 0; i < str.length; i++) {
-        crc ^= str.charCodeAt(i) << 8;
-        for (let j = 0; j < 8; j++) {
-          if (crc & 0x8000) {
-            crc = (crc << 1) ^ 0x1021;
-          } else {
-            crc <<= 1;
-          }
-        }
-        crc &= 0xFFFF;
-      }
-      return crc.toString(16).toUpperCase().padStart(4, '0');
-    }
-
-    // Generate unique TXID
     const txid = `TOCA${subscriptionId.replace(/-/g, '').substring(0, 21)}`;
     const pixCode = generatePixCode(pixKey, pixName, pixCity, price, txid);
 
