@@ -108,7 +108,7 @@ serve(async (req) => {
         .from('artist_subscriptions')
         .insert({
           artista_id,
-          status: 'pending_payment',
+          status: 'pending',
           valor: price,
         })
         .select('id')
