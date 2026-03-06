@@ -422,6 +422,8 @@ export default function Admin() {
         return <AdminSubscriptions />;
       case "financeiro":
         return <AdminPaymentStats />;
+      case "configuracoes":
+        return <AdminSettings />;
       default:
         return <AdminDashboard />;
     }
