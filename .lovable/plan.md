@@ -1,51 +1,55 @@
 
 
-## Adicionar edição de perfil ao painel do estabelecimento
+## Plano: Preços dinâmicos do admin_settings em toda a aplicação
 
 ### Problema
-A página de Configurações (`Settings.tsx`) é exclusiva para artistas -- quase todos os campos (PIX, estilo musical, redes sociais, status ao vivo) são condicionados a `profile.tipo === "artista"`. Estabelecimentos não têm como editar nome, foto, bio, endereço ou telefone de dentro do painel.
+
+Os preços dos planos estão hardcoded em ~10 arquivos diferentes. Quando o admin altera os valores em Configurações, nada muda na interface.
 
 ### Solução
 
-Adicionar uma nova aba **"Perfil"** ao `EstabelecimentoPanel.tsx` com formulário de edição inline. Os campos já existem na tabela `profiles` do banco de dados (não é necessário criar migrações).
+Criar um hook `useAdminPrices` que busca os preços do `admin_settings` (público, sem auth) e usar em todos os componentes que exibem preços. Para a landing page (usuários não autenticados), precisamos de uma RLS policy que permita leitura pública das settings de preço.
 
-```text
-Tabs do Estabelecimento (6 abas):
-[ Pedidos ] [ Relatórios ] [ Perfil ] [ Avaliações ] [ Histórico ] [ QR Code ]
-                             ↑ NOVO
+### Mudanças
+
+| Arquivo | Mudança |
+|---|---|
+| **Migração SQL** | Adicionar RLS policy permitindo SELECT público nas settings com prefixo `subscription_price_` |
+| **`src/hooks/useAdminPrices.ts`** (novo) | Hook que busca `subscription_price_mensal/anual/bienal` do `admin_settings` e retorna os preços (com fallback para valores padrão de `stripe-plans.ts`) |
+| **`src/lib/stripe-plans.ts`** | Exportar os preços padrão separadamente para uso como fallback |
+| **`src/components/landing/PricingCards.tsx`** | Usar `useAdminPrices` em vez de preços hardcoded |
+| **`src/components/PremiumOfferModal.tsx`** | Usar `useAdminPrices` |
+| **`src/components/landing/PlanComparison.tsx`** | Usar preço dinâmico no texto "A partir de R$ X/mês" |
+| **`src/components/sales/SavingsCalculator.tsx`** | Usar `proMonthlyPrice` do hook |
+| **`src/components/sales/PricingSection.tsx`** | Usar `useAdminPrices` |
+| **`src/components/sales/StickyMobileCTA.tsx`** | Usar preço dinâmico no texto |
+| **`src/components/sales/FinalCTA.tsx`** | Usar preço dinâmico no texto |
+| **`src/components/sales/ComparisonSection.tsx`** | Usar preço dinâmico |
+| **`src/components/SubscriptionCard.tsx`** | Usar `useAdminPrices` para exibir preços corretos |
+| **`src/components/PaymentMethodDialog.tsx`** | Usar preços dinâmicos nos cards de plano |
+| **`src/components/PaymentFAQ.tsx`** | Usar preços dinâmicos no texto do FAQ |
+
+### Hook `useAdminPrices`
+
+```typescript
+// Busca preços do admin_settings, retorna { mensal, anual, bienal, isLoading }
+// Fallback para valores padrão se não configurados
+// Cache via React Query com staleTime longo (5 min)
 ```
 
-### Campos editáveis na aba Perfil
+### RLS
 
-| Campo | Tipo | Já existe no banco |
-|---|---|---|
-| Nome | Input text | sim (`nome`) |
-| Bio / Descrição | Textarea | sim (`bio`) |
-| Foto de perfil | AvatarUpload (componente existente) | sim (`foto_url`) |
-| Foto de capa | CoverPhotoUpload (componente existente) | sim (`foto_capa_url`) |
-| Cidade | Input text | sim (`cidade`) |
-| Endereço completo | Input text | sim (`endereco`) |
-| Telefone | Input text | sim (`telefone`) |
-| Tipo de estabelecimento | Select (bar, restaurante, casa_noturna, etc.) | sim (`tipo_estabelecimento`) |
+Necessária uma policy pública de SELECT no `admin_settings` para keys de preço, já que a landing page é acessada por usuários não autenticados:
 
-### Detalhes técnicos
+```sql
+CREATE POLICY "Anyone can view subscription prices"
+ON public.admin_settings FOR SELECT
+USING (setting_key LIKE 'subscription_price_%');
+```
 
-**Arquivo modificado: `src/pages/EstabelecimentoPanel.tsx`**
+### Cálculos derivados
 
-1. Adicionar estados para edição do perfil (`editProfile`, `saving`)
-2. Adicionar a aba "Perfil" na `TabsList` (mudar grid de 5 para 6 colunas)
-3. Criar `TabsContent value="perfil"` com:
-   - `AvatarUpload` (importado de `@/components/AvatarUpload`)
-   - `CoverPhotoUpload` (importado de `@/components/CoverPhotoUpload`)
-   - Campos de texto para nome, bio, cidade, endereco, telefone
-   - Select para `tipo_estabelecimento`
-   - Botão "Salvar" que faz `supabase.from('profiles').update(...)` nos campos editados
-4. Após salvar, atualizar o estado `profile` local para refletir as mudanças no header
-5. Adicionar import de `Pencil` (ou `Edit`) do lucide-react para o ícone da aba
-
-**Nenhuma migração necessária** -- todos os campos já existem na tabela `profiles`.
-
-**Componentes reutilizados** (zero código novo de upload):
-- `AvatarUpload` -- já trata upload para storage e retorna URL
-- `CoverPhotoUpload` -- idem para foto de capa
+O hook também calculará valores derivados:
+- `monthlyEquivalent` para anual e bienal (preço / meses)
+- `savings` comparado ao mensal (ex: `mensal * 12 - anual`)
 
