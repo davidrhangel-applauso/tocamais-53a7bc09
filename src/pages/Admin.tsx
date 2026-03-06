@@ -18,6 +18,7 @@ import { AdminSubscriptions } from "@/components/AdminSubscriptions";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { AdminEstabelecimentos } from "@/components/AdminEstabelecimentos";
+import { AdminSettings } from "@/components/AdminSettings";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -421,6 +422,8 @@ export default function Admin() {
         return <AdminSubscriptions />;
       case "financeiro":
         return <AdminPaymentStats />;
+      case "configuracoes":
+        return <AdminSettings />;
       default:
         return <AdminDashboard />;
     }
@@ -433,6 +436,7 @@ export default function Admin() {
       case "estabelecimentos": return "Estabelecimentos";
       case "assinaturas": return "Assinaturas";
       case "financeiro": return "Financeiro";
+      case "configuracoes": return "Configurações";
       default: return "Dashboard";
     }
   };

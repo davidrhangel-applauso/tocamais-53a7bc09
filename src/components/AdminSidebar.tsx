@@ -37,6 +37,7 @@ const menuItems = [
   { id: "estabelecimentos", label: "Estabelecimentos", icon: Building2 },
   { id: "assinaturas", label: "Assinaturas", icon: Crown },
   { id: "financeiro", label: "Financeiro", icon: BarChart3 },
+  { id: "configuracoes", label: "Configurações", icon: Settings },
 ];
 
 export function AdminSidebar({ adminName, adminPhoto }: AdminSidebarProps) {
