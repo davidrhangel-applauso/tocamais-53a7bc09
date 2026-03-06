@@ -157,6 +157,8 @@ export default function ProSales() {
         onSelectCard={handleCardPayment}
         onSelectPix={handlePixPayment}
         planName={STRIPE_PLANS[selectedPlanKey].name}
+        selectedPlanKey={selectedPlanKey}
+        onPlanChange={setSelectedPlanKey}
       />
       {artistaId && (
         <PixSubscriptionDialog
