@@ -39,14 +39,6 @@ export function AdminSubscriptions() {
   const [processing, setProcessing] = useState<string | null>(null);
   const [rejectNotes, setRejectNotes] = useState("");
   const [showRejectDialog, setShowRejectDialog] = useState(false);
-  const [settings, setSettings] = useState<AdminSettings>({
-    subscription_pix_key: '',
-    subscription_pix_key_type: 'cpf',
-    subscription_pix_name: 'TocaMais',
-    subscription_pix_city: 'São Paulo',
-    subscription_price: '19.90',
-  });
-  const [savingSettings, setSavingSettings] = useState(false);
   const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
 
   useEffect(() => {
