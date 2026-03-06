@@ -101,11 +101,10 @@ export default function ProSales() {
   };
 
   const handleCardPayment = async () => {
-    const priceId = STRIPE_PLANS[selectedPlanKey].price_id;
     setIsCheckingOut(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { price_id: priceId },
+        body: { plan_key: selectedPlanKey },
       });
       if (error) throw error;
       if (data?.url) {

@@ -7,6 +7,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Fallback price IDs (hardcoded defaults)
+const DEFAULT_PRICE_IDS: Record<string, string> = {
+  mensal: "price_1T5uYrK9iScCpCyIPO1vAvXp",
+  anual: "price_1T5uZNK9iScCpCyI3V89oboN",
+  bienal: "price_1T5ua3K9iScCpCyIjE7vp6yU",
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -15,6 +22,11 @@ serve(async (req) => {
   const supabaseClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+  );
+
+  const supabaseAdmin = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   );
 
   try {
@@ -30,8 +42,21 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    const { price_id } = await req.json();
-    if (!price_id) throw new Error("price_id is required");
+    const { plan_key } = await req.json();
+    if (!plan_key || !DEFAULT_PRICE_IDS[plan_key]) {
+      throw new Error("Valid plan_key is required (mensal, anual, bienal)");
+    }
+
+    // Look up dynamic price_id from admin_settings, fallback to default
+    const settingKey = `stripe_price_id_${plan_key}`;
+    const { data: setting } = await supabaseAdmin
+      .from("admin_settings")
+      .select("setting_value")
+      .eq("setting_key", settingKey)
+      .maybeSingle();
+
+    const priceId = setting?.setting_value || DEFAULT_PRICE_IDS[plan_key];
+    console.log(`[CREATE-CHECKOUT] Using price_id ${priceId} for plan ${plan_key}`);
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
@@ -48,7 +73,7 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
-      line_items: [{ price: price_id, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
       success_url: `${origin}/painel?checkout=success`,
       cancel_url: `${origin}/pro?checkout=cancelled`,
