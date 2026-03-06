@@ -1,51 +1,43 @@
 
 
-## Adicionar edição de perfil ao painel do estabelecimento
+## Ajustes Finos Identificados
 
-### Problema
-A página de Configurações (`Settings.tsx`) é exclusiva para artistas -- quase todos os campos (PIX, estilo musical, redes sociais, status ao vivo) são condicionados a `profile.tipo === "artista"`. Estabelecimentos não têm como editar nome, foto, bio, endereço ou telefone de dentro do painel.
+Analisando o código, encontrei os seguintes problemas que precisam de correção:
 
-### Solução
+### 1. Preços duplicados e desincronizados
 
-Adicionar uma nova aba **"Perfil"** ao `EstabelecimentoPanel.tsx` com formulário de edição inline. Os campos já existem na tabela `profiles` do banco de dados (não é necessário criar migrações).
+O `AdminSettings.tsx` salva preços por plano (`subscription_price_mensal`, `subscription_price_anual`, `subscription_price_bienal`), mas a edge function `create-manual-subscription` lê apenas `subscription_price` (campo único antigo). Além disso, o `PixSubscriptionDialog` usa preços hardcoded de `stripe-plans.ts` em vez dos valores configurados pelo admin.
 
-```text
-Tabs do Estabelecimento (6 abas):
-[ Pedidos ] [ Relatórios ] [ Perfil ] [ Avaliações ] [ Histórico ] [ QR Code ]
-                             ↑ NOVO
-```
+**Correção:**
+- Atualizar a edge function para receber o `planKey` e buscar o preço correto (`subscription_price_mensal`, etc.)
+- O `PixSubscriptionDialog` já passa `plan.price` para o QR Code, mas deveria idealmente usar o preço do admin_settings
 
-### Campos editáveis na aba Perfil
+### 2. Configurações PIX duplicadas no admin
 
-| Campo | Tipo | Já existe no banco |
-|---|---|---|
-| Nome | Input text | sim (`nome`) |
-| Bio / Descrição | Textarea | sim (`bio`) |
-| Foto de perfil | AvatarUpload (componente existente) | sim (`foto_url`) |
-| Foto de capa | CoverPhotoUpload (componente existente) | sim (`foto_capa_url`) |
-| Cidade | Input text | sim (`cidade`) |
-| Endereço completo | Input text | sim (`endereco`) |
-| Telefone | Input text | sim (`telefone`) |
-| Tipo de estabelecimento | Select (bar, restaurante, casa_noturna, etc.) | sim (`tipo_estabelecimento`) |
+O `AdminSubscriptions.tsx` ainda tem uma aba "Configurar Pix" (linhas 287-290, 399-466) com campos antigos que agora é redundante com o novo `AdminSettings.tsx`. Isso confunde o admin com dois lugares para configurar a mesma coisa.
 
-### Detalhes técnicos
+**Correção:** Remover a aba "Configurar Pix" do `AdminSubscriptions.tsx`, deixando apenas a aba "Comprovantes".
 
-**Arquivo modificado: `src/pages/EstabelecimentoPanel.tsx`**
+### 3. Status `rejected` inválido no banco
 
-1. Adicionar estados para edição do perfil (`editProfile`, `saving`)
-2. Adicionar a aba "Perfil" na `TabsList` (mudar grid de 5 para 6 colunas)
-3. Criar `TabsContent value="perfil"` com:
-   - `AvatarUpload` (importado de `@/components/AvatarUpload`)
-   - `CoverPhotoUpload` (importado de `@/components/CoverPhotoUpload`)
-   - Campos de texto para nome, bio, cidade, endereco, telefone
-   - Select para `tipo_estabelecimento`
-   - Botão "Salvar" que faz `supabase.from('profiles').update(...)` nos campos editados
-4. Após salvar, atualizar o estado `profile` local para refletir as mudanças no header
-5. Adicionar import de `Pencil` (ou `Edit`) do lucide-react para o ícone da aba
+O `AdminSubscriptions.tsx` (linha 233) tenta atualizar o status da assinatura para `rejected`, mas o constraint do banco só aceita: `active`, `cancelled`, `expired`, `pending`. Isso causa erro silencioso ao rejeitar um comprovante.
 
-**Nenhuma migração necessária** -- todos os campos já existem na tabela `profiles`.
+**Correção:** Migração para adicionar `rejected` ao constraint, ou usar `cancelled` em vez de `rejected`.
 
-**Componentes reutilizados** (zero código novo de upload):
-- `AvatarUpload` -- já trata upload para storage e retorna URL
-- `CoverPhotoUpload` -- idem para foto de capa
+### 4. `planKey` não enviado à edge function
+
+O `PixSubscriptionDialog` chama `create-manual-subscription` sem enviar o `planKey`. A edge function não sabe qual plano foi escolhido, então sempre usa o preço padrão.
+
+**Correção:** Enviar `planKey` no body da chamada e a edge function usar `subscription_price_{planKey}` da tabela `admin_settings`.
+
+---
+
+### Resumo das mudanças
+
+| Arquivo | Mudança |
+|---|---|
+| **Migração SQL** | Adicionar `rejected` ao constraint `artist_subscriptions_status_check` |
+| **`create-manual-subscription/index.ts`** | Receber `plan_key`, buscar preço específico do plano no admin_settings |
+| **`PixSubscriptionDialog.tsx`** | Enviar `planKey` na chamada da edge function |
+| **`AdminSubscriptions.tsx`** | Remover aba "Configurar Pix" (redundante com AdminSettings), manter apenas "Comprovantes" |
 
