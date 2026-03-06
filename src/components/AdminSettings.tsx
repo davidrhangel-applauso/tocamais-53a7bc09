@@ -24,6 +24,7 @@ export function AdminSettings() {
   const [settings, setSettings] = useState<SettingsMap>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const initialPricesRef = useRef<Record<string, string>>({});
 
   useEffect(() => {
     fetchSettings();
