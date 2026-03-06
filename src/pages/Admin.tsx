@@ -18,6 +18,7 @@ import { AdminSubscriptions } from "@/components/AdminSubscriptions";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { AdminEstabelecimentos } from "@/components/AdminEstabelecimentos";
+import { AdminSettings } from "@/components/AdminSettings";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import NotificationBell from "@/components/NotificationBell";
 
