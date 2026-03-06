@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Check, Crown, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAdminPrices, formatPrice } from "@/hooks/useAdminPrices";
 
 interface PremiumOfferModalProps {
   open: boolean;
@@ -12,37 +13,6 @@ interface PremiumOfferModalProps {
   onContinueFree: () => void;
   onSelectPlan: (plan: "monthly" | "annual" | "biennial") => void;
 }
-
-const plans = [
-  {
-    id: "monthly" as const,
-    name: "Mensal",
-    price: 19.90,
-    period: "/mês",
-    totalPrice: null,
-    savings: null,
-    popular: false,
-  },
-  {
-    id: "annual" as const,
-    name: "Anual",
-    price: 99.00,
-    period: "/ano",
-    monthlyEquivalent: 8.25,
-    savings: "Economize R$ 139,80",
-    popular: true,
-  },
-  {
-    id: "biennial" as const,
-    name: "Bienal",
-    price: 169.90,
-    period: "/2 anos",
-    monthlyEquivalent: 7.08,
-    savings: "Economize R$ 308,50",
-    popular: false,
-    bestValue: true,
-  },
-];
 
 const benefits = [
   "Gorjetas ilimitadas via PIX (Free: até R$ 10)",
@@ -60,6 +30,42 @@ export function PremiumOfferModal({
   onSelectPlan,
 }: PremiumOfferModalProps) {
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual" | "biennial">("annual");
+  const prices = useAdminPrices();
+
+  const plans = [
+    {
+      id: "monthly" as const,
+      name: "Mensal",
+      price: prices.mensal,
+      period: "/mês",
+      monthlyEquivalent: null as number | null,
+      savings: null as string | null,
+      popular: false,
+      bestValue: false,
+    },
+    {
+      id: "annual" as const,
+      name: "Anual",
+      price: prices.anual,
+      period: "/ano",
+      monthlyEquivalent: prices.anualMonthly,
+      savings: prices.anualSavingsText,
+      popular: true,
+      bestValue: false,
+    },
+    {
+      id: "biennial" as const,
+      name: "Bienal",
+      price: prices.bienal,
+      period: "/2 anos",
+      monthlyEquivalent: prices.bienalMonthly,
+      savings: prices.bienalSavingsText,
+      popular: false,
+      bestValue: true,
+    },
+  ];
+
+  const selectedPlanData = plans.find(p => p.id === selectedPlan);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -109,13 +115,13 @@ export function PremiumOfferModal({
                   <h3 className="font-semibold text-sm mb-1">{plan.name}</h3>
                   <div className="mb-1">
                     <span className="text-2xl sm:text-3xl font-bold">
-                      R$ {plan.price.toFixed(2).replace(".", ",")}
+                      R$ {formatPrice(plan.price)}
                     </span>
                     <span className="text-xs text-muted-foreground">{plan.period}</span>
                   </div>
                   {plan.monthlyEquivalent && (
                     <p className="text-[10px] sm:text-xs text-muted-foreground">
-                      = R$ {plan.monthlyEquivalent.toFixed(2).replace(".", ",")}/mês
+                      = R$ {formatPrice(plan.monthlyEquivalent)}/mês
                     </p>
                   )}
                   {plan.savings && (
@@ -162,7 +168,7 @@ export function PremiumOfferModal({
               onClick={() => onSelectPlan(selectedPlan)}
             >
               <Crown className="w-5 h-5 mr-2" />
-              Assinar PRO - R$ {plans.find(p => p.id === selectedPlan)?.price.toFixed(2).replace(".", ",")}
+              Assinar PRO - R$ {selectedPlanData ? formatPrice(selectedPlanData.price) : ""}
             </Button>
             <Button
               variant="outline"

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Sparkles } from "lucide-react";
 import { STRIPE_PLANS, type PlanKey } from "@/lib/stripe-plans";
+import { useAdminPrices, formatPrice } from "@/hooks/useAdminPrices";
 
 interface PricingSectionProps {
   onCTAClick: (priceId?: string) => void;
@@ -19,6 +20,24 @@ const features = [
 ];
 
 export function PricingSection({ onCTAClick }: PricingSectionProps) {
+  const prices = useAdminPrices();
+
+  const getPlanPrice = (key: PlanKey) => {
+    return prices[key];
+  };
+
+  const getPlanDescription = (key: PlanKey) => {
+    if (key === "anual") return `R$ ${formatPrice(prices.anualMonthly)}/mês`;
+    if (key === "bienal") return `R$ ${formatPrice(prices.bienalMonthly)}/mês`;
+    return "Sem compromisso";
+  };
+
+  const getPlanSavings = (key: PlanKey) => {
+    if (key === "anual") return prices.anualSavingsText;
+    if (key === "bienal") return prices.bienalSavingsText;
+    return null;
+  };
+
   return (
     <section id="pricing" className="py-20 bg-gradient-to-br from-background to-primary/5">
       <div className="container px-4">
@@ -37,6 +56,9 @@ export function PricingSection({ onCTAClick }: PricingSectionProps) {
         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12">
           {planKeys.map((key) => {
             const plan = STRIPE_PLANS[key];
+            const price = getPlanPrice(key);
+            const description = getPlanDescription(key);
+            const savings = getPlanSavings(key);
             return (
               <div
                 key={key}
@@ -57,16 +79,16 @@ export function PricingSection({ onCTAClick }: PricingSectionProps) {
                   <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
                   <div className="flex items-end justify-center gap-1">
                     <span className="text-4xl font-bold">
-                      R$ {plan.price.toFixed(2).replace(".", ",")}
+                      R$ {formatPrice(price)}
                     </span>
                     <span className="text-muted-foreground mb-1">{plan.period}</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {plan.description}
+                    {description}
                   </p>
-                  {plan.savings && (
+                  {savings && (
                     <Badge variant="secondary" className="mt-2 bg-green-500/10 text-green-500 border-green-500/20">
-                      {plan.savings}
+                      {savings}
                     </Badge>
                   )}
                 </div>

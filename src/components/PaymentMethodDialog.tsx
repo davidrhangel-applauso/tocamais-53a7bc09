@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CreditCard, QrCode, Sparkles } from "lucide-react";
 import { STRIPE_PLANS, type PlanKey } from "@/lib/stripe-plans";
+import { useAdminPrices, formatPrice } from "@/hooks/useAdminPrices";
 
 const planKeys: PlanKey[] = ["mensal", "anual", "bienal"];
 
@@ -25,6 +26,20 @@ export function PaymentMethodDialog({
   selectedPlanKey,
   onPlanChange,
 }: PaymentMethodDialogProps) {
+  const prices = useAdminPrices();
+
+  const getPlanPrice = (key: PlanKey) => prices[key];
+  const getPlanDescription = (key: PlanKey) => {
+    if (key === "anual") return `R$ ${formatPrice(prices.anualMonthly)}/mês`;
+    if (key === "bienal") return `R$ ${formatPrice(prices.bienalMonthly)}/mês`;
+    return "Sem compromisso";
+  };
+  const getPlanSavings = (key: PlanKey) => {
+    if (key === "anual") return prices.anualSavingsText;
+    if (key === "bienal") return prices.bienalSavingsText;
+    return null;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -40,6 +55,9 @@ export function PaymentMethodDialog({
           {planKeys.map((key) => {
             const plan = STRIPE_PLANS[key];
             const isSelected = key === selectedPlanKey;
+            const price = getPlanPrice(key);
+            const description = getPlanDescription(key);
+            const savings = getPlanSavings(key);
             return (
               <button
                 key={key}
@@ -68,16 +86,16 @@ export function PaymentMethodDialog({
                         </Badge>
                       )}
                     </div>
-                    <span className="text-xs text-muted-foreground">{plan.description}</span>
+                    <span className="text-xs text-muted-foreground">{description}</span>
                   </div>
                 </div>
                 <div className="text-right">
                   <span className="font-bold text-sm">
-                    R$ {plan.price.toFixed(2).replace(".", ",")}
+                    R$ {formatPrice(price)}
                   </span>
                   <span className="text-xs text-muted-foreground">{plan.period}</span>
-                  {plan.savings && (
-                    <div className="text-[10px] text-green-500 font-medium">{plan.savings}</div>
+                  {savings && (
+                    <div className="text-[10px] text-green-500 font-medium">{savings}</div>
                   )}
                 </div>
               </button>

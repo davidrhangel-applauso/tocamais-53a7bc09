@@ -1,4 +1,5 @@
 import { Check, X } from "lucide-react";
+import { useAdminPrices, formatPrice } from "@/hooks/useAdminPrices";
 
 const features = [
   { name: "Receber gorjetas", free: true, pro: true },
@@ -13,6 +14,8 @@ const features = [
 ];
 
 export function ComparisonSection() {
+  const prices = useAdminPrices();
+
   return (
     <section className="py-20 bg-background">
       <div className="container px-4">
@@ -39,7 +42,7 @@ export function ComparisonSection() {
               </div>
               <div className="p-4 text-center border-l border-primary/50 bg-primary/10">
                 <p className="font-bold text-lg text-primary">PRO</p>
-                <p className="text-sm text-primary">R$ 19,90/mês</p>
+                <p className="text-sm text-primary">R$ {formatPrice(prices.mensal)}/mês</p>
               </div>
             </div>
 

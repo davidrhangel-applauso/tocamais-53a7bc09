@@ -1,12 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Zap } from "lucide-react";
+import { useAdminPrices, formatPrice } from "@/hooks/useAdminPrices";
 
 interface FinalCTAProps {
   onCTAClick: () => void;
 }
 
 export function FinalCTA({ onCTAClick }: FinalCTAProps) {
+  const prices = useAdminPrices();
+
   return (
     <section className="py-20 bg-gradient-to-br from-primary/20 via-background to-accent/20 relative overflow-hidden">
       {/* Background Effects */}
@@ -44,7 +47,7 @@ export function FinalCTA({ onCTAClick }: FinalCTAProps) {
           </Button>
 
           <p className="mt-6 text-sm text-muted-foreground">
-            A partir de R$ 19,90/mês • Cancele quando quiser
+            A partir de R$ {formatPrice(prices.mensal)}/mês • Cancele quando quiser
           </p>
         </div>
       </div>
