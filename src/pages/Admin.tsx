@@ -436,6 +436,7 @@ export default function Admin() {
       case "estabelecimentos": return "Estabelecimentos";
       case "assinaturas": return "Assinaturas";
       case "financeiro": return "Financeiro";
+      case "configuracoes": return "Configurações";
       default: return "Dashboard";
     }
   };
