@@ -78,6 +78,40 @@ export function AdminSettings() {
 
         if (error) throw error;
       }
+
+      // Sync changed prices with Stripe
+      const planKeys = ["mensal", "anual", "bienal"] as const;
+      for (const planKey of planKeys) {
+        const settingKey = `subscription_price_${planKey}`;
+        const newValue = settings[settingKey];
+        const oldValue = initialPricesRef.current[settingKey];
+        
+        if (newValue && newValue !== oldValue) {
+          const price = parseFloat(newValue);
+          if (!isNaN(price) && price > 0) {
+            toast.info(`Sincronizando preço ${planKey} com Stripe...`);
+            const { data: syncData, error: syncError } = await supabase.functions.invoke("sync-stripe-prices", {
+              body: { plan_key: planKey, price },
+            });
+            if (syncError) {
+              console.error(`Error syncing ${planKey}:`, syncError);
+              toast.error(`Erro ao sincronizar preço ${planKey} com Stripe`);
+            } else {
+              console.log(`Synced ${planKey}:`, syncData);
+              toast.success(`Preço ${planKey} sincronizado com Stripe!`);
+            }
+          }
+        }
+      }
+
+      // Update initial prices ref
+      const newPrices: Record<string, string> = {};
+      planKeys.forEach((k) => {
+        const key = `subscription_price_${k}`;
+        if (settings[key]) newPrices[key] = settings[key];
+      });
+      initialPricesRef.current = newPrices;
+
       toast.success("Configurações salvas com sucesso!");
     } catch (error) {
       console.error("Error saving settings:", error);
