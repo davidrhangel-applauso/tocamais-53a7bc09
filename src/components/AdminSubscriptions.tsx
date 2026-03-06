@@ -273,203 +273,117 @@ export function AdminSubscriptions() {
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="receipts" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="receipts" className="gap-2">
-            <Receipt className="w-4 h-4" />
-            Comprovantes
-            {pendingCount > 0 && (
-              <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                {pendingCount}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="gap-2">
-            <Settings className="w-4 h-4" />
-            Configurar Pix
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="receipts" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Comprovantes de Pagamento</CardTitle>
-                  <CardDescription>Gerencie os comprovantes de assinatura Pro</CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Select value={filter} onValueChange={(v: any) => setFilter(v)}>
-                    <SelectTrigger className="w-[150px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pendentes</SelectItem>
-                      <SelectItem value="approved">Aprovados</SelectItem>
-                      <SelectItem value="rejected">Rejeitados</SelectItem>
-                      <SelectItem value="all">Todos</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button variant="outline" size="icon" onClick={fetchReceipts}>
-                    <RefreshCw className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              ) : receipts.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Nenhum comprovante encontrado
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {receipts.map((receipt) => (
-                    <div 
-                      key={receipt.id} 
-                      className="flex items-center justify-between p-4 border rounded-lg"
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Receipt className="w-5 h-5" />
+                Comprovantes de Pagamento
+                {pendingCount > 0 && (
+                  <Badge variant="destructive" className="h-5 w-5 p-0 flex items-center justify-center text-xs">
+                    {pendingCount}
+                  </Badge>
+                )}
+              </CardTitle>
+              <CardDescription>Gerencie os comprovantes de assinatura Pro</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Select value={filter} onValueChange={(v: any) => setFilter(v)}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pendentes</SelectItem>
+                  <SelectItem value="approved">Aprovados</SelectItem>
+                  <SelectItem value="rejected">Rejeitados</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="icon" onClick={fetchReceipts}>
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : receipts.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Nenhum comprovante encontrado
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {receipts.map((receipt) => (
+                <div 
+                  key={receipt.id} 
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
+                  <div className="flex items-center gap-4">
+                    <Avatar>
+                      <AvatarImage src={receipt.artist?.foto_url || undefined} />
+                      <AvatarFallback>
+                        {receipt.artist?.nome?.[0] || '?'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{receipt.artist?.nome || 'Artista'}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {receipt.artist?.cidade || 'Sem cidade'} • {' '}
+                        {format(new Date(receipt.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    {getStatusBadge(receipt.status)}
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedReceipt(receipt);
+                        setShowImageDialog(true);
+                      }}
                     >
-                      <div className="flex items-center gap-4">
-                        <Avatar>
-                          <AvatarImage src={receipt.artist?.foto_url || undefined} />
-                          <AvatarFallback>
-                            {receipt.artist?.nome?.[0] || '?'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{receipt.artist?.nome || 'Artista'}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {receipt.artist?.cidade || 'Sem cidade'} • {' '}
-                            {format(new Date(receipt.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-3">
-                        {getStatusBadge(receipt.status)}
-                        
+                      <Eye className="w-4 h-4 mr-1" />
+                      Ver
+                    </Button>
+                    
+                    {receipt.status === 'pending' && (
+                      <>
                         <Button
-                          variant="outline"
+                          size="sm"
+                          onClick={() => approveReceipt(receipt)}
+                          disabled={processing === receipt.id}
+                        >
+                          <Check className="w-4 h-4 mr-1" />
+                          Aprovar
+                        </Button>
+                        <Button
+                          variant="destructive"
                           size="sm"
                           onClick={() => {
                             setSelectedReceipt(receipt);
-                            setShowImageDialog(true);
+                            setShowRejectDialog(true);
                           }}
+                          disabled={processing === receipt.id}
                         >
-                          <Eye className="w-4 h-4 mr-1" />
-                          Ver
+                          <X className="w-4 h-4 mr-1" />
+                          Rejeitar
                         </Button>
-                        
-                        {receipt.status === 'pending' && (
-                          <>
-                            <Button
-                              size="sm"
-                              onClick={() => approveReceipt(receipt)}
-                              disabled={processing === receipt.id}
-                            >
-                              <Check className="w-4 h-4 mr-1" />
-                              Aprovar
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedReceipt(receipt);
-                                setShowRejectDialog(true);
-                              }}
-                              disabled={processing === receipt.id}
-                            >
-                              <X className="w-4 h-4 mr-1" />
-                              Rejeitar
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                      </>
+                    )}
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="settings">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configurações do Pix</CardTitle>
-              <CardDescription>Configure sua chave Pix para receber pagamentos de assinatura</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Tipo de Chave</Label>
-                  <Select 
-                    value={settings.subscription_pix_key_type} 
-                    onValueChange={(v) => setSettings({...settings, subscription_pix_key_type: v})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cpf">CPF</SelectItem>
-                      <SelectItem value="cnpj">CNPJ</SelectItem>
-                      <SelectItem value="email">E-mail</SelectItem>
-                      <SelectItem value="celular">Celular</SelectItem>
-                      <SelectItem value="aleatoria">Chave Aleatória</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Chave Pix</Label>
-                  <Input
-                    value={settings.subscription_pix_key}
-                    onChange={(e) => setSettings({...settings, subscription_pix_key: e.target.value})}
-                    placeholder="Digite sua chave Pix"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Nome do Beneficiário</Label>
-                  <Input
-                    value={settings.subscription_pix_name}
-                    onChange={(e) => setSettings({...settings, subscription_pix_name: e.target.value})}
-                    placeholder="Nome que aparecerá no Pix"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Cidade</Label>
-                  <Input
-                    value={settings.subscription_pix_city}
-                    onChange={(e) => setSettings({...settings, subscription_pix_city: e.target.value})}
-                    placeholder="Sua cidade"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Valor da Assinatura (R$)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={settings.subscription_price}
-                    onChange={(e) => setSettings({...settings, subscription_price: e.target.value})}
-                    placeholder="19.90"
-                  />
-                </div>
-              </div>
-
-              <Button onClick={saveSettings} disabled={savingSettings} className="w-full md:w-auto">
-                <Save className="w-4 h-4 mr-2" />
-                {savingSettings ? 'Salvando...' : 'Salvar Configurações'}
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Image Preview Dialog */}
       <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>

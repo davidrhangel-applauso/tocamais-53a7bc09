@@ -43,7 +43,7 @@ export function PixSubscriptionDialog({ open, onOpenChange, planKey, artistaId }
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-manual-subscription', {
-        body: { artista_id: artistaId },
+        body: { artista_id: artistaId, plan_key: planKey },
       });
 
       if (error) throw error;
