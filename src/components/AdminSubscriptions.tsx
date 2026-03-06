@@ -43,7 +43,6 @@ export function AdminSubscriptions() {
 
   useEffect(() => {
     fetchReceipts();
-    fetchSettings();
   }, [filter]);
 
   const fetchReceipts = async () => {
