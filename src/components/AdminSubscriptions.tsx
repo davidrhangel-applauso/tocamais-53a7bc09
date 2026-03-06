@@ -30,13 +30,6 @@ interface SubscriptionReceipt {
   } | null;
 }
 
-interface AdminSettings {
-  subscription_pix_key: string;
-  subscription_pix_key_type: string;
-  subscription_pix_name: string;
-  subscription_pix_city: string;
-  subscription_price: string;
-}
 
 export function AdminSubscriptions() {
   const [receipts, setReceipts] = useState<SubscriptionReceipt[]>([]);
