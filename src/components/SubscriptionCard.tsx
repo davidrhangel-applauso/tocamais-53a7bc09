@@ -39,9 +39,8 @@ export function SubscriptionCard({ artistaId }: SubscriptionCardProps) {
   const handleSubscribe = async () => {
     setIsCreating(true);
     try {
-      const plan = STRIPE_PLANS[selectedPlan];
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { price_id: plan.price_id },
+        body: { plan_key: selectedPlan },
       });
 
       if (error) throw error;
