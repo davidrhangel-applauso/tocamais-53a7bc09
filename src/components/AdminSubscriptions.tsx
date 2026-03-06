@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Check, X, Eye, Clock, Settings, Receipt, RefreshCw, Save } from "lucide-react";
+import { Check, X, Eye, Clock, Receipt, RefreshCw } from "lucide-react";
 
 interface SubscriptionReceipt {
   id: string;
