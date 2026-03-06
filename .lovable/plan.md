@@ -1,51 +1,32 @@
 
 
-## Adicionar edição de perfil ao painel do estabelecimento
+## Plano: Seção de Configurações PIX no Painel Admin
 
-### Problema
-A página de Configurações (`Settings.tsx`) é exclusiva para artistas -- quase todos os campos (PIX, estilo musical, redes sociais, status ao vivo) são condicionados a `profile.tipo === "artista"`. Estabelecimentos não têm como editar nome, foto, bio, endereço ou telefone de dentro do painel.
+### O que será feito
 
-### Solução
+Criar uma nova aba "Configurações" no painel admin com formulário para gerenciar os dados PIX de recebimento das assinaturas.
 
-Adicionar uma nova aba **"Perfil"** ao `EstabelecimentoPanel.tsx` com formulário de edição inline. Os campos já existem na tabela `profiles` do banco de dados (não é necessário criar migrações).
+### Mudanças
 
-```text
-Tabs do Estabelecimento (6 abas):
-[ Pedidos ] [ Relatórios ] [ Perfil ] [ Avaliações ] [ Histórico ] [ QR Code ]
-                             ↑ NOVO
-```
+| Componente | Mudança |
+|---|---|
+| `src/components/AdminSettings.tsx` (novo) | Formulário com campos: chave PIX, tipo da chave (CPF/CNPJ/email/telefone/aleatória), nome do recebedor, cidade, e valores de cada plano (mensal, anual, bienal). Busca dados existentes da tabela `admin_settings` ao montar e faz upsert ao salvar. |
+| `src/components/AdminSidebar.tsx` | Adicionar item "Configurações" com ícone `Settings` (já importado) no menu |
+| `src/pages/Admin.tsx` | Adicionar case `"configuracoes"` no `renderContent()` e `getPageTitle()`, importar `AdminSettings` |
 
-### Campos editáveis na aba Perfil
+### Campos do formulário
 
-| Campo | Tipo | Já existe no banco |
-|---|---|---|
-| Nome | Input text | sim (`nome`) |
-| Bio / Descrição | Textarea | sim (`bio`) |
-| Foto de perfil | AvatarUpload (componente existente) | sim (`foto_url`) |
-| Foto de capa | CoverPhotoUpload (componente existente) | sim (`foto_capa_url`) |
-| Cidade | Input text | sim (`cidade`) |
-| Endereço completo | Input text | sim (`endereco`) |
-| Telefone | Input text | sim (`telefone`) |
-| Tipo de estabelecimento | Select (bar, restaurante, casa_noturna, etc.) | sim (`tipo_estabelecimento`) |
+- **Chave PIX** (`subscription_pix_key`) - input text
+- **Tipo da Chave** (`subscription_pix_key_type`) - select: CPF, CNPJ, Email, Telefone, Aleatória
+- **Nome do Recebedor** (`subscription_pix_name`) - input text (max 25 chars)
+- **Cidade** (`subscription_pix_city`) - input text (max 15 chars)
+- **Valor Mensal** (`subscription_price_mensal`) - input number
+- **Valor Anual** (`subscription_price_anual`) - input number
+- **Valor Bienal** (`subscription_price_bienal`) - input number
 
-### Detalhes técnicos
+### Lógica
 
-**Arquivo modificado: `src/pages/EstabelecimentoPanel.tsx`**
+O componente `AdminSettings` usa as setting keys existentes na tabela `admin_settings`. Ao carregar, busca todas as settings com prefixo `subscription_`. Ao salvar, faz upsert (insert on conflict update) para cada campo via chamadas individuais ao Supabase. As políticas RLS já permitem que admins façam CRUD na tabela `admin_settings`.
 
-1. Adicionar estados para edição do perfil (`editProfile`, `saving`)
-2. Adicionar a aba "Perfil" na `TabsList` (mudar grid de 5 para 6 colunas)
-3. Criar `TabsContent value="perfil"` com:
-   - `AvatarUpload` (importado de `@/components/AvatarUpload`)
-   - `CoverPhotoUpload` (importado de `@/components/CoverPhotoUpload`)
-   - Campos de texto para nome, bio, cidade, endereco, telefone
-   - Select para `tipo_estabelecimento`
-   - Botão "Salvar" que faz `supabase.from('profiles').update(...)` nos campos editados
-4. Após salvar, atualizar o estado `profile` local para refletir as mudanças no header
-5. Adicionar import de `Pencil` (ou `Edit`) do lucide-react para o ícone da aba
-
-**Nenhuma migração necessária** -- todos os campos já existem na tabela `profiles`.
-
-**Componentes reutilizados** (zero código novo de upload):
-- `AvatarUpload` -- já trata upload para storage e retorna URL
-- `CoverPhotoUpload` -- idem para foto de capa
+Sem migração necessária -- a tabela `admin_settings` já existe com a estrutura correta (key/value).
 
