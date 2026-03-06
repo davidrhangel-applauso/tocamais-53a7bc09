@@ -10,6 +10,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { Crown, Check, Zap, Clock, AlertCircle, Loader2, ExternalLink, Settings, QrCode } from "lucide-react";
 import { STRIPE_PLANS, type PlanKey } from "@/lib/stripe-plans";
 import { PixSubscriptionDialog } from "@/components/PixSubscriptionDialog";
+import { useAdminPrices, formatPrice } from "@/hooks/useAdminPrices";
 
 interface SubscriptionCardProps {
   artistaId: string;
@@ -21,6 +22,19 @@ export function SubscriptionCard({ artistaId }: SubscriptionCardProps) {
   const [selectedPlan, setSelectedPlan] = useState<PlanKey>("anual");
   const [isManaging, setIsManaging] = useState(false);
   const [pixDialogOpen, setPixDialogOpen] = useState(false);
+  const prices = useAdminPrices();
+
+  const getPlanPrice = (key: PlanKey) => prices[key];
+  const getPlanSavings = (key: PlanKey) => {
+    if (key === "anual") return prices.anualSavingsText;
+    if (key === "bienal") return prices.bienalSavingsText;
+    return null;
+  };
+  const getPlanDescription = (key: PlanKey) => {
+    if (key === "anual") return `R$ ${formatPrice(prices.anualMonthly)}/mês`;
+    if (key === "bienal") return `R$ ${formatPrice(prices.bienalMonthly)}/mês`;
+    return "Sem compromisso";
+  };
 
   const handleSubscribe = async () => {
     setIsCreating(true);
@@ -120,7 +134,7 @@ export function SubscriptionCard({ artistaId }: SubscriptionCardProps) {
               </h3>
               {isPro && <Badge variant="default" className="text-xs">Atual</Badge>}
             </div>
-            <p className="text-2xl font-bold">R$ 19,90<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
+            <p className="text-2xl font-bold">R$ {formatPrice(prices.mensal)}<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2 text-primary">
                 <Zap className="h-4 w-4" />
@@ -184,6 +198,9 @@ export function SubscriptionCard({ artistaId }: SubscriptionCardProps) {
             <div className="space-y-2">
               {(Object.keys(STRIPE_PLANS) as PlanKey[]).map((key) => {
                 const plan = STRIPE_PLANS[key];
+                const price = getPlanPrice(key);
+                const savings = getPlanSavings(key);
+                const description = getPlanDescription(key);
                 return (
                   <button
                     key={key}
@@ -197,18 +214,18 @@ export function SubscriptionCard({ artistaId }: SubscriptionCardProps) {
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="font-semibold">{plan.name}</span>
-                        <span className="text-muted-foreground text-sm ml-2">{plan.description}</span>
+                        <span className="text-muted-foreground text-sm ml-2">{description}</span>
                       </div>
                       <div className="text-right">
                         <span className="font-bold">
-                          R$ {plan.price.toFixed(2).replace(".", ",")}
+                          R$ {formatPrice(price)}
                         </span>
                         <span className="text-sm text-muted-foreground">{plan.period}</span>
                       </div>
                     </div>
-                    {plan.savings && (
+                    {savings && (
                       <Badge variant="secondary" className="mt-1 bg-green-500/10 text-green-500 border-green-500/20 text-xs">
-                        {plan.savings}
+                        {savings}
                       </Badge>
                     )}
                     {plan.recommended && (
@@ -233,7 +250,7 @@ export function SubscriptionCard({ artistaId }: SubscriptionCardProps) {
               ) : (
                 <>
                   <ExternalLink className="h-4 w-4 mr-2" />
-                  Assinar {STRIPE_PLANS[selectedPlan].name} - R$ {STRIPE_PLANS[selectedPlan].price.toFixed(2).replace(".", ",")}
+                  Assinar {STRIPE_PLANS[selectedPlan].name} - R$ {formatPrice(getPlanPrice(selectedPlan))}
                 </>
               )}
             </Button>

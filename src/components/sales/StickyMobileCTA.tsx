@@ -1,11 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { useAdminPrices, formatPrice } from "@/hooks/useAdminPrices";
 
 interface StickyMobileCTAProps {
   onCTAClick: () => void;
 }
 
 export function StickyMobileCTA({ onCTAClick }: StickyMobileCTAProps) {
+  const prices = useAdminPrices();
+
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-sm border-t border-border p-4 safe-area-inset-bottom">
       <Button
@@ -16,7 +19,7 @@ export function StickyMobileCTA({ onCTAClick }: StickyMobileCTAProps) {
         <ArrowRight className="ml-2 w-5 h-5" />
       </Button>
       <p className="text-center text-xs text-muted-foreground mt-2">
-        A partir de R$ 19,90/mês • Cancele quando quiser
+        A partir de R$ {formatPrice(prices.mensal)}/mês • Cancele quando quiser
       </p>
     </div>
   );

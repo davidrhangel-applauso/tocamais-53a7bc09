@@ -1,6 +1,7 @@
 import { Check, X, Crown, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useAdminPrices, formatPrice } from "@/hooks/useAdminPrices";
 
 interface PlanComparisonProps {
   onProClick: () => void;
@@ -31,6 +32,8 @@ function FeatureValue({ value }: { value: boolean | string }) {
 }
 
 export function PlanComparison({ onProClick, onFreeClick }: PlanComparisonProps) {
+  const prices = useAdminPrices();
+
   return (
     <section className="py-16 sm:py-24 px-4 bg-gradient-to-b from-muted/30 to-background">
       <div className="container mx-auto max-w-4xl">
@@ -42,7 +45,7 @@ export function PlanComparison({ onProClick, onFreeClick }: PlanComparisonProps)
             Escolha Seu Plano
           </h2>
           <p className="text-base sm:text-lg text-muted-foreground">
-            Assine Anual e Ganhe 2 Meses Grátis (Economize <span className="font-bold text-green-400">R$ 139,80</span>)
+            Assine Anual e Ganhe 2 Meses Grátis (Economize <span className="font-bold text-green-400">{prices.anualSavingsText ? `R$ ${formatPrice(prices.anualSavings)}` : `R$ ${formatPrice(prices.mensal * 12 - prices.anual)}`}</span>)
           </p>
         </div>
 
@@ -58,8 +61,8 @@ export function PlanComparison({ onProClick, onFreeClick }: PlanComparisonProps)
                 <Crown className="w-5 h-5 text-primary" />
                 <span className="font-bold text-xl text-primary">PRO</span>
               </div>
-              <p className="text-primary text-lg font-bold">R$ 19,90<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
-              <p className="text-xs text-green-400 font-bold mt-1">Economize R$ 139,80/ano</p>
+              <p className="text-primary text-lg font-bold">R$ {formatPrice(prices.mensal)}<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
+              <p className="text-xs text-green-400 font-bold mt-1">{prices.anualSavingsText}/ano</p>
             </div>
             <div className="p-4 space-y-3">
               {features.map((f, i) => (
@@ -79,9 +82,6 @@ export function PlanComparison({ onProClick, onFreeClick }: PlanComparisonProps)
                 <Crown className="w-4 h-4 mr-2" />
                 Assinar PRO Agora
               </Button>
-              <p className="text-xs text-center text-green-400 font-bold mt-2">
-                Economize R$ 481/ano
-              </p>
             </div>
           </div>
 
@@ -125,8 +125,8 @@ export function PlanComparison({ onProClick, onFreeClick }: PlanComparisonProps)
                 <Crown className="w-5 h-5 text-primary" />
                 <p className="font-bold text-xl text-primary">PRO</p>
               </div>
-              <p className="text-primary text-sm font-semibold">A partir de R$ 19,90/mês</p>
-              <p className="text-xs text-green-400 font-bold">Economize R$139,80/ano</p>
+              <p className="text-primary text-sm font-semibold">A partir de R$ {formatPrice(prices.mensal)}/mês</p>
+              <p className="text-xs text-green-400 font-bold">{prices.anualSavingsText}/ano</p>
             </div>
           </div>
 
@@ -167,9 +167,6 @@ export function PlanComparison({ onProClick, onFreeClick }: PlanComparisonProps)
                 <Crown className="w-4 h-4 mr-2" />
                 Assinar PRO Agora
               </Button>
-              <p className="text-xs text-center text-green-400 font-bold mt-3">
-                Economize R$ 481/ano
-              </p>
             </div>
           </div>
         </div>

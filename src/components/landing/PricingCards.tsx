@@ -2,66 +2,72 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Crown, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAdminPrices, formatPrice } from "@/hooks/useAdminPrices";
 
 interface PricingCardsProps {
   onSelectPlan: (plan: "monthly" | "annual" | "biennial") => void;
 }
 
-const plans = [
-  {
-    id: "monthly" as const,
-    name: "Mensal",
-    price: 19.90,
-    period: "/mês",
-    description: "Perfeito para testar",
-    features: [
-      "0% de taxa nas gorjetas",
-      "PIX direto na sua conta",
-      "Destaque na busca",
-      "Analytics completo",
-    ],
-    popular: false,
-    savings: null,
-  },
-  {
-    id: "annual" as const,
-    name: "Anual",
-    price: 99.00,
-    period: "/ano",
-    monthlyEquivalent: 8.25,
-    description: "Mais economia",
-    features: [
-      "0% de taxa nas gorjetas",
-      "PIX direto na sua conta",
-      "Destaque na busca",
-      "Analytics completo",
-      "Suporte prioritário",
-    ],
-    popular: true,
-    savings: "Economize R$ 139,80",
-  },
-  {
-    id: "biennial" as const,
-    name: "Bienal",
-    price: 169.90,
-    period: "/2 anos",
-    monthlyEquivalent: 7.08,
-    description: "Melhor custo-benefício",
-    features: [
-      "0% de taxa nas gorjetas",
-      "PIX direto na sua conta",
-      "Destaque na busca",
-      "Analytics completo",
-      "Suporte prioritário",
-      "Badge exclusivo no perfil",
-    ],
-    popular: false,
-    savings: "Economize R$ 308,50",
-    bestValue: true,
-  },
-];
-
 export function PricingCards({ onSelectPlan }: PricingCardsProps) {
+  const prices = useAdminPrices();
+
+  const plans = [
+    {
+      id: "monthly" as const,
+      name: "Mensal",
+      price: prices.mensal,
+      period: "/mês",
+      monthlyEquivalent: null as number | null,
+      description: "Perfeito para testar",
+      features: [
+        "0% de taxa nas gorjetas",
+        "PIX direto na sua conta",
+        "Destaque na busca",
+        "Analytics completo",
+      ],
+      popular: false,
+      savings: null as string | null,
+      bestValue: false,
+    },
+    {
+      id: "annual" as const,
+      name: "Anual",
+      price: prices.anual,
+      period: "/ano",
+      monthlyEquivalent: prices.anualMonthly,
+      description: "Mais economia",
+      features: [
+        "0% de taxa nas gorjetas",
+        "PIX direto na sua conta",
+        "Destaque na busca",
+        "Analytics completo",
+        "Suporte prioritário",
+      ],
+      popular: true,
+      savings: prices.anualSavingsText,
+      bestValue: false,
+    },
+    {
+      id: "biennial" as const,
+      name: "Bienal",
+      price: prices.bienal,
+      period: "/2 anos",
+      monthlyEquivalent: prices.bienalMonthly,
+      description: "Melhor custo-benefício",
+      features: [
+        "0% de taxa nas gorjetas",
+        "PIX direto na sua conta",
+        "Destaque na busca",
+        "Analytics completo",
+        "Suporte prioritário",
+        "Badge exclusivo no perfil",
+      ],
+      popular: false,
+      savings: prices.bienalSavingsText,
+      bestValue: true,
+    },
+  ];
+
   return (
     <section className="py-16 sm:py-24 px-4 bg-gradient-to-b from-background to-muted/30">
       <div className="container mx-auto max-w-6xl">
@@ -94,7 +100,6 @@ export function PricingCards({ onSelectPlan }: PricingCardsProps) {
                   : "border-border hover:border-primary/50"
               )}
             >
-              {/* Badges */}
               {plan.popular && (
                 <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
                   Mais Popular
@@ -112,14 +117,14 @@ export function PricingCards({ onSelectPlan }: PricingCardsProps) {
                 
                 <div className="mb-2">
                   <span className="text-4xl font-bold">
-                    R$ {plan.price.toFixed(2).replace(".", ",")}
+                    R$ {formatPrice(plan.price)}
                   </span>
                   <span className="text-muted-foreground">{plan.period}</span>
                 </div>
                 
                 {plan.monthlyEquivalent && (
                   <p className="text-sm text-muted-foreground">
-                    = R$ {plan.monthlyEquivalent.toFixed(2).replace(".", ",")}/mês
+                    = R$ {formatPrice(plan.monthlyEquivalent)}/mês
                   </p>
                 )}
                 
@@ -155,7 +160,6 @@ export function PricingCards({ onSelectPlan }: PricingCardsProps) {
           ))}
         </div>
 
-        {/* Trust message */}
         <p className="text-center text-sm text-muted-foreground mt-8">
           🔒 Pagamento seguro via PIX • Cancele quando quiser • Garantia de 7 dias
         </p>

@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calculator, TrendingUp, ArrowRight } from "lucide-react";
 import { formatCurrency } from "@/lib/financial-utils";
+import { useAdminPrices } from "@/hooks/useAdminPrices";
 
 interface SavingsCalculatorProps {
   onCTAClick: () => void;
@@ -11,10 +12,11 @@ interface SavingsCalculatorProps {
 
 export function SavingsCalculator({ onCTAClick }: SavingsCalculatorProps) {
   const [monthlyTips, setMonthlyTips] = useState<number>(300);
+  const prices = useAdminPrices();
   
   const monthlyFee = monthlyTips * 0.20;
   const yearlyFee = monthlyFee * 12;
-  const proMonthlyPrice = 19.90;
+  const proMonthlyPrice = prices.mensal;
   const netSavingsMonthly = monthlyFee - proMonthlyPrice;
   const netSavingsYearly = netSavingsMonthly * 12;
 
