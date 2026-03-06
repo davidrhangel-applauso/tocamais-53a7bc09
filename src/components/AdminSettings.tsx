@@ -43,6 +43,12 @@ export function AdminSettings() {
       data?.forEach((item) => {
         map[item.setting_key] = item.setting_value;
       });
+      // Store initial prices for change detection
+      const prices: Record<string, string> = {};
+      ["subscription_price_mensal", "subscription_price_anual", "subscription_price_bienal"].forEach((key) => {
+        if (map[key]) prices[key] = map[key];
+      });
+      initialPricesRef.current = prices;
       setSettings(map);
     } catch (error) {
       console.error("Error fetching settings:", error);
