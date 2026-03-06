@@ -36,9 +36,9 @@ export function useAdminPrices(): AdminPrices {
         return DEFAULT_PRICES;
       }
 
-      const prices = { ...DEFAULT_PRICES };
+      const prices: Record<string, number> = { ...DEFAULT_PRICES };
       for (const row of data || []) {
-        const planKey = row.setting_key.replace("subscription_price_", "") as keyof typeof prices;
+        const planKey = row.setting_key.replace("subscription_price_", "");
         if (planKey in prices) {
           const parsed = parseFloat(row.setting_value);
           if (!isNaN(parsed) && parsed > 0) {
