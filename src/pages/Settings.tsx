@@ -22,6 +22,8 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { PaymentFAQ } from "@/components/PaymentFAQ";
 import ProfileQRCode from "@/components/ProfileQRCode";
 import { LocationSettings } from "@/components/LocationSettings";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { Bell, BellOff } from "lucide-react";
 
 type MusicStyle = Database["public"]["Enums"]["music_style"];
 
