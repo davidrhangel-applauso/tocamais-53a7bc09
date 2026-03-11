@@ -451,6 +451,11 @@ const Settings = () => {
               </div>
             )}
 
+            {/* Push Notifications - Only for artists */}
+            {profile.tipo === "artista" && (
+              <PushNotificationToggle userId={profile.id} />
+            )}
+
             {/* Location Settings - Only for artists */}
             {profile.tipo === "artista" && (
               <LocationSettings
