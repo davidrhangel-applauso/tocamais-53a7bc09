@@ -29,6 +29,7 @@ export function StickyHeaderCTA({ onArtistClick }: StickyHeaderCTAProps) {
     <div className="fixed top-0 left-0 right-0 bg-black/95 border-b border-primary/30 backdrop-blur-md z-40 py-3 px-4 sm:px-6 animate-fade-in">
       <div className="container mx-auto max-w-7xl flex items-center justify-between">
         <div className="flex items-center gap-2">
+          <img src={logoTocaMais} alt="Toca Mais" className="w-8 h-8" />
           <span className="font-bold text-white hidden sm:inline">Toca Mais</span>
         </div>
         
