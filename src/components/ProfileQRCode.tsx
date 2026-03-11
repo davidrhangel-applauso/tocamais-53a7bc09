@@ -9,18 +9,21 @@ interface ProfileQRCodeProps {
   artistId: string;
   artistName: string;
   profileType?: "artista" | "estabelecimento";
+  slug?: string | null;
 }
 
 const PRODUCTION_URL = "https://tocamais.app";
 
-const ProfileQRCode = ({ artistId, artistName, profileType = "artista" }: ProfileQRCodeProps) => {
+const ProfileQRCode = ({ artistId, artistName, profileType = "artista", slug }: ProfileQRCodeProps) => {
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const profileUrl = profileType === "estabelecimento" 
     ? `${PRODUCTION_URL}/local/${artistId}`
-    : `${PRODUCTION_URL}/artista/${artistId}`;
+    : slug 
+      ? `${PRODUCTION_URL}/${slug}`
+      : `${PRODUCTION_URL}/artista/${artistId}`;
 
   useEffect(() => {
     generateQRCode();

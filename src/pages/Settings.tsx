@@ -204,7 +204,7 @@ const Settings = () => {
 
             {/* Profile QR Code - Only for artists */}
             {profile.tipo === "artista" && (
-              <ProfileQRCode artistId={profile.id} artistName={profile.nome} />
+              <ProfileQRCode artistId={profile.id} artistName={profile.nome} slug={profile.slug} />
             )}
 
             {/* Basic Info */}
