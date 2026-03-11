@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { SEOHead } from "@/components/SEOHead";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -274,6 +275,15 @@ const ArtistProfile = ({ artistId: propId }: ArtistProfileProps = {}) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      {artist && (
+        <SEOHead
+          title={`${artist.nome} — Artista ao Vivo`}
+          description={artist.bio ? artist.bio.slice(0, 155) : `Ouça ${artist.nome} ao vivo. Peça músicas e deixe gorjetas pelo Toca+.`}
+          image={artist.foto_url || undefined}
+          url={`https://tocamais.lovable.app/artista/${artist.id}`}
+          type="profile"
+        />
+      )}
       <header className="border-b border-border/40 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <Button variant="ghost" onClick={() => navigate("/home")}>

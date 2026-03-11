@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { SEOHead } from "@/components/SEOHead";
 import { supabase } from "@/integrations/supabase/client";
 import { waitForProfile } from "@/lib/auth-utils";
 import { PremiumOfferModal } from "@/components/PremiumOfferModal";
@@ -71,6 +72,11 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        title="Toca+ — Plataforma para Artistas Musicais"
+        description="Conecte-se com artistas ao vivo, peça músicas e deixe gorjetas digitais. A plataforma completa para músicos receberem gorjetas e gerenciarem pedidos."
+        url="https://tocamais.lovable.app/landing"
+      />
       {/* Sticky Header */}
       <StickyHeaderCTA onArtistClick={handleArtistClick} />
 
