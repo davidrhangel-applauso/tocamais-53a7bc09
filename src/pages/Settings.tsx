@@ -52,6 +52,54 @@ interface PixInfo {
   pix_tipo_chave: string | null;
 }
 
+const PushNotificationToggle = ({ userId }: { userId: string }) => {
+  const { isSupported, isSubscribed, loading: pushLoading, permission, subscribe, unsubscribe } = usePushNotifications(userId);
+
+  if (!isSupported) return null;
+
+  const handleToggle = async (checked: boolean) => {
+    if (checked) {
+      const ok = await subscribe();
+      if (ok) toast.success("Notificações push ativadas!");
+      else if (permission === "denied") toast.error("Permissão bloqueada. Habilite nas configurações do navegador.");
+      else toast.error("Erro ao ativar notificações");
+    } else {
+      const ok = await unsubscribe();
+      if (ok) toast.success("Notificações push desativadas");
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold flex items-center gap-2">
+        {isSubscribed ? <Bell className="w-5 h-5 text-primary" /> : <BellOff className="w-5 h-5 text-muted-foreground" />}
+        Notificações Push
+      </h3>
+      <div className="flex items-center justify-between">
+        <div>
+          <Label htmlFor="push-toggle">Receber notificações no dispositivo</Label>
+          <p className="text-sm text-muted-foreground">
+            {isSubscribed 
+              ? "Você receberá alertas de pedidos, gorjetas e mensagens" 
+              : "Ative para ser notificado em tempo real"}
+          </p>
+          {permission === "denied" && (
+            <p className="text-xs text-destructive mt-1">
+              Permissão bloqueada. Vá nas configurações do navegador para liberar.
+            </p>
+          )}
+        </div>
+        <Switch
+          id="push-toggle"
+          checked={isSubscribed}
+          onCheckedChange={handleToggle}
+          disabled={pushLoading || permission === "denied"}
+        />
+      </div>
+    </div>
+  );
+};
+
 const Settings = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
