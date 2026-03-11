@@ -570,6 +570,7 @@ export type Database = {
           nome: string
           pix_qr_code_url: string | null
           plano: Database["public"]["Enums"]["subscription_plan"]
+          slug: string | null
           spotify: string | null
           status_destaque: boolean | null
           telefone: string | null
@@ -595,6 +596,7 @@ export type Database = {
           nome: string
           pix_qr_code_url?: string | null
           plano?: Database["public"]["Enums"]["subscription_plan"]
+          slug?: string | null
           spotify?: string | null
           status_destaque?: boolean | null
           telefone?: string | null
@@ -620,6 +622,7 @@ export type Database = {
           nome?: string
           pix_qr_code_url?: string | null
           plano?: Database["public"]["Enums"]["subscription_plan"]
+          slug?: string | null
           spotify?: string | null
           status_destaque?: boolean | null
           telefone?: string | null
@@ -816,6 +819,7 @@ export type Database = {
         }
         Returns: string
       }
+      generate_slug: { Args: { input_name: string }; Returns: string }
       get_artist_active_checkin: {
         Args: { artist_id: string }
         Returns: {
@@ -894,6 +898,7 @@ export type Database = {
       is_artist_pro: { Args: { artist_id: string }; Returns: boolean }
       is_client: { Args: { user_id: string }; Returns: boolean }
       is_estabelecimento: { Args: { user_id: string }; Returns: boolean }
+      unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

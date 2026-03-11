@@ -25,6 +25,7 @@ import ProSales from "./pages/ProSales";
 import TermosDeUso from "./pages/TermosDeUso";
 import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import NotFound from "./pages/NotFound";
+import ArtistBySlug from "./pages/ArtistBySlug";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,8 @@ const App = () => (
             <Route path="/instrucoes" element={<Instructions />} />
             <Route path="/termos" element={<TermosDeUso />} />
             <Route path="/privacidade" element={<PoliticaPrivacidade />} />
+            {/* Friendly artist URL - must be before catch-all */}
+            <Route path="/:slug" element={<ArtistBySlug />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

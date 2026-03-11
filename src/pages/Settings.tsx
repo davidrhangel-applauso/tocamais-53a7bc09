@@ -41,6 +41,7 @@ interface Profile {
   pix_qr_code_url: string | null;
   latitude: number | null;
   longitude: number | null;
+  slug: string | null;
 }
 
 interface PixInfo {
@@ -70,7 +71,7 @@ const Settings = () => {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, nome, bio, foto_url, foto_capa_url, cidade, estilo_musical, tipo, instagram, youtube, spotify, link_pix, ativo_ao_vivo, pix_qr_code_url, latitude, longitude")
+        .select("id, nome, bio, foto_url, foto_capa_url, cidade, estilo_musical, tipo, instagram, youtube, spotify, link_pix, ativo_ao_vivo, pix_qr_code_url, latitude, longitude, slug")
         .eq("id", user.id)
         .single();
 
@@ -119,6 +120,7 @@ const Settings = () => {
           pix_qr_code_url: profile.pix_qr_code_url,
           latitude: profile.latitude,
           longitude: profile.longitude,
+          slug: profile.slug,
         })
         .eq("id", profile.id);
 
@@ -202,7 +204,7 @@ const Settings = () => {
 
             {/* Profile QR Code - Only for artists */}
             {profile.tipo === "artista" && (
-              <ProfileQRCode artistId={profile.id} artistName={profile.nome} />
+              <ProfileQRCode artistId={profile.id} artistName={profile.nome} slug={profile.slug} />
             )}
 
             {/* Basic Info */}
@@ -217,6 +219,32 @@ const Settings = () => {
                   onChange={(e) => setProfile({ ...profile, nome: e.target.value })}
                 />
               </div>
+
+              {/* URL personalizada - Only for artists */}
+              {profile.tipo === "artista" && (
+                <div className="space-y-2">
+                  <Label htmlFor="slug">URL Personalizada</Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">tocamais.app/</span>
+                    <Input
+                      id="slug"
+                      type="text"
+                      placeholder="seu-nome"
+                      value={profile.slug || ""}
+                      onChange={(e) => {
+                        const value = e.target.value
+                          .toLowerCase()
+                          .replace(/[^a-z0-9-]/g, '')
+                          .replace(/-+/g, '-');
+                        setProfile({ ...profile, slug: value });
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Apenas letras minúsculas, números e hífens. Ex: joao-musico
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="cidade">Cidade</Label>

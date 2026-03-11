@@ -1,49 +1,51 @@
 
 
-## Plano: URLs amigáveis para perfis de artistas (`tocamais.app/nomedoartista`)
+## Adicionar edição de perfil ao painel do estabelecimento
 
-### Resumo
+### Problema
+A página de Configurações (`Settings.tsx`) é exclusiva para artistas -- quase todos os campos (PIX, estilo musical, redes sociais, status ao vivo) são condicionados a `profile.tipo === "artista"`. Estabelecimentos não têm como editar nome, foto, bio, endereço ou telefone de dentro do painel.
 
-Sim, é possível! A ideia é adicionar um campo `slug` (apelido único para URL) na tabela `profiles` e criar uma rota `/:slug` que carrega o perfil do artista. Assim, cada artista terá uma URL como `tocamais.app/joaomusico`.
+### Solução
 
-### Como funciona
-
-1. **Novo campo `slug`** na tabela `profiles` — texto único, gerado automaticamente a partir do nome do artista (ex: "João Músico" → `joao-musico`), editável nas configurações.
-
-2. **Nova rota `/:slug`** no `App.tsx` — posicionada **antes** da rota catch-all `*`, mas **depois** de todas as rotas fixas (`/auth`, `/painel`, `/home`, etc.) para não conflitar.
-
-3. **Página de resolução de slug** — um componente que recebe o `slug`, busca o artista no banco e redireciona para `/artista/:id` (ou renderiza o perfil diretamente).
-
-4. **Atualizar links de compartilhamento** — quando o artista compartilha seu perfil (QR Code, redes sociais), usar a URL amigável.
-
-### Mudanças técnicas
-
-| Local | Ação |
-|---|---|
-| **Migração SQL** | Adicionar coluna `slug` (text, unique, nullable) na tabela `profiles`. Criar função para gerar slug automaticamente no `handle_new_user`. |
-| **`src/App.tsx`** | Adicionar rota `/:slug` antes do catch-all `*` |
-| **Novo: `src/pages/ArtistBySlug.tsx`** | Componente que busca artista pelo slug e renderiza o perfil ou redireciona |
-| **`src/pages/Settings.tsx`** | Campo para o artista personalizar seu slug/URL |
-| **Links de navegação** | Atualizar `Home.tsx`, `SearchArtists.tsx`, `NearbyArtists.tsx` para usar `/slug` quando disponível |
-| **`src/components/ProfileQRCode.tsx`** | Gerar QR code com URL amigável |
-
-### Pontos de atenção
-
-- **Conflito de rotas**: O slug não pode ser igual a rotas existentes (`auth`, `painel`, `home`, `admin`, etc.). Validação necessária no backend.
-- **Unicidade**: Dois artistas não podem ter o mesmo slug. Se houver conflito, adicionar número (ex: `joao-musico-2`).
-- **Caracteres**: Slug só aceita letras minúsculas, números e hífens.
-- **Retrocompatibilidade**: A rota `/artista/:id` continua funcionando normalmente.
-
-### Exemplo de fluxo
+Adicionar uma nova aba **"Perfil"** ao `EstabelecimentoPanel.tsx` com formulário de edição inline. Os campos já existem na tabela `profiles` do banco de dados (não é necessário criar migrações).
 
 ```text
-Usuário acessa: tocamais.app/banda-rock
-         ↓
-Rota /:slug captura "banda-rock"
-         ↓
-Busca no banco: SELECT id FROM profiles WHERE slug = 'banda-rock' AND tipo = 'artista'
-         ↓
-Encontrou → Renderiza perfil do artista
-Não encontrou → Mostra página 404
+Tabs do Estabelecimento (6 abas):
+[ Pedidos ] [ Relatórios ] [ Perfil ] [ Avaliações ] [ Histórico ] [ QR Code ]
+                             ↑ NOVO
 ```
+
+### Campos editáveis na aba Perfil
+
+| Campo | Tipo | Já existe no banco |
+|---|---|---|
+| Nome | Input text | sim (`nome`) |
+| Bio / Descrição | Textarea | sim (`bio`) |
+| Foto de perfil | AvatarUpload (componente existente) | sim (`foto_url`) |
+| Foto de capa | CoverPhotoUpload (componente existente) | sim (`foto_capa_url`) |
+| Cidade | Input text | sim (`cidade`) |
+| Endereço completo | Input text | sim (`endereco`) |
+| Telefone | Input text | sim (`telefone`) |
+| Tipo de estabelecimento | Select (bar, restaurante, casa_noturna, etc.) | sim (`tipo_estabelecimento`) |
+
+### Detalhes técnicos
+
+**Arquivo modificado: `src/pages/EstabelecimentoPanel.tsx`**
+
+1. Adicionar estados para edição do perfil (`editProfile`, `saving`)
+2. Adicionar a aba "Perfil" na `TabsList` (mudar grid de 5 para 6 colunas)
+3. Criar `TabsContent value="perfil"` com:
+   - `AvatarUpload` (importado de `@/components/AvatarUpload`)
+   - `CoverPhotoUpload` (importado de `@/components/CoverPhotoUpload`)
+   - Campos de texto para nome, bio, cidade, endereco, telefone
+   - Select para `tipo_estabelecimento`
+   - Botão "Salvar" que faz `supabase.from('profiles').update(...)` nos campos editados
+4. Após salvar, atualizar o estado `profile` local para refletir as mudanças no header
+5. Adicionar import de `Pencil` (ou `Edit`) do lucide-react para o ícone da aba
+
+**Nenhuma migração necessária** -- todos os campos já existem na tabela `profiles`.
+
+**Componentes reutilizados** (zero código novo de upload):
+- `AvatarUpload` -- já trata upload para storage e retorna URL
+- `CoverPhotoUpload` -- idem para foto de capa
 
