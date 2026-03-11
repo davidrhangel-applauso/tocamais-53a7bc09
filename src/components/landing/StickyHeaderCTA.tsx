@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Download } from "lucide-react";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
+import logoTocaMais from "@/assets/logo-tocamais.png";
 
 interface StickyHeaderCTAProps {
   onArtistClick: () => void;
