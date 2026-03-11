@@ -87,9 +87,7 @@ const Index = () => {
           <div className="flex flex-col items-center gap-3">
             <div className="relative">
               <div className="absolute -inset-4 rounded-full bg-primary/20 blur-xl" />
-              <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary via-primary to-accent shadow-2xl">
-                <Music className="h-10 w-10 text-primary-foreground" />
-              </div>
+              <img src={logoTocaMais} alt="Toca Mais" className="relative h-20 w-20 rounded-full shadow-2xl" />
             </div>
             <h1 className="text-5xl font-bold">
               <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
