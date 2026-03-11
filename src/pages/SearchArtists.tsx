@@ -271,7 +271,7 @@ const SearchArtists = () => {
                   <Card 
                     key={artist.id}
                     className="cursor-pointer hover:border-primary/40 transition-all hover:shadow-lg"
-                    onClick={() => navigate(`/artista/${artist.id}`)}
+                    onClick={() => navigate(getArtistUrl(artist))}
                   >
                     <CardContent className="flex items-center gap-4 p-6">
                       <Avatar className="w-16 h-16">

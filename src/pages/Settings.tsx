@@ -76,6 +76,13 @@ const Settings = () => {
         .single();
 
       if (error) throw error;
+      
+      // Redirect estabelecimentos to their panel profile tab
+      if (data.tipo === "estabelecimento") {
+        navigate("/painel-local?tab=perfil", { replace: true });
+        return;
+      }
+      
       setProfile(data as Profile);
 
       // Load PIX info from separate secure table

@@ -215,7 +215,7 @@ const Home = () => {
                     <Card
                       key={artist.id}
                       className="hover:shadow-glow transition-all duration-300 cursor-pointer border-primary/20"
-                      onClick={() => navigate(`/artista/${artist.id}`)}
+                      onClick={() => navigate(getArtistUrl(artist))}
                     >
                       <CardContent className="p-6">
                         <div className="flex items-start gap-4">
@@ -248,7 +248,7 @@ const Home = () => {
                   <Card
                     key={artist.id}
                     className="hover:shadow-lg transition-all duration-300 cursor-pointer"
-                    onClick={() => navigate(`/artista/${artist.id}`)}
+                    onClick={() => navigate(getArtistUrl(artist))}
                   >
                     <CardContent className="p-6">
                       <div className="flex items-start gap-4">
