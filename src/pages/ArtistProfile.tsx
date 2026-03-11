@@ -67,8 +67,13 @@ interface ActiveSetlist {
   nome: string;
 }
 
-const ArtistProfile = () => {
-  const { id } = useParams();
+interface ArtistProfileProps {
+  artistId?: string;
+}
+
+const ArtistProfile = ({ artistId: propId }: ArtistProfileProps = {}) => {
+  const { id: paramId } = useParams();
+  const id = propId || paramId;
   const navigate = useNavigate();
   const sessionId = useSessionId();
   const [artist, setArtist] = useState<Artist | null>(null);
