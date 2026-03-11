@@ -23,7 +23,6 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { useEffect, useState } from "react";
 import { useAdmin } from "@/hooks/useAdmin";
 
@@ -192,8 +191,7 @@ export function AppSidebar({ artistName, artistPhoto, ativoAoVivo }: AppSidebarP
 
       <SidebarFooter className="border-t border-border/40 p-4 space-y-2">
         <div className="flex items-center justify-between">
-          <ThemeToggle />
-          {!collapsed && <span className="text-sm text-muted-foreground">Tema</span>}
+          {!collapsed && <span className="text-sm text-muted-foreground">Toca+</span>}
         </div>
         <Button 
           variant="outline" 
