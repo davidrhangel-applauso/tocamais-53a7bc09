@@ -12,6 +12,7 @@ import logoTocaMais from "@/assets/logo-tocamais.png";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import { waitForProfile } from "@/lib/auth-utils";
+import { ADMIN_USER_IDS, getArtistUrl } from "@/lib/constants";
 
 interface Artist {
   id: string;
