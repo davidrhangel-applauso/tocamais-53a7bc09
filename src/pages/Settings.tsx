@@ -244,7 +244,7 @@ const Settings = () => {
                     Apenas letras minúsculas, números e hífens. Ex: joao-musico
                   </p>
                 </div>
-              )
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="cidade">Cidade</Label>
