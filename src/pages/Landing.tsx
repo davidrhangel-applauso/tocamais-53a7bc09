@@ -72,6 +72,11 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        title="Toca+ — Plataforma para Artistas Musicais"
+        description="Conecte-se com artistas ao vivo, peça músicas e deixe gorjetas digitais. A plataforma completa para músicos receberem gorjetas e gerenciarem pedidos."
+        url="https://tocamais.lovable.app/landing"
+      />
       {/* Sticky Header */}
       <StickyHeaderCTA onArtistClick={handleArtistClick} />
 
