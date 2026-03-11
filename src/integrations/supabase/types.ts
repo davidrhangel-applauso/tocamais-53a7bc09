@@ -38,39 +38,6 @@ export type Database = {
         }
         Relationships: []
       }
-      artist_mercadopago_credentials: {
-        Row: {
-          access_token: string | null
-          artist_id: string
-          created_at: string | null
-          id: string
-          refresh_token: string | null
-          seller_id: string | null
-          token_expires_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          access_token?: string | null
-          artist_id: string
-          created_at?: string | null
-          id?: string
-          refresh_token?: string | null
-          seller_id?: string | null
-          token_expires_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          access_token?: string | null
-          artist_id?: string
-          created_at?: string | null
-          id?: string
-          refresh_token?: string | null
-          seller_id?: string | null
-          token_expires_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       artist_pix_info: {
         Row: {
           artist_id: string
@@ -862,10 +829,6 @@ export type Database = {
         Args: { artist_id: string }
         Returns: number
       }
-      get_artist_mercadopago_seller_id: {
-        Args: { p_artist_id: string }
-        Returns: string
-      }
       get_artist_pix_info: {
         Args: { p_artist_id: string }
         Returns: {
@@ -920,7 +883,6 @@ export type Database = {
         Args: { artist_id: string; estabelecimento_id: string }
         Returns: boolean
       }
-      has_mercadopago_linked: { Args: { artist_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
