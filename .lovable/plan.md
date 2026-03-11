@@ -1,51 +1,58 @@
 
 
-## Adicionar edição de perfil ao painel do estabelecimento
+## Auto-generate VAPID Keys + Complete Push Notification System
 
-### Problema
-A página de Configurações (`Settings.tsx`) é exclusiva para artistas -- quase todos os campos (PIX, estilo musical, redes sociais, status ao vivo) são condicionados a `profile.tipo === "artista"`. Estabelecimentos não têm como editar nome, foto, bio, endereço ou telefone de dentro do painel.
+### Approach
 
-### Solução
+VAPID keys will be generated automatically via an edge function using Web Crypto API and stored in the `admin_settings` table (which already exists and is admin-protected). No manual key entry needed.
 
-Adicionar uma nova aba **"Perfil"** ao `EstabelecimentoPanel.tsx` com formulário de edição inline. Os campos já existem na tabela `profiles` do banco de dados (não é necessário criar migrações).
+### Implementation Steps
 
-```text
-Tabs do Estabelecimento (6 abas):
-[ Pedidos ] [ Relatórios ] [ Perfil ] [ Avaliações ] [ Histórico ] [ QR Code ]
-                             ↑ NOVO
-```
+**1. Edge Function: `generate-vapid-keys`**
+- Uses Web Crypto API to generate P-256 ECDSA key pair
+- Converts to Base64URL format (VAPID standard)
+- Stores `vapid_public_key` and `vapid_private_key` in `admin_settings` table (using service role)
+- Only generates if keys don't already exist
+- Returns the public key
 
-### Campos editáveis na aba Perfil
+**2. Edge Function: `send-push-notification`**
+- Reads VAPID keys from `admin_settings` 
+- Receives `user_id`, `title`, `body`, `link` from the database trigger (already created)
+- Fetches all push subscriptions for the user
+- Signs and sends Web Push payloads using VAPID/ECDSA
+- Deletes expired/invalid subscriptions (410 responses)
 
-| Campo | Tipo | Já existe no banco |
-|---|---|---|
-| Nome | Input text | sim (`nome`) |
-| Bio / Descrição | Textarea | sim (`bio`) |
-| Foto de perfil | AvatarUpload (componente existente) | sim (`foto_url`) |
-| Foto de capa | CoverPhotoUpload (componente existente) | sim (`foto_capa_url`) |
-| Cidade | Input text | sim (`cidade`) |
-| Endereço completo | Input text | sim (`endereco`) |
-| Telefone | Input text | sim (`telefone`) |
-| Tipo de estabelecimento | Select (bar, restaurante, casa_noturna, etc.) | sim (`tipo_estabelecimento`) |
+**3. Edge Function: `get-vapid-public-key`**
+- Simple endpoint that returns the VAPID public key from `admin_settings`
+- Called by the frontend to configure `pushManager.subscribe()`
+- Auto-calls `generate-vapid-keys` if key doesn't exist yet
 
-### Detalhes técnicos
+**4. Service Worker: `public/sw-push.js`**
+- Listens for `push` events
+- Shows native OS notification with title, body, icon
+- Handles `notificationclick` to navigate to the correct page
+- Registered alongside VitePWA's service worker
 
-**Arquivo modificado: `src/pages/EstabelecimentoPanel.tsx`**
+**5. Frontend Hook: `usePushNotifications`**
+- Checks browser support (`serviceWorker` + `PushManager`)
+- Fetches VAPID public key from edge function
+- Requests notification permission
+- Subscribes via `pushManager.subscribe()` with the VAPID key
+- Saves subscription to `push_subscriptions` table
+- Provides `isSupported`, `isSubscribed`, `subscribe()`, `unsubscribe()` 
 
-1. Adicionar estados para edição do perfil (`editProfile`, `saving`)
-2. Adicionar a aba "Perfil" na `TabsList` (mudar grid de 5 para 6 colunas)
-3. Criar `TabsContent value="perfil"` com:
-   - `AvatarUpload` (importado de `@/components/AvatarUpload`)
-   - `CoverPhotoUpload` (importado de `@/components/CoverPhotoUpload`)
-   - Campos de texto para nome, bio, cidade, endereco, telefone
-   - Select para `tipo_estabelecimento`
-   - Botão "Salvar" que faz `supabase.from('profiles').update(...)` nos campos editados
-4. Após salvar, atualizar o estado `profile` local para refletir as mudanças no header
-5. Adicionar import de `Pencil` (ou `Edit`) do lucide-react para o ícone da aba
+**6. UI Integration**
+- Add "Ativar Notificações Push" toggle in `Settings.tsx` (for artists)
+- Add notification prompt banner in `ArtistPanel.tsx` header
+- Show permission state feedback
 
-**Nenhuma migração necessária** -- todos os campos já existem na tabela `profiles`.
+**7. VitePWA Config Update**
+- Add `importScripts` or update service worker to include push handler
 
-**Componentes reutilizados** (zero código novo de upload):
-- `AvatarUpload` -- já trata upload para storage e retorna URL
-- `CoverPhotoUpload` -- idem para foto de capa
+### Key Technical Details
+- VAPID key generation uses standard `crypto.subtle.generateKey('ECDSA', P-256)` — no npm dependencies needed
+- Web Push signing uses JWT (VAPID) with ECDSA-P256 — implemented in pure Deno crypto
+- Keys stored in `admin_settings` with RLS (only admins can see private key; public key served via edge function)
+- The DB trigger on `notificacoes` already exists from the previous migration
+- Add RLS policy for service role to read `admin_settings` in the edge function context
 
