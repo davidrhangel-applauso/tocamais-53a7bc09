@@ -46,7 +46,7 @@ const SearchArtists = () => {
     try {
       let query = supabase
         .from("profiles")
-        .select("id, nome, estilo_musical, foto_url, bio, ativo_ao_vivo")
+        .select("id, nome, estilo_musical, foto_url, bio, ativo_ao_vivo, slug")
         .eq("tipo", "artista")
         .not("id", "in", `(${ADMIN_USER_IDS.join(",")})`);
 
