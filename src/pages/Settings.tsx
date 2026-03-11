@@ -120,6 +120,7 @@ const Settings = () => {
           pix_qr_code_url: profile.pix_qr_code_url,
           latitude: profile.latitude,
           longitude: profile.longitude,
+          slug: profile.slug,
         })
         .eq("id", profile.id);
 
