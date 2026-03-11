@@ -220,6 +220,32 @@ const Settings = () => {
                 />
               </div>
 
+              {/* URL personalizada - Only for artists */}
+              {profile.tipo === "artista" && (
+                <div className="space-y-2">
+                  <Label htmlFor="slug">URL Personalizada</Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">tocamais.app/</span>
+                    <Input
+                      id="slug"
+                      type="text"
+                      placeholder="seu-nome"
+                      value={profile.slug || ""}
+                      onChange={(e) => {
+                        const value = e.target.value
+                          .toLowerCase()
+                          .replace(/[^a-z0-9-]/g, '')
+                          .replace(/-+/g, '-');
+                        setProfile({ ...profile, slug: value });
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Apenas letras minúsculas, números e hífens. Ex: joao-musico
+                  </p>
+                </div>
+              )
+
               <div className="space-y-2">
                 <Label htmlFor="cidade">Cidade</Label>
                 <Input
