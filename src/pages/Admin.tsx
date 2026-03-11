@@ -159,7 +159,7 @@ export default function Admin() {
       await supabase.from("notificacoes").delete().eq("usuario_id", artist.id);
       await supabase.from("musicas_repertorio").delete().eq("artista_id", artist.id);
       await supabase.from("artist_pix_info").delete().eq("artist_id", artist.id);
-      await supabase.from("artist_mercadopago_credentials").delete().eq("artist_id", artist.id);
+      
       await supabase.from("artist_subscriptions").delete().eq("artista_id", artist.id);
       
       // Finally delete the profile
