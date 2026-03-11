@@ -41,6 +41,7 @@ interface Profile {
   pix_qr_code_url: string | null;
   latitude: number | null;
   longitude: number | null;
+  slug: string | null;
 }
 
 interface PixInfo {
