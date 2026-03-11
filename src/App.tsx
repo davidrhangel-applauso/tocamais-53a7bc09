@@ -25,6 +25,7 @@ import ProSales from "./pages/ProSales";
 import TermosDeUso from "./pages/TermosDeUso";
 import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import NotFound from "./pages/NotFound";
+import ArtistBySlug from "./pages/ArtistBySlug";
 
 const queryClient = new QueryClient();
 
