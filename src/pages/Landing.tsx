@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { SEOHead } from "@/components/SEOHead";
 import { supabase } from "@/integrations/supabase/client";
 import { waitForProfile } from "@/lib/auth-utils";
 import { PremiumOfferModal } from "@/components/PremiumOfferModal";

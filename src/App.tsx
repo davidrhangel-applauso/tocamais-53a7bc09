@@ -70,6 +70,7 @@ const App = () => (
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>
+    </HelmetProvider>
   </ErrorBoundary>
 );
 
