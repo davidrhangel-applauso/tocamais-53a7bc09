@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Music, Search, Building2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { waitForProfile } from "@/lib/auth-utils";
+import logoTocaMais from "@/assets/logo-tocamais.png";
 import { PremiumOfferModal } from "@/components/PremiumOfferModal";
 import { AuthRequiredDialog } from "@/components/AuthRequiredDialog";
 import heroImage from "@/assets/hero-concert.jpg";
