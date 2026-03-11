@@ -22,6 +22,7 @@ interface Artist {
   foto_url: string;
   status_destaque: boolean;
   ativo_ao_vivo: boolean;
+  slug: string | null;
 }
 
 const Home = () => {
