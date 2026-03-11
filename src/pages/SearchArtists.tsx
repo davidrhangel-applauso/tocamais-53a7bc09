@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Music, Search, ArrowLeft, Loader2, Filter } from "lucide-react";
 import { toast } from "sonner";
+import { ADMIN_USER_IDS, getArtistUrl } from "@/lib/constants";
 
 interface Artist {
   id: string;
@@ -17,13 +18,8 @@ interface Artist {
   foto_url: string | null;
   bio: string | null;
   ativo_ao_vivo: boolean | null;
+  slug: string | null;
 }
-
-// IDs dos administradores que devem ser ocultados da lista de artistas
-const ADMIN_USER_IDS = [
-  "0120d3e5-2c0c-4115-a27f-94dcf5e7ae7d",
-  "ae4abf4e-d360-49a5-ad3e-9cb3a710ca26"
-];
 
 const SearchArtists = () => {
   const navigate = useNavigate();
@@ -50,7 +46,7 @@ const SearchArtists = () => {
     try {
       let query = supabase
         .from("profiles")
-        .select("id, nome, estilo_musical, foto_url, bio, ativo_ao_vivo")
+        .select("id, nome, estilo_musical, foto_url, bio, ativo_ao_vivo, slug")
         .eq("tipo", "artista")
         .not("id", "in", `(${ADMIN_USER_IDS.join(",")})`);
 
@@ -275,7 +271,7 @@ const SearchArtists = () => {
                   <Card 
                     key={artist.id}
                     className="cursor-pointer hover:border-primary/40 transition-all hover:shadow-lg"
-                    onClick={() => navigate(`/artista/${artist.id}`)}
+                    onClick={() => navigate(getArtistUrl(artist))}
                   >
                     <CardContent className="flex items-center gap-4 p-6">
                       <Avatar className="w-16 h-16">

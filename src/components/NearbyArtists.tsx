@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Loader2, Navigation, Music } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
+import { ADMIN_USER_IDS } from '@/lib/constants';
 
 type MusicStyle = Database['public']['Enums']['music_style'];
 
@@ -19,12 +20,6 @@ interface NearbyArtist {
   bio: string | null;
   distance_km: number;
 }
-
-// IDs dos administradores que devem ser ocultados da lista de artistas
-const ADMIN_USER_IDS = [
-  "0120d3e5-2c0c-4115-a27f-94dcf5e7ae7d",
-  "ae4abf4e-d360-49a5-ad3e-9cb3a710ca26"
-];
 
 export const NearbyArtists = () => {
   const navigate = useNavigate();

@@ -12,6 +12,7 @@ import logoTocaMais from "@/assets/logo-tocamais.png";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import { waitForProfile } from "@/lib/auth-utils";
+import { ADMIN_USER_IDS, getArtistUrl } from "@/lib/constants";
 
 interface Artist {
   id: string;
@@ -22,6 +23,7 @@ interface Artist {
   foto_url: string;
   status_destaque: boolean;
   ativo_ao_vivo: boolean;
+  slug: string | null;
 }
 
 const Home = () => {
@@ -91,12 +93,6 @@ const Home = () => {
       setAuthLoading(false);
     }
   };
-
-  // IDs dos administradores que devem ser ocultados da lista de artistas
-  const ADMIN_USER_IDS = [
-    "0120d3e5-2c0c-4115-a27f-94dcf5e7ae7d",
-    "ae4abf4e-d360-49a5-ad3e-9cb3a710ca26"
-  ];
 
   const fetchArtists = async () => {
     try {
@@ -219,7 +215,7 @@ const Home = () => {
                     <Card
                       key={artist.id}
                       className="hover:shadow-glow transition-all duration-300 cursor-pointer border-primary/20"
-                      onClick={() => navigate(`/artista/${artist.id}`)}
+                      onClick={() => navigate(getArtistUrl(artist))}
                     >
                       <CardContent className="p-6">
                         <div className="flex items-start gap-4">
@@ -252,7 +248,7 @@ const Home = () => {
                   <Card
                     key={artist.id}
                     className="hover:shadow-lg transition-all duration-300 cursor-pointer"
-                    onClick={() => navigate(`/artista/${artist.id}`)}
+                    onClick={() => navigate(getArtistUrl(artist))}
                   >
                     <CardContent className="p-6">
                       <div className="flex items-start gap-4">

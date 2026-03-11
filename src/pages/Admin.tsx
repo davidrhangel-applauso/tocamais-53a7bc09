@@ -368,7 +368,7 @@ export default function Admin() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => navigate(`/artista/${artist.id}`)}
+                                  onClick={() => navigate(`/artista/${artist.id}`)} // Admin uses UUID for reliability
                                   title="Ver perfil"
                                 >
                                   <Eye className="w-4 h-4" />

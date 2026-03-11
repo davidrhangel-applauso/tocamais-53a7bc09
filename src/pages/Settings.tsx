@@ -9,7 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Constants, type Database } from "@/integrations/supabase/types";
 import { AvatarUpload } from "@/components/AvatarUpload";
@@ -76,6 +77,13 @@ const Settings = () => {
         .single();
 
       if (error) throw error;
+      
+      // Redirect estabelecimentos to their panel profile tab
+      if (data.tipo === "estabelecimento") {
+        navigate("/painel-local?tab=perfil", { replace: true });
+        return;
+      }
+      
       setProfile(data as Profile);
 
       // Load PIX info from separate secure table
@@ -456,6 +464,63 @@ const Settings = () => {
                 <Save className="w-4 h-4 mr-2" />
                 {saving ? "Salvando..." : "Salvar Alterações"}
               </Button>
+            </div>
+
+            {/* Delete Account */}
+            <div className="border-t border-destructive/20 pt-6 mt-6">
+              <h3 className="text-lg font-semibold text-destructive mb-2">Zona de Perigo</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Ao excluir sua conta, todos os seus dados serão permanentemente removidos. Esta ação não pode ser desfeita.
+              </p>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="gap-2">
+                    <Trash2 className="w-4 h-4" />
+                    Excluir Minha Conta
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir conta permanentemente?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação é irreversível. Todos os seus dados, incluindo perfil, pedidos, gorjetas, mensagens e repertório serão excluídos permanentemente.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      onClick={async () => {
+                        try {
+                          const { data: { session } } = await supabase.auth.getSession();
+                          if (!session) throw new Error("Sessão não encontrada");
+                          
+                          const response = await fetch(
+                            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`,
+                            {
+                              method: "POST",
+                              headers: {
+                                Authorization: `Bearer ${session.access_token}`,
+                                "Content-Type": "application/json",
+                              },
+                            }
+                          );
+                          
+                          if (!response.ok) throw new Error("Erro ao excluir conta");
+                          
+                          await supabase.auth.signOut();
+                          toast.success("Conta excluída com sucesso");
+                          navigate("/auth");
+                        } catch (error: any) {
+                          toast.error("Erro ao excluir conta: " + error.message);
+                        }
+                      }}
+                    >
+                      Excluir Permanentemente
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </CardContent>
         </Card>
