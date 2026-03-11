@@ -1,54 +1,51 @@
 
 
-## Resultado da Análise
+## Adicionar edição de perfil ao painel do estabelecimento
 
-Revisei o código completo do fluxo de URLs amigáveis e encontrei **um problema importante** que precisa ser corrigido antes de o fluxo funcionar como esperado:
+### Problema
+A página de Configurações (`Settings.tsx`) é exclusiva para artistas -- quase todos os campos (PIX, estilo musical, redes sociais, status ao vivo) são condicionados a `profile.tipo === "artista"`. Estabelecimentos não têm como editar nome, foto, bio, endereço ou telefone de dentro do painel.
 
-### Problema: `ArtistBySlug.tsx` redireciona para `/artista/:id`
+### Solução
 
-O componente `ArtistBySlug` resolve o slug corretamente, mas depois **redireciona o usuário para `/artista/{uuid}`**, trocando a URL amigável pela URL com ID. Isso anula o propósito da feature — o usuário acessa `tocamais.app/banda-rock` mas acaba vendo `tocamais.app/artista/abc-123-uuid` no navegador.
+Adicionar uma nova aba **"Perfil"** ao `EstabelecimentoPanel.tsx` com formulário de edição inline. Os campos já existem na tabela `profiles` do banco de dados (não é necessário criar migrações).
 
-### Correção necessária
+```text
+Tabs do Estabelecimento (6 abas):
+[ Pedidos ] [ Relatórios ] [ Perfil ] [ Avaliações ] [ Histórico ] [ QR Code ]
+                             ↑ NOVO
+```
 
-Alterar `ArtistBySlug.tsx` para **renderizar diretamente** o `ArtistProfile` passando o `artistId` como prop, em vez de redirecionar. Isso exige uma pequena alteração no `ArtistProfile` para aceitar um `id` via prop além do `useParams`.
+### Campos editáveis na aba Perfil
 
-### Mudanças
-
-| Arquivo | Ação |
-|---|---|
-| `src/pages/ArtistProfile.tsx` | Aceitar prop opcional `artistId` e usar `artistId \|\| id` do `useParams` |
-| `src/pages/ArtistBySlug.tsx` | Renderizar `<ArtistProfile artistId={artistId} />` diretamente em vez de redirecionar |
+| Campo | Tipo | Já existe no banco |
+|---|---|---|
+| Nome | Input text | sim (`nome`) |
+| Bio / Descrição | Textarea | sim (`bio`) |
+| Foto de perfil | AvatarUpload (componente existente) | sim (`foto_url`) |
+| Foto de capa | CoverPhotoUpload (componente existente) | sim (`foto_capa_url`) |
+| Cidade | Input text | sim (`cidade`) |
+| Endereço completo | Input text | sim (`endereco`) |
+| Telefone | Input text | sim (`telefone`) |
+| Tipo de estabelecimento | Select (bar, restaurante, casa_noturna, etc.) | sim (`tipo_estabelecimento`) |
 
 ### Detalhes técnicos
 
-**`ArtistProfile.tsx`** (linha ~2, ~34):
-```tsx
-// Adicionar prop interface
-interface ArtistProfileProps {
-  artistId?: string;
-}
+**Arquivo modificado: `src/pages/EstabelecimentoPanel.tsx`**
 
-const ArtistProfile = ({ artistId: propId }: ArtistProfileProps) => {
-  const { id: paramId } = useParams();
-  const id = propId || paramId;
-  // ... resto do componente usa `id` normalmente
-```
+1. Adicionar estados para edição do perfil (`editProfile`, `saving`)
+2. Adicionar a aba "Perfil" na `TabsList` (mudar grid de 5 para 6 colunas)
+3. Criar `TabsContent value="perfil"` com:
+   - `AvatarUpload` (importado de `@/components/AvatarUpload`)
+   - `CoverPhotoUpload` (importado de `@/components/CoverPhotoUpload`)
+   - Campos de texto para nome, bio, cidade, endereco, telefone
+   - Select para `tipo_estabelecimento`
+   - Botão "Salvar" que faz `supabase.from('profiles').update(...)` nos campos editados
+4. Após salvar, atualizar o estado `profile` local para refletir as mudanças no header
+5. Adicionar import de `Pencil` (ou `Edit`) do lucide-react para o ícone da aba
 
-**`ArtistBySlug.tsx`** — simplificar para:
-```tsx
-if (artistId) {
-  return <ArtistProfile artistId={artistId} />;
-}
-```
+**Nenhuma migração necessária** -- todos os campos já existem na tabela `profiles`.
 
-Remover o `ArtistProfileWrapper` inteiramente.
-
-### Sobre a tela de Configurações
-
-O código para exibir e editar o slug está implementado corretamente em `Settings.tsx`:
-- Campo "URL Personalizada" com prefixo `tocamais.app/`
-- Sanitização de input (lowercase, sem caracteres especiais)
-- Valor salvo junto com o restante do perfil
-
-Não é possível testar via browser sem estar logado como artista, mas o código está correto.
+**Componentes reutilizados** (zero código novo de upload):
+- `AvatarUpload` -- já trata upload para storage e retorna URL
+- `CoverPhotoUpload` -- idem para foto de capa
 
