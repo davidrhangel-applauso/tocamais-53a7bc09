@@ -186,6 +186,51 @@ export type Database = {
           },
         ]
       }
+      avaliacoes_estabelecimentos: {
+        Row: {
+          cliente_id: string | null
+          comentario: string | null
+          created_at: string | null
+          estabelecimento_id: string
+          id: string
+          nota: number
+          session_id: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          comentario?: string | null
+          created_at?: string | null
+          estabelecimento_id: string
+          id?: string
+          nota: number
+          session_id: string
+        }
+        Update: {
+          cliente_id?: string | null
+          comentario?: string | null
+          created_at?: string | null
+          estabelecimento_id?: string
+          id?: string
+          nota?: number
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacoes_estabelecimentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_estabelecimentos_estabelecimento_id_fkey"
+            columns: ["estabelecimento_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       estabelecimento_checkins: {
         Row: {
           artista_id: string | null
