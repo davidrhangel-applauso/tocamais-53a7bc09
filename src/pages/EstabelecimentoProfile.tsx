@@ -10,11 +10,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Building2, MapPin, Music, User, Send, Star, ArrowLeft } from "lucide-react";
+import { Building2, MapPin, Music, User, Send, Star, ArrowLeft, DollarSign, Heart } from "lucide-react";
 import { useSessionId } from "@/hooks/useSessionId";
 import { useEstabelecimento } from "@/hooks/useEstabelecimento";
 import { RatingDialog } from "@/components/RatingDialog";
 import { ArtistRepertoireDisplay } from "@/components/ArtistRepertoireDisplay";
+import { TwoStepPixPaymentDialog } from "@/components/TwoStepPixPaymentDialog";
+
 const EstabelecimentoProfile = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -27,6 +29,59 @@ const EstabelecimentoProfile = () => {
   const [submitting, setSubmitting] = useState(false);
   const [showRatingDialog, setShowRatingDialog] = useState(false);
   const [lastCompletedCheckin, setLastCompletedCheckin] = useState<any>(null);
+  const [showTipDialog, setShowTipDialog] = useState(false);
+  const [artistPixInfo, setArtistPixInfo] = useState<{ pix_chave: string; pix_tipo_chave: string } | null>(null);
+  const [artistMusicas, setArtistMusicas] = useState<{ id: string; titulo: string; artista_original: string | null }[]>([]);
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
+
+  // Get current user
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setCurrentUser(data.user?.id || null);
+    });
+  }, []);
+
+  // Fetch artist PIX info when there's an active checkin
+  useEffect(() => {
+    const fetchPixInfo = async () => {
+      if (!activeCheckin?.artista_id) {
+        setArtistPixInfo(null);
+        return;
+      }
+      try {
+        const { data } = await supabase.rpc('get_artist_pix_info', { p_artist_id: activeCheckin.artista_id });
+        if (data && data.length > 0 && data[0].pix_chave) {
+          setArtistPixInfo(data[0]);
+        } else {
+          setArtistPixInfo(null);
+        }
+      } catch {
+        setArtistPixInfo(null);
+      }
+    };
+    fetchPixInfo();
+  }, [activeCheckin?.artista_id]);
+
+  // Fetch artist repertoire for TwoStepPixPaymentDialog
+  useEffect(() => {
+    const fetchMusicas = async () => {
+      if (!activeCheckin?.artista_id) {
+        setArtistMusicas([]);
+        return;
+      }
+      try {
+        const { data } = await supabase
+          .from('musicas_repertorio')
+          .select('id, titulo, artista_original')
+          .eq('artista_id', activeCheckin.artista_id)
+          .order('titulo');
+        setArtistMusicas(data || []);
+      } catch {
+        setArtistMusicas([]);
+      }
+    };
+    fetchMusicas();
+  }, [activeCheckin?.artista_id]);
 
   // Check if there's a recently completed checkin for rating
   useEffect(() => {
@@ -34,7 +89,6 @@ const EstabelecimentoProfile = () => {
       if (!id || !sessionId) return;
 
       try {
-        // Get completed checkins from last hour that haven't been rated
         const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
         
         const { data: checkins } = await supabase
@@ -47,7 +101,6 @@ const EstabelecimentoProfile = () => {
           .limit(1);
 
         if (checkins && checkins.length > 0) {
-          // Check if already rated
           const { data: existingRating } = await supabase
             .from('avaliacoes_artistas')
             .select('id')
@@ -143,6 +196,12 @@ const EstabelecimentoProfile = () => {
     ? estabelecimento.tipo_estabelecimento.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())
     : 'Estabelecimento';
 
+  const checkinForRating = lastCompletedCheckin || (activeCheckin ? {
+    id: activeCheckin.checkin_id,
+    artista_id: activeCheckin.artista_id,
+    artista_nome: activeCheckin.artista_nome,
+  } : null);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header with cover photo */}
@@ -166,9 +225,9 @@ const EstabelecimentoProfile = () => {
         </Button>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 -mt-16 relative z-10 pb-8">
+      <div className="max-w-lg mx-auto px-4 -mt-16 relative z-10 pb-8 space-y-4">
         {/* Profile info */}
-        <Card className="mb-4">
+        <Card>
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">
               <Avatar className="w-20 h-20 border-4 border-background shadow-lg">
@@ -206,29 +265,67 @@ const EstabelecimentoProfile = () => {
           </CardContent>
         </Card>
 
-        {/* Current artist */}
-        <Card className="mb-4">
+        {/* Current artist - enhanced */}
+        <Card className={activeCheckin ? "border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5" : ""}>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Music className="w-5 h-5 text-primary" />
               Artista no Palco
+              {activeCheckin && (
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {activeCheckin ? (
-              <div className="flex items-center gap-3">
-                <Avatar className="w-12 h-12">
-                  <AvatarImage src={activeCheckin.artista_foto || undefined} />
-                  <AvatarFallback>
-                    <User className="w-5 h-5" />
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium">{activeCheckin.artista_nome}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Tocando agora 🎵
-                  </p>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-14 h-14 border-2 border-primary/20">
+                    <AvatarImage src={activeCheckin.artista_foto || undefined} />
+                    <AvatarFallback>
+                      <User className="w-6 h-6" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <p className="font-semibold text-lg">{activeCheckin.artista_nome}</p>
+                    <p className="text-sm text-muted-foreground">
+                      🎵 Tocando agora
+                    </p>
+                  </div>
                 </div>
+
+                {/* Action buttons */}
+                <div className="grid grid-cols-2 gap-2">
+                  {artistPixInfo && (
+                    <Button
+                      onClick={() => setShowTipDialog(true)}
+                      className="bg-gradient-to-r from-amber-500 to-yellow-400 text-black hover:from-amber-600 hover:to-yellow-500"
+                    >
+                      <Heart className="w-4 h-4 mr-1" />
+                      Enviar Gorjeta
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (checkinForRating) {
+                        setShowRatingDialog(true);
+                      }
+                    }}
+                  >
+                    <Star className="w-4 h-4 mr-1" />
+                    Avaliar
+                  </Button>
+                </div>
+
+                {artistPixInfo && (
+                  <p className="text-xs text-center text-muted-foreground">
+                    💰 0% de taxa — 100% vai para o artista
+                  </p>
+                )}
               </div>
             ) : (
               <div className="text-center py-4 text-muted-foreground">
@@ -252,7 +349,10 @@ const EstabelecimentoProfile = () => {
         {/* Request form */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Pedir Música</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Send className="w-5 h-5 text-primary" />
+              Pedir Música
+            </CardTitle>
             <CardDescription>
               {activeCheckin 
                 ? "Faça seu pedido para o artista!" 
@@ -314,13 +414,13 @@ const EstabelecimentoProfile = () => {
           </CardContent>
         </Card>
 
-        {/* Rating prompt */}
+        {/* Rating prompt for completed checkin */}
         {lastCompletedCheckin && (
-          <Card className="mt-4 border-primary/20 bg-primary/5">
+          <Card className="border-primary/20 bg-primary/5">
             <CardContent className="pt-6">
               <div className="text-center">
                 <Star className="w-8 h-8 mx-auto text-yellow-500 mb-2" />
-                <h3 className="font-semibold mb-1">Avalie o artista!</h3>
+                <h3 className="font-semibold mb-1">Avalie a apresentação!</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   {lastCompletedCheckin.artista_nome || 'O artista'} acabou de tocar. Que tal dar uma nota?
                 </p>
@@ -333,13 +433,31 @@ const EstabelecimentoProfile = () => {
         )}
       </div>
 
+      {/* Rating Dialog - now supports artist + establishment rating */}
       <RatingDialog
         open={showRatingDialog}
         onOpenChange={setShowRatingDialog}
-        checkin={lastCompletedCheckin}
+        checkin={checkinForRating}
         sessionId={sessionId}
         estabelecimentoId={id || ''}
+        estabelecimentoNome={estabelecimento.nome}
+        showEstabelecimentoRating={true}
       />
+
+      {/* Tip Dialog */}
+      {artistPixInfo && activeCheckin && (
+        <TwoStepPixPaymentDialog
+          open={showTipDialog}
+          onOpenChange={setShowTipDialog}
+          artistaId={activeCheckin.artista_id || ''}
+          artistaNome={activeCheckin.artista_nome || ''}
+          pixChave={artistPixInfo.pix_chave}
+          pixTipoChave={artistPixInfo.pix_tipo_chave}
+          clienteId={currentUser}
+          sessionId={sessionId}
+          musicas={artistMusicas}
+        />
+      )}
     </div>
   );
 };

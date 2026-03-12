@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Star } from "lucide-react";
+import { Star, Music, Building2, ArrowRight } from "lucide-react";
 
 interface RatingDialogProps {
   open: boolean;
@@ -23,7 +23,53 @@ interface RatingDialogProps {
   } | null;
   sessionId: string;
   estabelecimentoId: string;
+  estabelecimentoNome?: string;
+  showEstabelecimentoRating?: boolean;
 }
+
+const StarRating = ({
+  rating,
+  hoveredRating,
+  onRate,
+  onHover,
+  onLeave,
+}: {
+  rating: number;
+  hoveredRating: number;
+  onRate: (star: number) => void;
+  onHover: (star: number) => void;
+  onLeave: () => void;
+}) => (
+  <div className="flex gap-1">
+    {[1, 2, 3, 4, 5].map((star) => (
+      <button
+        key={star}
+        type="button"
+        className="p-1 transition-transform hover:scale-110"
+        onMouseEnter={() => onHover(star)}
+        onMouseLeave={onLeave}
+        onClick={() => onRate(star)}
+      >
+        <Star
+          className={`w-9 h-9 ${
+            star <= (hoveredRating || rating)
+              ? 'fill-yellow-400 text-yellow-400'
+              : 'text-muted-foreground'
+          }`}
+        />
+      </button>
+    ))}
+  </div>
+);
+
+const ratingLabels: Record<number, string> = {
+  0: "Clique para avaliar",
+  1: "Ruim",
+  2: "Regular",
+  3: "Bom",
+  4: "Muito bom",
+  5: "Excelente!",
+};
 
 export const RatingDialog = ({
   open,
@@ -31,21 +77,41 @@ export const RatingDialog = ({
   checkin,
   sessionId,
   estabelecimentoId,
+  estabelecimentoNome,
+  showEstabelecimentoRating = false,
 }: RatingDialogProps) => {
-  const [rating, setRating] = useState(0);
-  const [hoveredRating, setHoveredRating] = useState(0);
-  const [comentario, setComentario] = useState("");
+  // Step: 'artista' or 'estabelecimento'
+  const [step, setStep] = useState<'artista' | 'estabelecimento'>('artista');
+
+  // Artist rating
+  const [artistRating, setArtistRating] = useState(0);
+  const [artistHover, setArtistHover] = useState(0);
+  const [artistComment, setArtistComment] = useState("");
+
+  // Establishment rating
+  const [estabRating, setEstabRating] = useState(0);
+  const [estabHover, setEstabHover] = useState(0);
+  const [estabComment, setEstabComment] = useState("");
+
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async () => {
-    if (rating === 0) {
-      toast.error("Selecione uma nota");
-      return;
-    }
+  const resetState = () => {
+    setStep('artista');
+    setArtistRating(0);
+    setArtistHover(0);
+    setArtistComment("");
+    setEstabRating(0);
+    setEstabHover(0);
+    setEstabComment("");
+  };
 
-    if (!checkin) return;
+  const handleClose = (open: boolean) => {
+    if (!open) resetState();
+    onOpenChange(open);
+  };
 
-    setSubmitting(true);
+  const submitArtistRating = async () => {
+    if (artistRating === 0 || !checkin) return;
 
     try {
       const { error } = await supabase
@@ -56,98 +122,204 @@ export const RatingDialog = ({
           artista_id: checkin.artista_id,
           artista_nome: checkin.artista_nome,
           session_id: sessionId,
-          nota: rating,
-          comentario: comentario.trim() || null,
+          nota: artistRating,
+          comentario: artistComment.trim() || null,
         });
 
       if (error) throw error;
-
-      toast.success("Avaliação enviada! Obrigado pelo feedback.");
-      onOpenChange(false);
-      setRating(0);
-      setComentario("");
+      return true;
     } catch (error: any) {
-      console.error('Error submitting rating:', error);
-      toast.error("Erro ao enviar avaliação. Tente novamente.");
-    } finally {
-      setSubmitting(false);
+      console.error('Error submitting artist rating:', error);
+      toast.error("Erro ao enviar avaliação do artista.");
+      return false;
+    }
+  };
+
+  const submitEstabRating = async () => {
+    if (estabRating === 0) return true; // skip if not rated
+
+    try {
+      const { error } = await supabase
+        .from('avaliacoes_estabelecimentos' as any)
+        .insert({
+          estabelecimento_id: estabelecimentoId,
+          session_id: sessionId,
+          nota: estabRating,
+          comentario: estabComment.trim() || null,
+        });
+
+      if (error) throw error;
+      return true;
+    } catch (error: any) {
+      console.error('Error submitting establishment rating:', error);
+      toast.error("Erro ao enviar avaliação do estabelecimento.");
+      return false;
+    }
+  };
+
+  const handleSubmitArtist = async () => {
+    if (artistRating === 0) {
+      toast.error("Selecione uma nota");
+      return;
+    }
+
+    setSubmitting(true);
+    const success = await submitArtistRating();
+    setSubmitting(false);
+
+    if (success) {
+      if (showEstabelecimentoRating && estabelecimentoNome) {
+        toast.success("Avaliação do artista enviada!");
+        setStep('estabelecimento');
+      } else {
+        toast.success("Avaliação enviada! Obrigado pelo feedback.");
+        handleClose(false);
+      }
+    }
+  };
+
+  const handleSubmitEstab = async () => {
+    if (estabRating === 0) {
+      toast.error("Selecione uma nota");
+      return;
+    }
+
+    setSubmitting(true);
+    const success = await submitEstabRating();
+    setSubmitting(false);
+
+    if (success) {
+      toast.success("Obrigado pelas avaliações! 🎉");
+      handleClose(false);
     }
   };
 
   const artistaName = checkin?.artista_nome || 'o artista';
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Avalie {artistaName}</DialogTitle>
-          <DialogDescription>
-            Como foi a apresentação? Sua opinião é importante!
-          </DialogDescription>
-        </DialogHeader>
+        {step === 'artista' ? (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Music className="w-5 h-5 text-primary" />
+                Avalie {artistaName}
+              </DialogTitle>
+              <DialogDescription>
+                Como foi a apresentação? Sua opinião é importante!
+                {showEstabelecimentoRating && (
+                  <span className="block mt-1 text-xs">Etapa 1 de 2</span>
+                )}
+              </DialogDescription>
+            </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Star rating */}
-          <div className="flex flex-col items-center gap-2">
-            <div className="flex gap-1">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  className="p-1 transition-transform hover:scale-110"
-                  onMouseEnter={() => setHoveredRating(star)}
-                  onMouseLeave={() => setHoveredRating(0)}
-                  onClick={() => setRating(star)}
+            <div className="space-y-6 py-4">
+              <div className="flex flex-col items-center gap-2">
+                <StarRating
+                  rating={artistRating}
+                  hoveredRating={artistHover}
+                  onRate={setArtistRating}
+                  onHover={setArtistHover}
+                  onLeave={() => setArtistHover(0)}
+                />
+                <p className="text-sm text-muted-foreground">{ratingLabels[artistRating]}</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="artist-comment">Comentário (opcional)</Label>
+                <Textarea
+                  id="artist-comment"
+                  value={artistComment}
+                  onChange={(e) => setArtistComment(e.target.value)}
+                  placeholder="Deixe um recado para o artista..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => handleClose(false)}
                 >
-                  <Star
-                    className={`w-10 h-10 ${
-                      star <= (hoveredRating || rating)
-                        ? 'fill-yellow-400 text-yellow-400'
-                        : 'text-muted-foreground'
-                    }`}
-                  />
-                </button>
-              ))}
+                  Pular
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleSubmitArtist}
+                  disabled={artistRating === 0 || submitting}
+                >
+                  {submitting ? "Enviando..." : (
+                    showEstabelecimentoRating ? (
+                      <>
+                        Avançar
+                        <ArrowRight className="w-4 h-4 ml-1" />
+                      </>
+                    ) : "Enviar Avaliação"
+                  )}
+                </Button>
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground">
-              {rating === 1 && "Ruim"}
-              {rating === 2 && "Regular"}
-              {rating === 3 && "Bom"}
-              {rating === 4 && "Muito bom"}
-              {rating === 5 && "Excelente!"}
-              {rating === 0 && "Clique para avaliar"}
-            </p>
-          </div>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-primary" />
+                Avalie {estabelecimentoNome || 'o estabelecimento'}
+              </DialogTitle>
+              <DialogDescription>
+                Como foi sua experiência no local?
+                <span className="block mt-1 text-xs">Etapa 2 de 2</span>
+              </DialogDescription>
+            </DialogHeader>
 
-          {/* Comment */}
-          <div className="space-y-2">
-            <Label htmlFor="comentario">Comentário (opcional)</Label>
-            <Textarea
-              id="comentario"
-              value={comentario}
-              onChange={(e) => setComentario(e.target.value)}
-              placeholder="Deixe um recado para o artista..."
-              rows={3}
-            />
-          </div>
+            <div className="space-y-6 py-4">
+              <div className="flex flex-col items-center gap-2">
+                <StarRating
+                  rating={estabRating}
+                  hoveredRating={estabHover}
+                  onRate={setEstabRating}
+                  onHover={setEstabHover}
+                  onLeave={() => setEstabHover(0)}
+                />
+                <p className="text-sm text-muted-foreground">{ratingLabels[estabRating]}</p>
+              </div>
 
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => onOpenChange(false)}
-            >
-              Pular
-            </Button>
-            <Button
-              className="flex-1"
-              onClick={handleSubmit}
-              disabled={rating === 0 || submitting}
-            >
-              {submitting ? "Enviando..." : "Enviar Avaliação"}
-            </Button>
-          </div>
-        </div>
+              <div className="space-y-2">
+                <Label htmlFor="estab-comment">Comentário (opcional)</Label>
+                <Textarea
+                  id="estab-comment"
+                  value={estabComment}
+                  onChange={(e) => setEstabComment(e.target.value)}
+                  placeholder="O que achou do local?"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    toast.success("Obrigado pela avaliação do artista! 🎉");
+                    handleClose(false);
+                  }}
+                >
+                  Pular
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleSubmitEstab}
+                  disabled={estabRating === 0 || submitting}
+                >
+                  {submitting ? "Enviando..." : "Enviar Avaliação"}
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
