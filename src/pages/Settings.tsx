@@ -45,6 +45,7 @@ interface Profile {
   latitude: number | null;
   longitude: number | null;
   slug: string | null;
+  mostrar_gorjetas_local: boolean;
 }
 
 interface PixInfo {
@@ -122,7 +123,7 @@ const Settings = () => {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, nome, bio, foto_url, foto_capa_url, cidade, estilo_musical, tipo, instagram, youtube, spotify, link_pix, ativo_ao_vivo, pix_qr_code_url, latitude, longitude, slug")
+        .select("id, nome, bio, foto_url, foto_capa_url, cidade, estilo_musical, tipo, instagram, youtube, spotify, link_pix, ativo_ao_vivo, pix_qr_code_url, latitude, longitude, slug, mostrar_gorjetas_local")
         .eq("id", user.id)
         .single();
 
@@ -179,6 +180,7 @@ const Settings = () => {
           latitude: profile.latitude,
           longitude: profile.longitude,
           slug: profile.slug,
+          mostrar_gorjetas_local: profile.mostrar_gorjetas_local,
         })
         .eq("id", profile.id);
 
@@ -461,6 +463,28 @@ const Settings = () => {
                     </p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Gorjeta Visibility for Establishments - Only for artists */}
+            {profile.tipo === "artista" && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  🏢 Estabelecimentos
+                </h3>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="mostrar_gorjetas_local">Mostrar gorjetas ao estabelecimento</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Permite que estabelecimentos onde você toca vejam os valores das gorjetas recebidas no local
+                    </p>
+                  </div>
+                  <Switch
+                    id="mostrar_gorjetas_local"
+                    checked={profile.mostrar_gorjetas_local}
+                    onCheckedChange={(checked) => setProfile({ ...profile, mostrar_gorjetas_local: checked })}
+                  />
+                </div>
               </div>
             )}
 

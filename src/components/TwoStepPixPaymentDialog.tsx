@@ -27,6 +27,7 @@ interface TwoStepPixPaymentDialogProps {
   clienteId: string | null;
   sessionId: string;
   musicas?: Musica[];
+  estabelecimentoId?: string;
 }
 
 const pixTipoChaveLabels: Record<string, string> = {
@@ -47,6 +48,7 @@ export function TwoStepPixPaymentDialog({
   clienteId,
   sessionId,
   musicas = [],
+  estabelecimentoId,
 }: TwoStepPixPaymentDialogProps) {
   // Step state: 'pedido' or 'pagamento'
   const [step, setStep] = useState<'pedido' | 'pagamento'>('pedido');
@@ -202,6 +204,7 @@ export function TwoStepPixPaymentDialog({
         mensagem: pedidoMensagem.trim() || null,
         status: "aguardando_pix",
         valor: null,
+        ...(estabelecimentoId ? { estabelecimento_id: estabelecimentoId } : {}),
       };
 
       // Only include cliente_id if user is authenticated
