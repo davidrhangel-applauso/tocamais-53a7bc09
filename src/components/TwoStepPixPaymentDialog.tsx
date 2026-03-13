@@ -27,6 +27,7 @@ interface TwoStepPixPaymentDialogProps {
   clienteId: string | null;
   sessionId: string;
   musicas?: Musica[];
+  estabelecimentoId?: string;
 }
 
 const pixTipoChaveLabels: Record<string, string> = {
