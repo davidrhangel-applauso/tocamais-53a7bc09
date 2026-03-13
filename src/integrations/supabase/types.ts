@@ -287,6 +287,7 @@ export type Database = {
           cliente_id: string | null
           cliente_nome: string | null
           created_at: string | null
+          estabelecimento_id: string | null
           expires_at: string | null
           id: string
           payment_id: string | null
@@ -307,6 +308,7 @@ export type Database = {
           cliente_id?: string | null
           cliente_nome?: string | null
           created_at?: string | null
+          estabelecimento_id?: string | null
           expires_at?: string | null
           id?: string
           payment_id?: string | null
@@ -327,6 +329,7 @@ export type Database = {
           cliente_id?: string | null
           cliente_nome?: string | null
           created_at?: string | null
+          estabelecimento_id?: string | null
           expires_at?: string | null
           id?: string
           payment_id?: string | null
@@ -612,6 +615,7 @@ export type Database = {
           latitude: number | null
           link_pix: string | null
           longitude: number | null
+          mostrar_gorjetas_local: boolean | null
           nome: string
           pix_qr_code_url: string | null
           plano: Database["public"]["Enums"]["subscription_plan"]
@@ -638,6 +642,7 @@ export type Database = {
           latitude?: number | null
           link_pix?: string | null
           longitude?: number | null
+          mostrar_gorjetas_local?: boolean | null
           nome: string
           pix_qr_code_url?: string | null
           plano?: Database["public"]["Enums"]["subscription_plan"]
@@ -664,6 +669,7 @@ export type Database = {
           latitude?: number | null
           link_pix?: string | null
           longitude?: number | null
+          mostrar_gorjetas_local?: boolean | null
           nome?: string
           pix_qr_code_url?: string | null
           plano?: Database["public"]["Enums"]["subscription_plan"]
