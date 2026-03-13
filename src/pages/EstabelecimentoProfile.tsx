@@ -137,44 +137,18 @@ const EstabelecimentoProfile = () => {
     setSubmitting(true);
 
     try {
-      // Get current user for cliente_id
-      const { data: userData } = await supabase.auth.getUser();
-      
-      const insertData: any = {
-        artista_id: activeCheckin.artista_id,
-        cliente_nome: clienteNome.trim() || null,
-        session_id: sessionId,
-        musica: musica.trim(),
-        mensagem: mensagem.trim() || null,
-        status: 'pendente',
-        estabelecimento_id: id,
-      };
-
-      // Only include cliente_id if user is authenticated
-      if (userData.user) {
-        insertData.cliente_id = userData.user.id;
-      }
-
       const { error } = await supabase
-        .from('pedidos')
-        .insert(insertData);
+        .from('pedidos_estabelecimento')
+        .insert({
+          estabelecimento_id: id,
+          checkin_id: activeCheckin.checkin_id,
+          cliente_nome: clienteNome.trim() || null,
+          session_id: sessionId,
+          musica: musica.trim(),
+          mensagem: mensagem.trim() || null,
+        });
 
       if (error) throw error;
-
-      // Send notification to the establishment about the request
-      if (id) {
-        try {
-          await supabase.rpc('criar_notificacao', {
-            p_usuario_id: id,
-            p_tipo: 'pedido_local',
-            p_titulo: 'Novo Pedido de Música',
-            p_mensagem: `${clienteNome.trim() || 'Cliente'} pediu: ${musica.trim()}`,
-            p_link: '/painel-local',
-          });
-        } catch (notifError) {
-          console.error('Error sending notification to estabelecimento:', notifError);
-        }
-      }
 
       toast.success("Pedido enviado com sucesso!");
       setMusica("");
@@ -482,7 +456,6 @@ const EstabelecimentoProfile = () => {
           clienteId={currentUser}
           sessionId={sessionId}
           musicas={artistMusicas}
-          estabelecimentoId={id}
         />
       )}
     </div>

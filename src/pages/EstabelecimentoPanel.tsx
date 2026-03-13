@@ -32,139 +32,12 @@ import {
   Calendar,
   Pencil,
   Save,
-  Loader2,
-  Bell,
-  Heart,
-  DollarSign
+  Loader2
 } from "lucide-react";
 import { useEstabelecimento } from "@/hooks/useEstabelecimento";
 import ProfileQRCode from "@/components/ProfileQRCode";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-
-// Component: Gorjetas do Local
-const GorjetasDoLocal = ({ estabelecimentoId }: { estabelecimentoId: string }) => {
-  const [gorjetas, setGorjetas] = useState<any[]>([]);
-  const [loadingGorjetas, setLoadingGorjetas] = useState(true);
-
-  useEffect(() => {
-    if (!estabelecimentoId) return;
-    const fetchGorjetas = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('gorjetas')
-          .select('id, valor, created_at, cliente_nome, pedido_musica, status_pagamento')
-          .eq('estabelecimento_id', estabelecimentoId)
-          .eq('arquivado', false)
-          .order('created_at', { ascending: false })
-          .limit(20);
-        if (error) throw error;
-        setGorjetas(data || []);
-      } catch (err) {
-        console.error('Error fetching local gorjetas:', err);
-      } finally {
-        setLoadingGorjetas(false);
-      }
-    };
-    fetchGorjetas();
-  }, [estabelecimentoId]);
-
-  if (loadingGorjetas) return <Skeleton className="h-32 w-full rounded-xl" />;
-
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Heart className="w-4 h-4 text-primary" />
-          Gorjetas no Local
-        </CardTitle>
-        <CardDescription>
-          Gorjetas enviadas aos artistas no seu estabelecimento
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {gorjetas.length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground">
-            <DollarSign className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Nenhuma gorjeta registrada ainda</p>
-            <p className="text-xs">As gorjetas dos clientes aparecerão aqui quando o artista permitir</p>
-          </div>
-        ) : (
-          <div className="space-y-2 max-h-[30vh] overflow-y-auto">
-            {gorjetas.map((g) => (
-              <div key={g.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                <div>
-                  <p className="text-sm font-medium">{g.cliente_nome || 'Cliente'}</p>
-                  {g.pedido_musica && (
-                    <p className="text-xs text-muted-foreground">🎵 {g.pedido_musica}</p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(g.created_at), { addSuffix: true, locale: ptBR })}
-                  </p>
-                </div>
-                <Badge variant={g.status_pagamento === 'approved' ? 'default' : 'secondary'}>
-                  R$ {Number(g.valor).toFixed(2)}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
-
-// Component: Notificações Feed
-const NotificacoesFeed = ({ userId }: { userId: string }) => {
-  const [notificacoes, setNotificacoes] = useState<any[]>([]);
-  const [loadingNotif, setLoadingNotif] = useState(true);
-
-  useEffect(() => {
-    if (!userId) return;
-    const fetchNotifs = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('notificacoes')
-          .select('*')
-          .eq('usuario_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(20);
-        if (error) throw error;
-        setNotificacoes(data || []);
-      } catch (err) {
-        console.error('Error fetching notificacoes:', err);
-      } finally {
-        setLoadingNotif(false);
-      }
-    };
-    fetchNotifs();
-  }, [userId]);
-
-  if (loadingNotif) return <Skeleton className="h-20 w-full rounded-xl" />;
-
-  if (notificacoes.length === 0) {
-    return (
-      <div className="text-center py-4 text-muted-foreground">
-        <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
-        <p className="text-sm">Nenhuma notificação ainda</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2 max-h-[30vh] overflow-y-auto">
-      {notificacoes.map((n) => (
-        <div key={n.id} className={`p-3 rounded-lg border ${n.lida ? 'bg-background' : 'bg-primary/5 border-primary/20'}`}>
-          <p className="text-sm font-medium">{n.titulo}</p>
-          <p className="text-xs text-muted-foreground">{n.mensagem}</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: ptBR })}
-          </p>
-        </div>
-      ))}
-    </div>
-  );
-};
 
 const EstabelecimentoPanel = () => {
   const navigate = useNavigate();
@@ -438,10 +311,15 @@ const EstabelecimentoPanel = () => {
         </Card>
 
         {/* Tabs */}
-        <Tabs defaultValue="atividade" className="w-full">
+        <Tabs defaultValue="pedidos" className="w-full">
           <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="atividade" className="relative text-xs sm:text-sm">
-              Atividade
+            <TabsTrigger value="pedidos" className="relative text-xs sm:text-sm">
+              Pedidos
+              {pendingPedidos.length > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs" variant="destructive">
+                  {pendingPedidos.length}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="relatorios" className="text-xs sm:text-sm">Relatórios</TabsTrigger>
             <TabsTrigger value="perfil" className="text-xs sm:text-sm">Perfil</TabsTrigger>
@@ -450,26 +328,81 @@ const EstabelecimentoPanel = () => {
             <TabsTrigger value="qrcode" className="text-xs sm:text-sm">QR Code</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="atividade" className="mt-4">
-            <div className="space-y-4">
-              {/* Gorjetas do local */}
-              <GorjetasDoLocal estabelecimentoId={user?.id} />
-              
-              {/* Notificações / Feed de atividades */}
+          <TabsContent value="pedidos" className="mt-4">
+            <div className="max-h-[50vh] overflow-y-auto overscroll-contain touch-pan-y space-y-3">
+            {pedidos.length === 0 ? (
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-primary" />
-                    Notificações Recentes
-                  </CardTitle>
-                  <CardDescription>
-                    Pedidos e atividades recentes no seu local
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <NotificacoesFeed userId={user?.id} />
+                <CardContent className="pt-6 text-center text-muted-foreground">
+                  <Music className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>Nenhum pedido ainda</p>
+                  <p className="text-sm">Os pedidos dos clientes aparecerão aqui</p>
                 </CardContent>
               </Card>
+            ) : (
+              pedidos.map((pedido) => (
+                <Card key={pedido.id} className={pedido.status === 'pendente' ? 'border-primary/30' : ''}>
+                  <CardContent className="pt-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-medium truncate">{pedido.musica}</p>
+                          <Badge variant={
+                            pedido.status === 'pendente' ? 'default' :
+                            pedido.status === 'aceito' ? 'secondary' :
+                            pedido.status === 'concluido' ? 'outline' : 'destructive'
+                          }>
+                            {pedido.status}
+                          </Badge>
+                        </div>
+                        {pedido.cliente_nome && (
+                          <p className="text-sm text-muted-foreground">
+                            De: {pedido.cliente_nome}
+                          </p>
+                        )}
+                        {pedido.mensagem && (
+                          <p className="text-sm mt-1 italic">"{pedido.mensagem}"</p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {formatDistanceToNow(new Date(pedido.created_at), { 
+                            addSuffix: true, 
+                            locale: ptBR 
+                          })}
+                        </p>
+                      </div>
+                      {pedido.status === 'pendente' && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-green-600"
+                            onClick={() => handleUpdatePedido(pedido.id, 'aceito')}
+                          >
+                            <Check className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-destructive"
+                            onClick={() => handleUpdatePedido(pedido.id, 'recusado')}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                      {pedido.status === 'aceito' && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleUpdatePedido(pedido.id, 'concluido')}
+                        >
+                          <Play className="w-4 h-4 mr-1" />
+                          Tocou
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
             </div>
           </TabsContent>
 
