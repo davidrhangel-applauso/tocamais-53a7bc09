@@ -147,6 +147,7 @@ const EstabelecimentoProfile = () => {
         musica: musica.trim(),
         mensagem: mensagem.trim() || null,
         status: 'pendente',
+        estabelecimento_id: id,
       };
 
       // Only include cliente_id if user is authenticated
