@@ -311,15 +311,10 @@ const EstabelecimentoPanel = () => {
         </Card>
 
         {/* Tabs */}
-        <Tabs defaultValue="pedidos" className="w-full">
+        <Tabs defaultValue="atividade" className="w-full">
           <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="pedidos" className="relative text-xs sm:text-sm">
-              Pedidos
-              {pendingPedidos.length > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs" variant="destructive">
-                  {pendingPedidos.length}
-                </Badge>
-              )}
+            <TabsTrigger value="atividade" className="relative text-xs sm:text-sm">
+              Atividade
             </TabsTrigger>
             <TabsTrigger value="relatorios" className="text-xs sm:text-sm">Relatórios</TabsTrigger>
             <TabsTrigger value="perfil" className="text-xs sm:text-sm">Perfil</TabsTrigger>
@@ -328,81 +323,26 @@ const EstabelecimentoPanel = () => {
             <TabsTrigger value="qrcode" className="text-xs sm:text-sm">QR Code</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="pedidos" className="mt-4">
-            <div className="max-h-[50vh] overflow-y-auto overscroll-contain touch-pan-y space-y-3">
-            {pedidos.length === 0 ? (
+          <TabsContent value="atividade" className="mt-4">
+            <div className="space-y-4">
+              {/* Gorjetas do local */}
+              <GorjetasDoLocal estabelecimentoId={user?.id} />
+              
+              {/* Notificações / Feed de atividades */}
               <Card>
-                <CardContent className="pt-6 text-center text-muted-foreground">
-                  <Music className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>Nenhum pedido ainda</p>
-                  <p className="text-sm">Os pedidos dos clientes aparecerão aqui</p>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-primary" />
+                    Notificações Recentes
+                  </CardTitle>
+                  <CardDescription>
+                    Pedidos e atividades recentes no seu local
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <NotificacoesFeed userId={user?.id} />
                 </CardContent>
               </Card>
-            ) : (
-              pedidos.map((pedido) => (
-                <Card key={pedido.id} className={pedido.status === 'pendente' ? 'border-primary/30' : ''}>
-                  <CardContent className="pt-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium truncate">{pedido.musica}</p>
-                          <Badge variant={
-                            pedido.status === 'pendente' ? 'default' :
-                            pedido.status === 'aceito' ? 'secondary' :
-                            pedido.status === 'concluido' ? 'outline' : 'destructive'
-                          }>
-                            {pedido.status}
-                          </Badge>
-                        </div>
-                        {pedido.cliente_nome && (
-                          <p className="text-sm text-muted-foreground">
-                            De: {pedido.cliente_nome}
-                          </p>
-                        )}
-                        {pedido.mensagem && (
-                          <p className="text-sm mt-1 italic">"{pedido.mensagem}"</p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {formatDistanceToNow(new Date(pedido.created_at), { 
-                            addSuffix: true, 
-                            locale: ptBR 
-                          })}
-                        </p>
-                      </div>
-                      {pedido.status === 'pendente' && (
-                        <div className="flex gap-2">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 text-green-600"
-                            onClick={() => handleUpdatePedido(pedido.id, 'aceito')}
-                          >
-                            <Check className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 text-destructive"
-                            onClick={() => handleUpdatePedido(pedido.id, 'recusado')}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
-                      {pedido.status === 'aceito' && (
-                        <Button
-                          size="sm"
-                          onClick={() => handleUpdatePedido(pedido.id, 'concluido')}
-                        >
-                          <Play className="w-4 h-4 mr-1" />
-                          Tocou
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
             </div>
           </TabsContent>
 
