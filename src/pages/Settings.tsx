@@ -123,7 +123,7 @@ const Settings = () => {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, nome, bio, foto_url, foto_capa_url, cidade, estilo_musical, tipo, instagram, youtube, spotify, link_pix, ativo_ao_vivo, pix_qr_code_url, latitude, longitude, slug")
+        .select("id, nome, bio, foto_url, foto_capa_url, cidade, estilo_musical, tipo, instagram, youtube, spotify, link_pix, ativo_ao_vivo, pix_qr_code_url, latitude, longitude, slug, mostrar_gorjetas_local")
         .eq("id", user.id)
         .single();
 
