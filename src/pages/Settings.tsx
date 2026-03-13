@@ -486,6 +486,9 @@ const Settings = () => {
                   />
                 </div>
               </div>
+            )}
+
+            {/* Subscription Plan - Only for artists */}
             {profile.tipo === "artista" && (
               <div className="space-y-4">
                 <SubscriptionCard artistaId={profile.id} />
