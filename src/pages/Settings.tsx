@@ -180,6 +180,7 @@ const Settings = () => {
           latitude: profile.latitude,
           longitude: profile.longitude,
           slug: profile.slug,
+          mostrar_gorjetas_local: profile.mostrar_gorjetas_local,
         })
         .eq("id", profile.id);
 
