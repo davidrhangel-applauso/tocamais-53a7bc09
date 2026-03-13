@@ -48,6 +48,7 @@ export function TwoStepPixPaymentDialog({
   clienteId,
   sessionId,
   musicas = [],
+  estabelecimentoId,
 }: TwoStepPixPaymentDialogProps) {
   // Step state: 'pedido' or 'pagamento'
   const [step, setStep] = useState<'pedido' | 'pagamento'>('pedido');

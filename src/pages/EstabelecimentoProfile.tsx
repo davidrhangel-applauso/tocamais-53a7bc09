@@ -481,6 +481,7 @@ const EstabelecimentoProfile = () => {
           clienteId={currentUser}
           sessionId={sessionId}
           musicas={artistMusicas}
+          estabelecimentoId={id}
         />
       )}
     </div>
