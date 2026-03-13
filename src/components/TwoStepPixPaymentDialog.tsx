@@ -204,6 +204,7 @@ export function TwoStepPixPaymentDialog({
         mensagem: pedidoMensagem.trim() || null,
         status: "aguardando_pix",
         valor: null,
+        ...(estabelecimentoId ? { estabelecimento_id: estabelecimentoId } : {}),
       };
 
       // Only include cliente_id if user is authenticated

@@ -32,7 +32,10 @@ import {
   Calendar,
   Pencil,
   Save,
-  Loader2
+  Loader2,
+  Bell,
+  Heart,
+  DollarSign
 } from "lucide-react";
 import { useEstabelecimento } from "@/hooks/useEstabelecimento";
 import ProfileQRCode from "@/components/ProfileQRCode";
