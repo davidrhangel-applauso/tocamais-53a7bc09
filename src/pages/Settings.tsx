@@ -466,7 +466,26 @@ const Settings = () => {
               </div>
             )}
 
-            {/* Subscription Plan - Only for artists */}
+            {/* Gorjeta Visibility for Establishments - Only for artists */}
+            {profile.tipo === "artista" && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  🏢 Estabelecimentos
+                </h3>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="mostrar_gorjetas_local">Mostrar gorjetas ao estabelecimento</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Permite que estabelecimentos onde você toca vejam os valores das gorjetas recebidas no local
+                    </p>
+                  </div>
+                  <Switch
+                    id="mostrar_gorjetas_local"
+                    checked={profile.mostrar_gorjetas_local}
+                    onCheckedChange={(checked) => setProfile({ ...profile, mostrar_gorjetas_local: checked })}
+                  />
+                </div>
+              </div>
             {profile.tipo === "artista" && (
               <div className="space-y-4">
                 <SubscriptionCard artistaId={profile.id} />
