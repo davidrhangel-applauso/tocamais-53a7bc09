@@ -45,6 +45,7 @@ interface Profile {
   latitude: number | null;
   longitude: number | null;
   slug: string | null;
+  mostrar_gorjetas_local: boolean;
 }
 
 interface PixInfo {

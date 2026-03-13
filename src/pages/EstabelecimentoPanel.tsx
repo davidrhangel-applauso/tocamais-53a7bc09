@@ -42,6 +42,130 @@ import ProfileQRCode from "@/components/ProfileQRCode";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+// Component: Gorjetas do Local
+const GorjetasDoLocal = ({ estabelecimentoId }: { estabelecimentoId: string }) => {
+  const [gorjetas, setGorjetas] = useState<any[]>([]);
+  const [loadingGorjetas, setLoadingGorjetas] = useState(true);
+
+  useEffect(() => {
+    if (!estabelecimentoId) return;
+    const fetchGorjetas = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('gorjetas')
+          .select('id, valor, created_at, cliente_nome, pedido_musica, status_pagamento')
+          .eq('estabelecimento_id', estabelecimentoId)
+          .eq('arquivado', false)
+          .order('created_at', { ascending: false })
+          .limit(20);
+        if (error) throw error;
+        setGorjetas(data || []);
+      } catch (err) {
+        console.error('Error fetching local gorjetas:', err);
+      } finally {
+        setLoadingGorjetas(false);
+      }
+    };
+    fetchGorjetas();
+  }, [estabelecimentoId]);
+
+  if (loadingGorjetas) return <Skeleton className="h-32 w-full rounded-xl" />;
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Heart className="w-4 h-4 text-primary" />
+          Gorjetas no Local
+        </CardTitle>
+        <CardDescription>
+          Gorjetas enviadas aos artistas no seu estabelecimento
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {gorjetas.length === 0 ? (
+          <div className="text-center py-4 text-muted-foreground">
+            <DollarSign className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">Nenhuma gorjeta registrada ainda</p>
+            <p className="text-xs">As gorjetas dos clientes aparecerão aqui quando o artista permitir</p>
+          </div>
+        ) : (
+          <div className="space-y-2 max-h-[30vh] overflow-y-auto">
+            {gorjetas.map((g) => (
+              <div key={g.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                <div>
+                  <p className="text-sm font-medium">{g.cliente_nome || 'Cliente'}</p>
+                  {g.pedido_musica && (
+                    <p className="text-xs text-muted-foreground">🎵 {g.pedido_musica}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(g.created_at), { addSuffix: true, locale: ptBR })}
+                  </p>
+                </div>
+                <Badge variant={g.status_pagamento === 'approved' ? 'default' : 'secondary'}>
+                  R$ {Number(g.valor).toFixed(2)}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+// Component: Notificações Feed
+const NotificacoesFeed = ({ userId }: { userId: string }) => {
+  const [notificacoes, setNotificacoes] = useState<any[]>([]);
+  const [loadingNotif, setLoadingNotif] = useState(true);
+
+  useEffect(() => {
+    if (!userId) return;
+    const fetchNotifs = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('notificacoes')
+          .select('*')
+          .eq('usuario_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(20);
+        if (error) throw error;
+        setNotificacoes(data || []);
+      } catch (err) {
+        console.error('Error fetching notificacoes:', err);
+      } finally {
+        setLoadingNotif(false);
+      }
+    };
+    fetchNotifs();
+  }, [userId]);
+
+  if (loadingNotif) return <Skeleton className="h-20 w-full rounded-xl" />;
+
+  if (notificacoes.length === 0) {
+    return (
+      <div className="text-center py-4 text-muted-foreground">
+        <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
+        <p className="text-sm">Nenhuma notificação ainda</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 max-h-[30vh] overflow-y-auto">
+      {notificacoes.map((n) => (
+        <div key={n.id} className={`p-3 rounded-lg border ${n.lida ? 'bg-background' : 'bg-primary/5 border-primary/20'}`}>
+          <p className="text-sm font-medium">{n.titulo}</p>
+          <p className="text-xs text-muted-foreground">{n.mensagem}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: ptBR })}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const EstabelecimentoPanel = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
