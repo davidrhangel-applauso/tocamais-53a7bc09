@@ -226,8 +226,8 @@ const AuthEstabelecimento = () => {
       if (error) throw error;
 
       if (data.user) {
-        const profile = await waitForProfile(data.user.id);
-        
+        const profile = await ensureProfileForUser(data.user, "estabelecimento");
+
         if (!profile) {
           toast.error("Erro ao carregar perfil. Tente novamente.");
           await supabase.auth.signOut();
