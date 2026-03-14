@@ -1,45 +1,89 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { User } from "@supabase/supabase-js";
 
 export interface Profile {
   id: string;
   tipo: "artista" | "cliente" | "estabelecimento";
 }
 
+const sanitizeTipo = (
+  tipo: unknown,
+  fallback: Profile["tipo"]
+): Profile["tipo"] => {
+  if (tipo === "artista" || tipo === "cliente" || tipo === "estabelecimento") {
+    return tipo;
+  }
+  return fallback;
+};
+
 /**
  * Waits for a user profile to be created in the database.
  * Uses retry logic to handle the async trigger that creates profiles.
  */
 export const waitForProfile = async (
-  userId: string, 
+  userId: string,
   maxAttempts: number = 10,
   delayMs: number = 500
 ): Promise<Profile | null> => {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    try {
-      const { data: profile, error, status } = await supabase
-        .from("profiles")
-        .select("id, tipo")
-        .eq("id", userId)
-        .maybeSingle();
-      
-      console.log(`[waitForProfile] Attempt ${attempt + 1}: status=${status}, profile=`, profile, 'error=', error);
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, tipo")
+      .eq("id", userId)
+      .maybeSingle();
 
-      if (profile) {
-        return profile;
-      }
-
-      if (error) {
-        console.error(`[waitForProfile] Error on attempt ${attempt + 1}:`, error);
-      }
-    } catch (e) {
-      console.error(`[waitForProfile] Exception on attempt ${attempt + 1}:`, e);
+    if (profile) {
+      return profile;
     }
-    
+
     if (attempt < maxAttempts - 1) {
-      await new Promise(resolve => setTimeout(resolve, delayMs));
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
   }
-  
-  console.error(`[waitForProfile] Profile not found after ${maxAttempts} attempts for user ${userId}`);
+
   return null;
+};
+
+const createMissingProfile = async (
+  user: User,
+  fallbackTipo: Profile["tipo"]
+): Promise<void> => {
+  const nomeFromEmail = user.email?.split("@")[0];
+  const tipo = sanitizeTipo(user.user_metadata?.tipo, fallbackTipo);
+
+  const profilePayload = {
+    id: user.id,
+    nome:
+      user.user_metadata?.nome?.toString().trim() ||
+      nomeFromEmail ||
+      "Usuário",
+    cidade: user.user_metadata?.cidade?.toString() || null,
+    tipo,
+    foto_url: user.user_metadata?.foto_url?.toString() || null,
+    endereco: user.user_metadata?.endereco?.toString() || null,
+    telefone: user.user_metadata?.telefone?.toString() || null,
+    tipo_estabelecimento:
+      user.user_metadata?.tipo_estabelecimento?.toString() || null,
+  };
+
+  const { error } = await supabase.from("profiles").upsert(profilePayload, {
+    onConflict: "id",
+    ignoreDuplicates: true,
+  });
+
+  if (error) {
+    throw error;
+  }
+};
+
+export const ensureProfileForUser = async (
+  user: User,
+  fallbackTipo: Profile["tipo"]
+): Promise<Profile | null> => {
+  const existingProfile = await waitForProfile(user.id, 6, 400);
+  if (existingProfile) return existingProfile;
+
+  await createMissingProfile(user, fallbackTipo);
+
+  return waitForProfile(user.id, 6, 400);
 };

@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Building2, Check, X, Loader2 } from "lucide-react";
-import { waitForProfile } from "@/lib/auth-utils";
+import { ensureProfileForUser } from "@/lib/auth-utils";
 import { lovable } from "@/integrations/lovable/index";
 import { z } from "zod";
 import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicator";
@@ -140,8 +140,8 @@ const AuthEstabelecimento = () => {
         toast.success("Conta criada com sucesso!");
         
         // Wait for the trigger to create the profile with retry logic
-        const profile = await waitForProfile(authData.user.id);
-        
+        const profile = await ensureProfileForUser(authData.user, "estabelecimento");
+
         if (!profile) {
           toast.error("Erro ao criar perfil. Por favor, tente fazer login.");
           return;
@@ -226,8 +226,8 @@ const AuthEstabelecimento = () => {
       if (error) throw error;
 
       if (data.user) {
-        const profile = await waitForProfile(data.user.id);
-        
+        const profile = await ensureProfileForUser(data.user, "estabelecimento");
+
         if (!profile) {
           toast.error("Erro ao carregar perfil. Tente novamente.");
           await supabase.auth.signOut();

@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Check, X, Building2 } from "lucide-react";
 import logoTocaMais from "@/assets/logo-tocamais.png";
-import { waitForProfile } from "@/lib/auth-utils";
+import { ensureProfileForUser } from "@/lib/auth-utils";
 import { lovable } from "@/integrations/lovable/index";
 import { z } from "zod";
 import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicator";
@@ -103,8 +103,8 @@ const Auth = () => {
         toast.success("Conta criada com sucesso!");
         
         // Wait for the trigger to create the profile with retry logic
-        const profile = await waitForProfile(authData.user.id);
-        
+        const profile = await ensureProfileForUser(authData.user, "artista");
+
         if (!profile) {
           toast.error("Erro ao criar perfil. Por favor, tente fazer login.");
           return;
@@ -168,24 +168,16 @@ const Auth = () => {
     }
 
     try {
-      console.log('[Auth] Attempting signIn with email:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password: loginPassword,
       });
 
-      if (error) {
-        console.error('[Auth] signInWithPassword error:', error);
-        throw error;
-      }
-
-      console.log('[Auth] signIn success, user:', data.user?.id);
+      if (error) throw error;
 
       if (data.user) {
-        console.log('[Auth] Waiting for profile...');
-        const profile = await waitForProfile(data.user.id);
-        console.log('[Auth] Profile result:', profile);
-        
+        const profile = await ensureProfileForUser(data.user, "artista");
+
         if (!profile) {
           toast.error("Erro ao carregar perfil. Tente novamente.");
           await supabase.auth.signOut();
@@ -193,14 +185,16 @@ const Auth = () => {
         }
 
         toast.success("Login realizado com sucesso!");
-        const destination = isUpgrade ? `/pro${planParam ? `?plan=${planParam}` : ''}` : 
-          profile.tipo === "estabelecimento" ? "/painel-local" : "/painel";
-        console.log('[Auth] Navigating to:', destination);
+        const destination = isUpgrade
+          ? `/pro${planParam ? `?plan=${planParam}` : ''}`
+          : profile.tipo === "estabelecimento"
+            ? "/painel-local"
+            : "/painel";
         navigate(destination);
       }
     } catch (error: any) {
       toast.error(error.message || "Erro ao fazer login");
-      console.error('[Auth] Login error:', error);
+      console.error("Login error:", error);
     } finally {
       setLoading(false);
     }
