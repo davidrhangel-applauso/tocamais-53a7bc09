@@ -140,8 +140,8 @@ const AuthEstabelecimento = () => {
         toast.success("Conta criada com sucesso!");
         
         // Wait for the trigger to create the profile with retry logic
-        const profile = await waitForProfile(authData.user.id);
-        
+        const profile = await ensureProfileForUser(authData.user, "estabelecimento");
+
         if (!profile) {
           toast.error("Erro ao criar perfil. Por favor, tente fazer login.");
           return;
