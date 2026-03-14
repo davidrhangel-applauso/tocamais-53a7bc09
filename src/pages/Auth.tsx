@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Check, X, Building2 } from "lucide-react";
 import logoTocaMais from "@/assets/logo-tocamais.png";
-import { waitForProfile } from "@/lib/auth-utils";
+import { ensureProfileForUser } from "@/lib/auth-utils";
 import { lovable } from "@/integrations/lovable/index";
 import { z } from "zod";
 import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicator";
