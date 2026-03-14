@@ -168,15 +168,23 @@ const Auth = () => {
     }
 
     try {
+      console.log('[Auth] Attempting signIn with email:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password: loginPassword,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[Auth] signInWithPassword error:', error);
+        throw error;
+      }
+
+      console.log('[Auth] signIn success, user:', data.user?.id);
 
       if (data.user) {
+        console.log('[Auth] Waiting for profile...');
         const profile = await waitForProfile(data.user.id);
+        console.log('[Auth] Profile result:', profile);
         
         if (!profile) {
           toast.error("Erro ao carregar perfil. Tente novamente.");
@@ -185,11 +193,14 @@ const Auth = () => {
         }
 
         toast.success("Login realizado com sucesso!");
-        navigate(isUpgrade ? `/pro${planParam ? `?plan=${planParam}` : ''}` : "/painel");
+        const destination = isUpgrade ? `/pro${planParam ? `?plan=${planParam}` : ''}` : 
+          profile.tipo === "estabelecimento" ? "/painel-local" : "/painel";
+        console.log('[Auth] Navigating to:', destination);
+        navigate(destination);
       }
     } catch (error: any) {
       toast.error(error.message || "Erro ao fazer login");
-      console.error('Login error:', error);
+      console.error('[Auth] Login error:', error);
     } finally {
       setLoading(false);
     }
