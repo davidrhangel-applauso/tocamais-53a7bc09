@@ -175,12 +175,19 @@ const Auth = () => {
 
       if (error) throw error;
 
+      if (data.session) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+      }
+
       if (data.user) {
         const profile = await ensureProfileForUser(data.user, "artista");
 
         if (!profile) {
-          toast.error("Erro ao carregar perfil. Tente novamente.");
-          await supabase.auth.signOut();
+          toast.error("Perfil em sincronização. Tentando continuar...");
+          navigate(isUpgrade ? `/pro${planParam ? `?plan=${planParam}` : ''}` : "/painel");
           return;
         }
 
