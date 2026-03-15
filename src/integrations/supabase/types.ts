@@ -867,6 +867,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      artist_shows_tips_to_local: {
+        Args: { p_artista_id: string }
+        Returns: boolean
+      }
       calculate_distance: {
         Args: { lat1: number; lat2: number; lon1: number; lon2: number }
         Returns: number
