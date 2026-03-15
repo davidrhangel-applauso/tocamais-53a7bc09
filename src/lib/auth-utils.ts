@@ -76,14 +76,41 @@ const createMissingProfile = async (
   }
 };
 
+const inferProfileFromMetadata = (
+  user: User,
+  fallbackTipo: Profile["tipo"]
+): Profile => ({
+  id: user.id,
+  tipo: sanitizeTipo(user.user_metadata?.tipo, fallbackTipo),
+});
+
 export const ensureProfileForUser = async (
   user: User,
   fallbackTipo: Profile["tipo"]
 ): Promise<Profile | null> => {
-  const existingProfile = await waitForProfile(user.id, 6, 400);
-  if (existingProfile) return existingProfile;
+  try {
+    const existingProfile = await waitForProfile(user.id, 6, 400);
+    if (existingProfile) return existingProfile;
+  } catch (error) {
+    console.error("[auth] Falha ao buscar perfil existente:", error);
+  }
 
-  await createMissingProfile(user, fallbackTipo);
+  try {
+    await createMissingProfile(user, fallbackTipo);
+  } catch (error) {
+    console.error("[auth] Falha ao criar perfil automaticamente:", error);
+  }
 
-  return waitForProfile(user.id, 6, 400);
+  try {
+    const recoveredProfile = await waitForProfile(user.id, 8, 400);
+    if (recoveredProfile) return recoveredProfile;
+  } catch (error) {
+    console.error("[auth] Falha ao recuperar perfil após criação:", error);
+  }
+
+  console.warn("[auth] Usando perfil inferido por fallback para evitar loop de login", {
+    userId: user.id,
+    fallbackTipo,
+  });
+  return inferProfileFromMetadata(user, fallbackTipo);
 };
